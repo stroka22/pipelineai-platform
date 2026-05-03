@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Sparkles, Target, TrendingUp, Building2, Bug, Wrench, Home, Briefcase, ChevronRight } from 'lucide-react';
+import { ArrowRight, Sparkles, Target, TrendingUp, Building2, Bug, Wrench, Home, Briefcase, ChevronRight, Users, ShoppingBag, Dumbbell, Stethoscope, GraduationCap, Camera } from 'lucide-react';
 
 const industries = [
   {
@@ -33,6 +33,54 @@ const industries = [
     slug: 'real-estate',
     icon: Building2,
     description: 'Listing content, market updates & buyer guides',
+    available: false,
+    featured: false,
+  },
+  {
+    name: 'Coaches & Consultants',
+    slug: 'coaches',
+    icon: Users,
+    description: 'Authority-building content & client attraction',
+    available: false,
+    featured: false,
+  },
+  {
+    name: 'E-Commerce',
+    slug: 'ecommerce',
+    icon: ShoppingBag,
+    description: 'Product showcases, launches & promotional campaigns',
+    available: false,
+    featured: false,
+  },
+  {
+    name: 'Fitness & Wellness',
+    slug: 'fitness',
+    icon: Dumbbell,
+    description: 'Transformation content, tips & motivation',
+    available: false,
+    featured: false,
+  },
+  {
+    name: 'Healthcare & Medical',
+    slug: 'healthcare',
+    icon: Stethoscope,
+    description: 'Patient education & trust-building content',
+    available: false,
+    featured: false,
+  },
+  {
+    name: 'Education & Courses',
+    slug: 'education',
+    icon: GraduationCap,
+    description: 'Course promotion & thought leadership',
+    available: false,
+    featured: false,
+  },
+  {
+    name: 'Photographers',
+    slug: 'photographers',
+    icon: Camera,
+    description: 'Portfolio showcases & booking campaigns',
     available: false,
     featured: false,
   },
@@ -76,7 +124,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto px-6 text-center relative z-10">
           <div className="inline-flex items-center gap-2 bg-[#C96A2B]/20 border border-[#C96A2B]/30 text-[#FACC15] px-4 py-2 rounded-full text-sm font-semibold mb-8">
             <Sparkles className="w-4 h-4" />
-            Premium Social Media Content for Local Service Businesses
+            Premium Social Media Content for Any Industry
           </div>
           
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
@@ -86,7 +134,7 @@ export default function HomePage() {
           
           <p className="text-xl md:text-2xl text-white/80 mb-10 max-w-3xl mx-auto leading-relaxed">
             Done-for-you social media campaigns, reels, carousels, and branded assets 
-            for local service businesses. Customized with your logo, phone, and service area.
+            customized for your business. Your logo, your brand, your message.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -121,7 +169,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-bold text-[#081F33] mb-3">Industry-Specific</h3>
               <p className="text-[#4B5563]">
-                Not generic templates. Real content built around what homeowners actually care about in your industry.
+                Not generic templates. Real content built around what your audience actually cares about.
               </p>
             </div>
             
@@ -141,7 +189,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-bold text-[#081F33] mb-3">Trust-Building</h3>
               <p className="text-[#4B5563]">
-                Educational content that positions you as the local expert homeowners trust to call first.
+                Educational content that positions you as the expert your audience trusts first.
               </p>
             </div>
           </div>
@@ -156,7 +204,7 @@ export default function HomePage() {
               Choose Your Industry
             </h2>
             <p className="text-xl text-[#4B5563] max-w-2xl mx-auto">
-              Premium content vaults built for specific local service industries. 
+              Premium content vaults built for specific industries. 
               Each vault contains campaigns tailored to your market.
             </p>
           </div>
@@ -240,8 +288,8 @@ export default function HomePage() {
             Ready to Look Like the <span className="text-[#C96A2B]">Obvious Expert</span>?
           </h2>
           <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-            Stop posting random content. Start posting campaigns that make homeowners 
-            trust you before they ever pick up the phone.
+            Stop posting random content. Start posting campaigns that make your 
+            audience trust you before they ever reach out.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -273,7 +321,7 @@ export default function HomePage() {
             Pipeline <span className="text-[#C96A2B]">AI</span>
           </Link>
           <p className="text-sm mb-4">
-            Premium social media content for local service businesses
+            Premium social media content for businesses that want to stand out
           </p>
           <p className="text-xs text-white/40">
             © {new Date().getFullYear()} Pipeline AI. All rights reserved.
