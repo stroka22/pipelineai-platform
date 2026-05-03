@@ -80,8 +80,8 @@ export default function HomePage() {
           </div>
           
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
-            Content That Makes <br className="hidden md:block" />
-            <span className="text-[#C96A2B]">Homeowners Trust</span> You First
+            Content That Makes You <br className="hidden md:block" />
+            <span className="text-[#C96A2B]">The Obvious Choice</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-white/80 mb-10 max-w-3xl mx-auto leading-relaxed">
