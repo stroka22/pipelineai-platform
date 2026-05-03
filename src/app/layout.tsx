@@ -13,20 +13,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pipeline AI - Premium Social Media Content for Local Service Businesses",
-  description: "Done-for-you social media campaigns, reels, carousels, and branded marketing assets for local service businesses. Customized with your logo, phone, and service area.",
-  keywords: "social media content, pest control marketing, local service marketing, carousel campaigns, reels, branded content",
+  title: "Pipeline AI - Content That Makes You The Obvious Choice",
+  description: "Done-for-you social media campaigns, reels, carousels, and branded marketing assets customized for your business. Your logo, your brand, your message.",
+  keywords: "social media content, business marketing, carousel campaigns, reels, branded content, content creation",
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
   openGraph: {
-    title: "Pipeline AI - Premium Social Media Content",
-    description: "Done-for-you social media campaigns for local service businesses",
+    title: "Pipeline AI - Content That Makes You The Obvious Choice",
+    description: "Done-for-you social media campaigns customized for your business",
     url: "https://getpipelineai.com",
     siteName: "Pipeline AI",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pipeline AI - Premium Social Media Content",
-    description: "Done-for-you social media campaigns for local service businesses",
+    title: "Pipeline AI - Content That Makes You The Obvious Choice",
+    description: "Done-for-you social media campaigns customized for your business",
   },
   robots: {
     index: true,
