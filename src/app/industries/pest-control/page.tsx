@@ -21,7 +21,7 @@ import {
   Download,
   Mail
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const vaultCategories = [
@@ -122,18 +122,7 @@ const packages = [
   },
 ];
 
-const individualProducts = [
-  { name: 'Termite Carousel Pack', price: 97, category: 'Termites', items: 3 },
-  { name: 'Roach Carousel Pack', price: 97, category: 'Roaches', items: 3 },
-  { name: 'Rodent Carousel Pack', price: 97, category: 'Rodents', items: 3 },
-  { name: 'Mosquito Carousel Pack', price: 97, category: 'Mosquitoes', items: 3 },
-  { name: 'Ant Carousel Pack', price: 97, category: 'Ants', items: 3 },
-  { name: 'General Pest Image Pack', price: 97, category: 'General', items: 5 },
-  { name: 'Single Branded Reel', price: 147, category: 'Reels', items: 1 },
-  { name: '3-Reel Pack', price: 347, category: 'Reels', items: 3 },
-  { name: '3-Pack Carousel Bundle', price: 247, category: 'Bundle', items: 9 },
-  { name: 'Founder Starter Bundle', price: 497, category: 'Bundle', items: 15 },
-];
+// Products are now fetched from Supabase
 
 const seasonalCalendar = [
   { month: 'Jan', pest: 'Rodents', theme: 'Winter invaders seeking warmth' },
@@ -150,11 +139,25 @@ const seasonalCalendar = [
   { month: 'Dec', pest: 'Winter Pests', theme: 'Cold weather invaders' },
 ];
 
+import { Product } from '@/lib/supabase';
+
 export default function PestControlPage() {
   const [activeTab, setActiveTab] = useState('termites');
   const [leadForm, setLeadForm] = useState({ name: '', email: '', company: '' });
   const [leadSubmitting, setLeadSubmitting] = useState(false);
   const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('price', { ascending: true })
+      .then(({ data }) => {
+        if (data) setProducts(data);
+      });
+  }, []);
 
   async function handleLeadSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -621,21 +624,30 @@ export default function PestControlPage() {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {individualProducts.map((product, i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm vault-card">
+            {products.map((product) => (
+              <div key={product.id} className="bg-white rounded-2xl p-6 shadow-sm vault-card">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-xs font-semibold text-[#C96A2B] bg-[#C96A2B]/10 px-3 py-1 rounded-full">
                     {product.category}
                   </span>
-                  <span className="text-xs text-[#9CA3AF]">{product.items} asset{product.items > 1 ? 's' : ''}</span>
+                  <span className="text-xs text-[#9CA3AF]">{product.items_count} asset{product.items_count > 1 ? 's' : ''}</span>
                 </div>
                 
-                <h3 className="text-lg font-bold text-[#081F33] mb-4">{product.name}</h3>
+                <h3 className="text-lg font-bold text-[#081F33] mb-4">{product.title}</h3>
                 
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-[#081F33]">${product.price}</span>
+                  <div>
+                    {product.sale_price && product.sale_price < product.price ? (
+                      <>
+                        <span className="text-sm text-[#9CA3AF] line-through mr-2">${product.price}</span>
+                        <span className="text-2xl font-bold text-[#081F33]">${product.sale_price}</span>
+                      </>
+                    ) : (
+                      <span className="text-2xl font-bold text-[#081F33]">${product.price}</span>
+                    )}
+                  </div>
                   <Link 
-                    href="#checkout"
+                    href={`/checkout?product=${product.id}`}
                     className="bg-[#081F33] text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#0a2a47] transition-all"
                   >
                     Buy Now
