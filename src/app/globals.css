@@ -1,8 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Premium Hermes-Inspired Palette */
+  --navy: #081F33;
+  --charcoal: #111827;
+  --hermes-orange: #C96A2B;
+  --amber: #D97706;
+  --gold: #FACC15;
+  --cream: #F8F3EA;
+  --white: #FFFFFF;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-400: #9CA3AF;
+  --gray-600: #4B5563;
+  --gray-800: #1F2937;
+  --green: #22C55E;
+  --red: #EF4444;
+  
+  --background: var(--white);
+  --foreground: var(--charcoal);
 }
 
 @theme inline {
@@ -10,17 +26,101 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  
+  /* Custom colors for Tailwind */
+  --color-navy: #081F33;
+  --color-charcoal: #111827;
+  --color-hermes: #C96A2B;
+  --color-amber: #D97706;
+  --color-gold: #FACC15;
+  --color-cream: #F8F3EA;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Premium Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Premium button hover effects */
+.btn-premium {
+  transition: all 0.2s ease;
+}
+
+.btn-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px -10px rgba(201, 106, 43, 0.4);
+}
+
+/* Vault card hover */
+.vault-card {
+  transition: all 0.3s ease;
+}
+
+.vault-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.2);
+}
+
+/* Watermark overlay for previews */
+.watermark-overlay {
+  position: relative;
+}
+
+.watermark-overlay::after {
+  content: 'SAMPLE PREVIEW';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: rgba(201, 106, 43, 0.3);
+  pointer-events: none;
+  white-space: nowrap;
+  letter-spacing: 0.1em;
+}
+
+/* Locked blur effect */
+.locked-blur {
+  filter: blur(8px);
+  transition: filter 0.3s ease;
+}
+
+/* Premium gradient backgrounds */
+.gradient-navy {
+  background: linear-gradient(135deg, #081F33 0%, #0F2D47 100%);
+}
+
+.gradient-hermes {
+  background: linear-gradient(135deg, #C96A2B 0%, #D97706 100%);
+}
+
+/* Sticky mobile CTA */
+@media (max-width: 768px) {
+  .sticky-cta {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    padding: 1rem;
+    background: rgba(8, 31, 51, 0.98);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
 }
