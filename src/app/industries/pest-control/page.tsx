@@ -22,6 +22,7 @@ import {
   Mail
 } from 'lucide-react';
 import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 const vaultCategories = [
   { name: 'Termite Authority Pack', icon: '🪵', count: 12, description: 'Damage warnings, inspection campaigns, prevention education' },
@@ -151,6 +152,30 @@ const seasonalCalendar = [
 
 export default function PestControlPage() {
   const [activeTab, setActiveTab] = useState('termites');
+  const [leadForm, setLeadForm] = useState({ name: '', email: '', company: '' });
+  const [leadSubmitting, setLeadSubmitting] = useState(false);
+  const [leadSubmitted, setLeadSubmitted] = useState(false);
+
+  async function handleLeadSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!leadForm.name || !leadForm.email) return;
+    
+    setLeadSubmitting(true);
+    const { error } = await supabase.from('leads').insert([{
+      name: leadForm.name,
+      email: leadForm.email,
+      company: leadForm.company || null,
+      source: 'pest-control-sample-pack',
+    }]);
+    
+    setLeadSubmitting(false);
+    if (!error) {
+      setLeadSubmitted(true);
+      setLeadForm({ name: '', email: '', company: '' });
+    } else {
+      alert('Something went wrong. Please try again.');
+    }
+  }
 
   return (
     <main className="min-h-screen bg-white">
@@ -658,29 +683,46 @@ export default function PestControlPage() {
               delivered straight to your inbox.
             </p>
             
-            <form className="space-y-4 max-w-md mx-auto">
-              <input 
-                type="text"
-                placeholder="Your Name"
-                className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-[#C96A2B]"
-              />
-              <input 
-                type="email"
-                placeholder="Email Address"
-                className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-[#C96A2B]"
-              />
-              <input 
-                type="text"
-                placeholder="Company Name"
-                className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-[#C96A2B]"
-              />
-              <button 
-                type="submit"
-                className="w-full bg-[#C96A2B] text-white py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all btn-premium"
-              >
-                Get Free Sample Pack
-              </button>
-            </form>
+            {leadSubmitted ? (
+              <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-8">
+                <Check className="w-12 h-12 text-green-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">You&apos;re In!</h3>
+                <p className="text-white/70">Check your inbox for your free sample pack.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleLeadSubmit} className="space-y-4 max-w-md mx-auto">
+                <input 
+                  type="text"
+                  placeholder="Your Name"
+                  value={leadForm.name}
+                  onChange={(e) => setLeadForm({ ...leadForm, name: e.target.value })}
+                  required
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-[#C96A2B]"
+                />
+                <input 
+                  type="email"
+                  placeholder="Email Address"
+                  value={leadForm.email}
+                  onChange={(e) => setLeadForm({ ...leadForm, email: e.target.value })}
+                  required
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-[#C96A2B]"
+                />
+                <input 
+                  type="text"
+                  placeholder="Company Name"
+                  value={leadForm.company}
+                  onChange={(e) => setLeadForm({ ...leadForm, company: e.target.value })}
+                  className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-[#C96A2B]"
+                />
+                <button 
+                  type="submit"
+                  disabled={leadSubmitting}
+                  className="w-full bg-[#C96A2B] text-white py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all btn-premium disabled:opacity-50"
+                >
+                  {leadSubmitting ? 'Sending...' : 'Get Free Sample Pack'}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </section>
