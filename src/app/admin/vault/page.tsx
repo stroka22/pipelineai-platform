@@ -1,18 +1,19 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { supabase, VaultItem } from '@/lib/supabase';
-import { Plus, Pencil, Trash2, Check, X, Image as ImageIcon, Eye, Upload, Loader2, GripVertical } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase, VaultItem, Niche } from '@/lib/supabase';
+import { Plus, Pencil, Trash2, Check, X, Image as ImageIcon, Eye, Upload, Loader2, GripVertical, FolderPlus } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-const NICHES = ['pest-control', 'hvac', 'roofing'] as const;
-const CONTENT_TYPES = ['carousel', 'reel', 'image'] as const;
+const CONTENT_TYPES = ['carousel', 'reel', 'video', 'image'] as const;
 
 export default function VaultAdminPage() {
   const [items, setItems] = useState<VaultItem[]>([]);
+  const [niches, setNiches] = useState<Niche[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [isAddingNiche, setIsAddingNiche] = useState(false);
   const [editingItem, setEditingItem] = useState<VaultItem | null>(null);
   const [filterNiche, setFilterNiche] = useState<string>('all');
   const [uploading, setUploading] = useState(false);
@@ -20,31 +21,33 @@ export default function VaultAdminPage() {
   
   const [formData, setFormData] = useState({
     title: '',
-    niche: 'pest-control' as typeof NICHES[number],
+    niche: '',
     category: '',
     content_type: 'carousel' as typeof CONTENT_TYPES[number],
     is_active: true,
     display_order: 0,
   });
   
+  const [newNiche, setNewNiche] = useState({ name: '', slug: '', description: '' });
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchItems();
+    fetchData();
   }, []);
 
-  async function fetchItems() {
-    const { data, error } = await supabase
-      .from('vault_items')
-      .select('*')
-      .order('niche')
-      .order('display_order');
+  async function fetchData() {
+    const [itemsRes, nichesRes] = await Promise.all([
+      supabase.from('vault_items').select('*').order('niche').order('display_order'),
+      supabase.from('niches').select('*').order('display_order')
+    ]);
     
-    if (error) {
-      console.error('Error fetching vault items:', error);
-    } else {
-      setItems(data || []);
+    setItems(itemsRes.data || []);
+    setNiches(nichesRes.data || []);
+    
+    if (nichesRes.data && nichesRes.data.length > 0 && !formData.niche) {
+      setFormData(prev => ({ ...prev, niche: nichesRes.data[0].slug }));
     }
+    
     setLoading(false);
   }
 
@@ -59,23 +62,16 @@ export default function VaultAdminPage() {
       const file = files[i];
       setUploadProgress(`Uploading ${i + 1} of ${files.length}...`);
       
-      // Create unique filename
       const fileExt = file.name.split('.').pop();
-      const fileName = `${formData.niche}/${formData.category || 'uncategorized'}/${Date.now()}-${i}.${fileExt}`;
+      const fileName = `${formData.niche}/${formData.category || 'general'}/${Date.now()}-${i}.${fileExt}`;
       
-      const { error } = await supabase.storage
-        .from('vault')
-        .upload(fileName, file);
+      const { error } = await supabase.storage.from('vault').upload(fileName, file);
       
       if (error) {
         console.error('Upload error:', error);
         alert(`Error uploading ${file.name}: ${error.message}`);
       } else {
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('vault')
-          .getPublicUrl(fileName);
-        
+        const { data: { publicUrl } } = supabase.storage.from('vault').getPublicUrl(fileName);
         newImages.push(publicUrl);
       }
     }
@@ -83,7 +79,7 @@ export default function VaultAdminPage() {
     setUploadedImages(prev => [...prev, ...newImages]);
     setUploading(false);
     setUploadProgress('');
-    e.target.value = ''; // Reset input
+    e.target.value = '';
   }
 
   function removeImage(index: number) {
@@ -93,7 +89,6 @@ export default function VaultAdminPage() {
   function reorderImage(fromIndex: number, direction: 'up' | 'down') {
     const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1;
     if (toIndex < 0 || toIndex >= uploadedImages.length) return;
-    
     const newImages = [...uploadedImages];
     [newImages[fromIndex], newImages[toIndex]] = [newImages[toIndex], newImages[fromIndex]];
     setUploadedImages(newImages);
@@ -101,7 +96,7 @@ export default function VaultAdminPage() {
 
   async function handleSave() {
     if (uploadedImages.length === 0 && !editingItem) {
-      alert('Please upload at least one image');
+      alert('Please upload at least one image or video');
       return;
     }
 
@@ -111,63 +106,53 @@ export default function VaultAdminPage() {
       category: formData.category,
       content_type: formData.content_type,
       slide_count: uploadedImages.length || editingItem?.slide_count || 0,
-      folder_path: '', // Not used with Supabase storage
+      folder_path: '',
       images: uploadedImages.length > 0 ? uploadedImages : editingItem?.images || [],
       is_active: formData.is_active,
       display_order: formData.display_order,
     };
 
     if (editingItem) {
-      const { error } = await supabase
-        .from('vault_items')
-        .update(itemData)
-        .eq('id', editingItem.id);
-      
-      if (error) {
-        alert('Error updating item: ' + error.message);
-      } else {
-        setEditingItem(null);
-        setIsCreating(false);
-        resetForm();
-        fetchItems();
-      }
+      const { error } = await supabase.from('vault_items').update(itemData).eq('id', editingItem.id);
+      if (error) alert('Error updating item: ' + error.message);
+      else { setEditingItem(null); setIsCreating(false); resetForm(); fetchData(); }
     } else {
-      const { error } = await supabase
-        .from('vault_items')
-        .insert([itemData]);
-      
-      if (error) {
-        alert('Error creating item: ' + error.message);
-      } else {
-        setIsCreating(false);
-        resetForm();
-        fetchItems();
-      }
+      const { error } = await supabase.from('vault_items').insert([itemData]);
+      if (error) alert('Error creating item: ' + error.message);
+      else { setIsCreating(false); resetForm(); fetchData(); }
+    }
+  }
+
+  async function handleAddNiche() {
+    if (!newNiche.name || !newNiche.slug) {
+      alert('Please enter both name and slug');
+      return;
+    }
+    
+    const { error } = await supabase.from('niches').insert([{
+      name: newNiche.name,
+      slug: newNiche.slug.toLowerCase().replace(/\s+/g, '-'),
+      description: newNiche.description || null,
+      display_order: niches.length + 1,
+    }]);
+    
+    if (error) alert('Error adding niche: ' + error.message);
+    else {
+      setIsAddingNiche(false);
+      setNewNiche({ name: '', slug: '', description: '' });
+      fetchData();
     }
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Are you sure you want to delete this vault item?')) return;
-    
-    const { error } = await supabase
-      .from('vault_items')
-      .delete()
-      .eq('id', id);
-    
-    if (!error) {
-      fetchItems();
-    }
+    const { error } = await supabase.from('vault_items').delete().eq('id', id);
+    if (!error) fetchData();
   }
 
   async function toggleActive(item: VaultItem) {
-    const { error } = await supabase
-      .from('vault_items')
-      .update({ is_active: !item.is_active })
-      .eq('id', item.id);
-    
-    if (!error) {
-      fetchItems();
-    }
+    const { error } = await supabase.from('vault_items').update({ is_active: !item.is_active }).eq('id', item.id);
+    if (!error) fetchData();
   }
 
   function startEdit(item: VaultItem) {
@@ -176,7 +161,7 @@ export default function VaultAdminPage() {
       title: item.title,
       niche: item.niche,
       category: item.category,
-      content_type: item.content_type,
+      content_type: item.content_type as typeof CONTENT_TYPES[number],
       is_active: item.is_active,
       display_order: item.display_order,
     });
@@ -187,7 +172,7 @@ export default function VaultAdminPage() {
   function resetForm() {
     setFormData({
       title: '',
-      niche: 'pest-control',
+      niche: niches[0]?.slug || '',
       category: '',
       content_type: 'carousel',
       is_active: true,
@@ -197,15 +182,17 @@ export default function VaultAdminPage() {
     setEditingItem(null);
   }
 
-  const filteredItems = filterNiche === 'all' 
-    ? items 
-    : items.filter(i => i.niche === filterNiche);
+  const filteredItems = filterNiche === 'all' ? items : items.filter(i => i.niche === filterNiche);
 
   const nicheColors: Record<string, string> = {
     'pest-control': 'bg-green-100 text-green-800',
     'hvac': 'bg-blue-100 text-blue-800',
     'roofing': 'bg-orange-100 text-orange-800',
   };
+
+  function getNicheColor(slug: string) {
+    return nicheColors[slug] || 'bg-purple-100 text-purple-800';
+  }
 
   if (loading) {
     return (
@@ -220,7 +207,7 @@ export default function VaultAdminPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-[#081F33]">Content Vault</h1>
-          <p className="text-[#4B5563]">{items.length} items across all niches</p>
+          <p className="text-[#4B5563]">{items.length} items across {niches.length} niches</p>
         </div>
         <div className="flex items-center gap-4">
           <select
@@ -229,21 +216,80 @@ export default function VaultAdminPage() {
             className="px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
           >
             <option value="all">All Niches</option>
-            <option value="pest-control">Pest Control</option>
-            <option value="hvac">HVAC</option>
-            <option value="roofing">Roofing</option>
+            {niches.map(n => (
+              <option key={n.id} value={n.slug}>{n.name}</option>
+            ))}
           </select>
-          {!isCreating && (
-            <button
-              onClick={() => setIsCreating(true)}
-              className="bg-[#C96A2B] text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-[#B55D24] transition-all"
-            >
-              <Plus className="w-5 h-5" />
-              Add Item
-            </button>
+          {!isCreating && !isAddingNiche && (
+            <>
+              <button
+                onClick={() => setIsAddingNiche(true)}
+                className="border border-[#C96A2B] text-[#C96A2B] px-4 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-[#C96A2B]/10 transition-all"
+              >
+                <FolderPlus className="w-5 h-5" />
+                New Niche
+              </button>
+              <button
+                onClick={() => setIsCreating(true)}
+                className="bg-[#C96A2B] text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-[#B55D24] transition-all"
+              >
+                <Plus className="w-5 h-5" />
+                Add Content
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {/* Add Niche Form */}
+      {isAddingNiche && (
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+          <h2 className="text-lg font-semibold text-[#081F33] mb-6">Add New Niche</h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#081F33] mb-2">Name *</label>
+              <input
+                type="text"
+                value={newNiche.name}
+                onChange={(e) => setNewNiche({ ...newNiche, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
+                placeholder="e.g., Plumbing"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#081F33] mb-2">Slug *</label>
+              <input
+                type="text"
+                value={newNiche.slug}
+                onChange={(e) => setNewNiche({ ...newNiche, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
+                placeholder="e.g., plumbing"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#081F33] mb-2">Description</label>
+              <input
+                type="text"
+                value={newNiche.description}
+                onChange={(e) => setNewNiche({ ...newNiche, description: e.target.value })}
+                className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
+                placeholder="Optional description"
+              />
+            </div>
+          </div>
+          <div className="flex gap-4 mt-4">
+            <button onClick={handleAddNiche} className="bg-[#C96A2B] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#B55D24] transition-all">
+              Add Niche
+            </button>
+            <button onClick={() => { setIsAddingNiche(false); setNewNiche({ name: '', slug: '', description: '' }); }} className="border border-[#E5E7EB] text-[#4B5563] px-6 py-2 rounded-lg font-semibold hover:bg-[#F3F4F6] transition-all">
+              Cancel
+            </button>
+          </div>
+          <p className="text-xs text-[#9CA3AF] mt-4">
+            Vault URL will be: <code className="bg-[#F3F4F6] px-2 py-1 rounded">getpipelineai.com/vault/{newNiche.slug || 'slug'}</code>
+          </p>
+        </div>
+      )}
 
       {/* Create/Edit Form */}
       {isCreating && (
@@ -268,12 +314,12 @@ export default function VaultAdminPage() {
               <label className="block text-sm font-medium text-[#081F33] mb-2">Niche *</label>
               <select
                 value={formData.niche}
-                onChange={(e) => setFormData({ ...formData, niche: e.target.value as typeof NICHES[number] })}
+                onChange={(e) => setFormData({ ...formData, niche: e.target.value })}
                 className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
               >
-                <option value="pest-control">Pest Control</option>
-                <option value="hvac">HVAC</option>
-                <option value="roofing">Roofing</option>
+                {niches.map(n => (
+                  <option key={n.id} value={n.slug}>{n.name}</option>
+                ))}
               </select>
             </div>
             
@@ -284,7 +330,7 @@ export default function VaultAdminPage() {
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
-                placeholder="e.g., Roaches, Termites, AC Repair"
+                placeholder="e.g., Roaches, AC Repair, Storm Damage"
               />
             </div>
             
@@ -295,8 +341,9 @@ export default function VaultAdminPage() {
                 onChange={(e) => setFormData({ ...formData, content_type: e.target.value as typeof CONTENT_TYPES[number] })}
                 className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
               >
-                <option value="carousel">Carousel</option>
-                <option value="reel">Reel</option>
+                <option value="carousel">Carousel (Images)</option>
+                <option value="reel">Reel (Short Video)</option>
+                <option value="video">Video</option>
                 <option value="image">Single Image</option>
               </select>
             </div>
@@ -323,13 +370,12 @@ export default function VaultAdminPage() {
               </label>
             </div>
             
-            {/* Image Upload Section */}
+            {/* Upload Section */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-[#081F33] mb-2">
-                Images * ({uploadedImages.length} uploaded)
+                Files * ({uploadedImages.length} uploaded)
               </label>
               
-              {/* Upload Area */}
               <div className="border-2 border-dashed border-[#E5E7EB] rounded-xl p-6 text-center hover:border-[#C96A2B] transition-colors mb-4">
                 <input
                   type="file"
@@ -352,48 +398,33 @@ export default function VaultAdminPage() {
                       <p className="text-sm text-[#4B5563]">
                         <span className="text-[#C96A2B] font-semibold">Click to upload</span> or drag and drop
                       </p>
-                      <p className="text-xs text-[#9CA3AF] mt-1">PNG, JPG, MP4 up to 50MB each</p>
+                      <p className="text-xs text-[#9CA3AF] mt-1">Images (PNG, JPG) or Videos (MP4, MOV) up to 50MB</p>
                     </div>
                   )}
                 </label>
               </div>
               
-              {/* Image Preview Grid */}
               {uploadedImages.length > 0 && (
                 <div className="grid grid-cols-5 gap-3">
                   {uploadedImages.map((url, index) => (
                     <div key={index} className="relative group aspect-square bg-[#F3F4F6] rounded-lg overflow-hidden">
-                      <Image
-                        src={url}
-                        alt={`Upload ${index + 1}`}
-                        fill
-                        className="object-cover"
-                      />
+                      {url.match(/\.(mp4|webm|mov)$/i) ? (
+                        <video src={url} className="w-full h-full object-cover" muted />
+                      ) : (
+                        <Image src={url} alt={`Upload ${index + 1}`} fill className="object-cover" />
+                      )}
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => reorderImage(index, 'up')}
-                          disabled={index === 0}
-                          className="p-1 bg-white/20 rounded hover:bg-white/40 disabled:opacity-30"
-                        >
+                        <button onClick={() => reorderImage(index, 'up')} disabled={index === 0} className="p-1 bg-white/20 rounded hover:bg-white/40 disabled:opacity-30">
                           <GripVertical className="w-4 h-4 text-white rotate-90" />
                         </button>
-                        <button
-                          onClick={() => removeImage(index)}
-                          className="p-1 bg-red-500/80 rounded hover:bg-red-500"
-                        >
+                        <button onClick={() => removeImage(index)} className="p-1 bg-red-500/80 rounded hover:bg-red-500">
                           <X className="w-4 h-4 text-white" />
                         </button>
-                        <button
-                          onClick={() => reorderImage(index, 'down')}
-                          disabled={index === uploadedImages.length - 1}
-                          className="p-1 bg-white/20 rounded hover:bg-white/40 disabled:opacity-30"
-                        >
+                        <button onClick={() => reorderImage(index, 'down')} disabled={index === uploadedImages.length - 1} className="p-1 bg-white/20 rounded hover:bg-white/40 disabled:opacity-30">
                           <GripVertical className="w-4 h-4 text-white rotate-90" />
                         </button>
                       </div>
-                      <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
-                        {index + 1}
-                      </div>
+                      <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">{index + 1}</div>
                     </div>
                   ))}
                 </div>
@@ -423,7 +454,7 @@ export default function VaultAdminPage() {
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {filteredItems.length === 0 ? (
           <div className="p-12 text-center text-[#9CA3AF]">
-            No vault items yet
+            {filterNiche === 'all' ? 'No vault items yet' : `No items in ${filterNiche}`}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -434,7 +465,7 @@ export default function VaultAdminPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Niche</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Category</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Type</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Slides</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Files</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Actions</th>
                 </tr>
@@ -446,12 +477,11 @@ export default function VaultAdminPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-[#F3F4F6] rounded-lg overflow-hidden relative">
                           {item.images[0] ? (
-                            <Image
-                              src={item.images[0]}
-                              alt={item.title}
-                              fill
-                              className="object-cover"
-                            />
+                            item.images[0].match(/\.(mp4|webm|mov)$/i) ? (
+                              <video src={item.images[0]} className="w-full h-full object-cover" muted />
+                            ) : (
+                              <Image src={item.images[0]} alt={item.title} fill className="object-cover" />
+                            )
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <ImageIcon className="w-5 h-5 text-[#9CA3AF]" />
@@ -462,25 +492,19 @@ export default function VaultAdminPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-xs px-2 py-1 rounded-full ${nicheColors[item.niche]}`}>
-                        {item.niche}
+                      <span className={`text-xs px-2 py-1 rounded-full ${getNicheColor(item.niche)}`}>
+                        {niches.find(n => n.slug === item.niche)?.name || item.niche}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-[#4B5563]">{item.category}</td>
                     <td className="px-6 py-4">
-                      <span className="text-xs bg-[#F3F4F6] text-[#4B5563] px-2 py-1 rounded-full capitalize">
-                        {item.content_type}
-                      </span>
+                      <span className="text-xs bg-[#F3F4F6] text-[#4B5563] px-2 py-1 rounded-full capitalize">{item.content_type}</span>
                     </td>
                     <td className="px-6 py-4 text-[#4B5563]">{item.slide_count}</td>
                     <td className="px-6 py-4">
                       <button
                         onClick={() => toggleActive(item)}
-                        className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-                          item.is_active 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}
+                        className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${item.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
                       >
                         {item.is_active ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
                         {item.is_active ? 'Active' : 'Hidden'}
@@ -488,23 +512,13 @@ export default function VaultAdminPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/vault/${item.niche}`}
-                          target="_blank"
-                          className="p-2 text-[#4B5563] hover:text-[#C96A2B] hover:bg-[#F3F4F6] rounded-lg transition-all"
-                        >
+                        <Link href={`/vault/${item.niche}`} target="_blank" className="p-2 text-[#4B5563] hover:text-[#C96A2B] hover:bg-[#F3F4F6] rounded-lg transition-all">
                           <Eye className="w-4 h-4" />
                         </Link>
-                        <button
-                          onClick={() => startEdit(item)}
-                          className="p-2 text-[#4B5563] hover:text-[#C96A2B] hover:bg-[#F3F4F6] rounded-lg transition-all"
-                        >
+                        <button onClick={() => startEdit(item)} className="p-2 text-[#4B5563] hover:text-[#C96A2B] hover:bg-[#F3F4F6] rounded-lg transition-all">
                           <Pencil className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="p-2 text-[#4B5563] hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                        >
+                        <button onClick={() => handleDelete(item.id)} className="p-2 text-[#4B5563] hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>

@@ -72,9 +72,9 @@ export interface Coupon {
 export interface VaultItem {
   id: string;
   title: string;
-  niche: 'pest-control' | 'hvac' | 'roofing';
+  niche: string;
   category: string;
-  content_type: 'carousel' | 'reel' | 'image';
+  content_type: 'carousel' | 'reel' | 'image' | 'video';
   slide_count: number;
   folder_path: string;
   images: string[];
@@ -83,4 +83,15 @@ export interface VaultItem {
   display_order: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface Niche {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
 }
