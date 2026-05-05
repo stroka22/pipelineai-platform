@@ -3,47 +3,48 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Lock, Play, ChevronLeft, ChevronRight, X, ShoppingBag, Eye, Shield } from 'lucide-react';
-
-const carousels = [
-  {
-    id: 'roach-warning-sign',
-    title: 'One Roach Is A Warning Sign',
-    category: 'Roaches',
-    slides: 10,
-    images: [
-      '/vault/pest-control/carousels/roach-warning-sign/Roaches-1.PNG',
-      '/vault/pest-control/carousels/roach-warning-sign/Roaches-2.PNG',
-      '/vault/pest-control/carousels/roach-warning-sign/Roaches-3.PNG',
-      '/vault/pest-control/carousels/roach-warning-sign/Roaches-4.PNG',
-      '/vault/pest-control/carousels/roach-warning-sign/Roaches-5.PNG',
-      '/vault/pest-control/carousels/roach-warning-sign/Roaches-6.PNG',
-      '/vault/pest-control/carousels/roach-warning-sign/Roaches-7.PNG',
-      '/vault/pest-control/carousels/roach-warning-sign/Roaches-8.PNG',
-      '/vault/pest-control/carousels/roach-warning-sign/Roaches-9.PNG',
-      '/vault/pest-control/carousels/roach-warning-sign/Roaches-10.PNG',
-    ],
-    productId: null, // Link to product when available
-  },
-];
-
-const categories = [
-  { name: 'All', count: 1 },
-  { name: 'Roaches', count: 1 },
-  { name: 'Termites', count: 0 },
-  { name: 'Rodents', count: 0 },
-  { name: 'Mosquitoes', count: 0 },
-  { name: 'Ants', count: 0 },
-];
+import { Lock, ChevronLeft, ChevronRight, X, ShoppingBag, Eye, Shield, Loader2 } from 'lucide-react';
+import { supabase, VaultItem } from '@/lib/supabase';
 
 export default function PestControlVaultPage() {
+  const [items, setItems] = useState<VaultItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<{name: string; count: number}[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [previewCarousel, setPreviewCarousel] = useState<typeof carousels[0] | null>(null);
+  const [previewItem, setPreviewItem] = useState<VaultItem | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const filteredCarousels = selectedCategory === 'All' 
-    ? carousels 
-    : carousels.filter(c => c.category === selectedCategory);
+  // Fetch vault items
+  useEffect(() => {
+    async function fetchItems() {
+      const { data } = await supabase
+        .from('vault_items')
+        .select('*')
+        .eq('niche', 'pest-control')
+        .eq('is_active', true)
+        .order('display_order');
+      
+      if (data) {
+        setItems(data);
+        // Build categories
+        const catCounts: Record<string, number> = {};
+        data.forEach(item => {
+          catCounts[item.category] = (catCounts[item.category] || 0) + 1;
+        });
+        const cats = [
+          { name: 'All', count: data.length },
+          ...Object.entries(catCounts).map(([name, count]) => ({ name, count }))
+        ];
+        setCategories(cats);
+      }
+      setLoading(false);
+    }
+    fetchItems();
+  }, []);
+
+  const filteredItems = selectedCategory === 'All' 
+    ? items 
+    : items.filter(i => i.category === selectedCategory);
 
   // Disable right-click on the page
   useEffect(() => {
@@ -56,21 +57,29 @@ export default function PestControlVaultPage() {
 
   // Keyboard navigation for preview
   useEffect(() => {
-    if (!previewCarousel) return;
+    if (!previewItem) return;
     
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') {
-        setCurrentSlide(prev => (prev + 1) % previewCarousel.images.length);
+        setCurrentSlide(prev => (prev + 1) % previewItem.images.length);
       } else if (e.key === 'ArrowLeft') {
-        setCurrentSlide(prev => prev === 0 ? previewCarousel.images.length - 1 : prev - 1);
+        setCurrentSlide(prev => prev === 0 ? previewItem.images.length - 1 : prev - 1);
       } else if (e.key === 'Escape') {
-        setPreviewCarousel(null);
+        setPreviewItem(null);
       }
     };
     
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [previewCarousel]);
+  }, [previewItem]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#081F33] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#C96A2B]" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#081F33]">
@@ -141,7 +150,7 @@ export default function PestControlVaultPage() {
       {/* Content Grid */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-6">
-          {filteredCarousels.length === 0 ? (
+          {filteredItems.length === 0 ? (
             <div className="text-center py-20">
               <Lock className="w-16 h-16 text-white/20 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-white/60 mb-2">Coming Soon</h3>
@@ -149,24 +158,24 @@ export default function PestControlVaultPage() {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredCarousels.map((carousel) => (
+              {filteredItems.map((item) => (
                 <div 
-                  key={carousel.id}
+                  key={item.id}
                   className="group relative bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-[#C96A2B]/50 transition-all"
                 >
                   {/* Preview Image with Protection */}
                   <div 
                     className="relative aspect-square cursor-pointer"
                     onClick={() => {
-                      setPreviewCarousel(carousel);
+                      setPreviewItem(item);
                       setCurrentSlide(0);
                     }}
                   >
                     {/* Image with watermark overlay */}
                     <div className="relative w-full h-full select-none pointer-events-none">
                       <Image
-                        src={carousel.images[0]}
-                        alt={carousel.title}
+                        src={item.images[0]}
+                        alt={item.title}
                         fill
                         className="object-cover"
                         draggable={false}
@@ -186,22 +195,22 @@ export default function PestControlVaultPage() {
                     <div className="absolute inset-0 bg-[#C96A2B]/0 group-hover:bg-[#C96A2B]/20 transition-all flex items-center justify-center pointer-events-auto">
                       <div className="opacity-0 group-hover:opacity-100 transition-all bg-white/20 backdrop-blur-sm px-6 py-3 rounded-full flex items-center gap-2 text-white font-semibold">
                         <Eye className="w-5 h-5" />
-                        Preview All {carousel.slides} Slides
+                        Preview All {item.slide_count} Slides
                       </div>
                     </div>
                     
                     {/* Slide count badge */}
                     <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm font-medium">
-                      {carousel.slides} slides
+                      {item.slide_count} slides
                     </div>
                   </div>
                   
                   {/* Info */}
                   <div className="p-5">
                     <span className="text-xs font-semibold text-[#C96A2B] bg-[#C96A2B]/10 px-3 py-1 rounded-full">
-                      {carousel.category}
+                      {item.category}
                     </span>
-                    <h3 className="text-lg font-bold text-white mt-3 mb-4">{carousel.title}</h3>
+                    <h3 className="text-lg font-bold text-white mt-3 mb-4">{item.title}</h3>
                     <Link
                       href="/industries/pest-control#individual"
                       className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all w-full justify-center"
@@ -244,15 +253,15 @@ export default function PestControlVaultPage() {
       </section>
 
       {/* Preview Modal */}
-      {previewCarousel && (
+      {previewItem && (
         <div 
           className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
-          onClick={() => setPreviewCarousel(null)}
+          onClick={() => setPreviewItem(null)}
         >
           {/* Close button */}
           <button 
             className="absolute top-6 right-6 text-white/70 hover:text-white p-2"
-            onClick={() => setPreviewCarousel(null)}
+            onClick={() => setPreviewItem(null)}
           >
             <X className="w-8 h-8" />
           </button>
@@ -262,7 +271,7 @@ export default function PestControlVaultPage() {
             className="absolute left-6 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-2 bg-white/10 rounded-full"
             onClick={(e) => {
               e.stopPropagation();
-              setCurrentSlide(prev => prev === 0 ? previewCarousel.images.length - 1 : prev - 1);
+              setCurrentSlide(prev => prev === 0 ? previewItem.images.length - 1 : prev - 1);
             }}
           >
             <ChevronLeft className="w-8 h-8" />
@@ -271,7 +280,7 @@ export default function PestControlVaultPage() {
             className="absolute right-6 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-2 bg-white/10 rounded-full"
             onClick={(e) => {
               e.stopPropagation();
-              setCurrentSlide(prev => (prev + 1) % previewCarousel.images.length);
+              setCurrentSlide(prev => (prev + 1) % previewItem.images.length);
             }}
           >
             <ChevronRight className="w-8 h-8" />
@@ -283,8 +292,8 @@ export default function PestControlVaultPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <Image
-              src={previewCarousel.images[currentSlide]}
-              alt={`${previewCarousel.title} - Slide ${currentSlide + 1}`}
+              src={previewItem.images[currentSlide]}
+              alt={`${previewItem.title} - Slide ${currentSlide + 1}`}
               fill
               className="object-contain pointer-events-none"
               draggable={false}
@@ -299,13 +308,13 @@ export default function PestControlVaultPage() {
             
             {/* Slide counter */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm font-medium">
-              {currentSlide + 1} / {previewCarousel.images.length}
+              {currentSlide + 1} / {previewItem.images.length}
             </div>
           </div>
           
           {/* Thumbnail strip */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 mt-20" style={{ marginTop: '100px', bottom: '80px' }}>
-            {previewCarousel.images.map((img, i) => (
+            {previewItem.images.map((img, i) => (
               <button
                 key={i}
                 onClick={(e) => {

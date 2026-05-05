@@ -12,7 +12,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  FolderLock
 } from 'lucide-react';
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Leads', href: '/admin/leads', icon: Users },
+  { name: 'Vault', href: '/admin/vault', icon: FolderLock },
   { name: 'Coupons', href: '/admin/coupons', icon: Ticket },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];

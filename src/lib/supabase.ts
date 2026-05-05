@@ -68,3 +68,19 @@ export interface Coupon {
   is_active: boolean;
   created_at: string;
 }
+
+export interface VaultItem {
+  id: string;
+  title: string;
+  niche: 'pest-control' | 'hvac' | 'roofing';
+  category: string;
+  content_type: 'carousel' | 'reel' | 'image';
+  slide_count: number;
+  folder_path: string;
+  images: string[];
+  product_id?: string;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
