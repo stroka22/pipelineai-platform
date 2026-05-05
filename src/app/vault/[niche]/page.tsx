@@ -263,11 +263,11 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
             </>
           )}
           
-          <div className="relative max-w-3xl max-h-[80vh] aspect-square select-none" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-[80vw] h-[70vh] max-w-4xl select-none flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
             {isVideo(previewItem.images[currentSlide]) ? (
               <video 
                 src={previewItem.images[currentSlide]} 
-                className="w-full h-full object-contain"
+                className="max-w-full max-h-full object-contain"
                 controls
                 autoPlay
                 controlsList="nodownload"
@@ -275,7 +275,14 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
               />
             ) : (
               <>
-                <Image src={previewItem.images[currentSlide]} alt={`${previewItem.title} - Slide ${currentSlide + 1}`} fill className="object-contain pointer-events-none" draggable={false} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                  src={previewItem.images[currentSlide]} 
+                  alt={`${previewItem.title} - Slide ${currentSlide + 1}`} 
+                  className="max-w-full max-h-full object-contain pointer-events-none" 
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-white/20 text-6xl font-bold rotate-[-30deg] whitespace-nowrap select-none">PIPELINE AI</div>
                 </div>
