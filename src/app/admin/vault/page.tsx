@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase, VaultItem } from '@/lib/supabase';
-import { Plus, Pencil, Trash2, Check, X, Image as ImageIcon, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Image as ImageIcon, Eye, Upload, Loader2, GripVertical } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const NICHES = ['pest-control', 'hvac', 'roofing'] as const;
 const CONTENT_TYPES = ['carousel', 'reel', 'image'] as const;
@@ -14,17 +15,19 @@ export default function VaultAdminPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [editingItem, setEditingItem] = useState<VaultItem | null>(null);
   const [filterNiche, setFilterNiche] = useState<string>('all');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
   
   const [formData, setFormData] = useState({
     title: '',
     niche: 'pest-control' as typeof NICHES[number],
     category: '',
     content_type: 'carousel' as typeof CONTENT_TYPES[number],
-    folder_path: '',
-    images: '',
     is_active: true,
     display_order: 0,
   });
+  
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
   useEffect(() => {
     fetchItems();
@@ -45,20 +48,71 @@ export default function VaultAdminPage() {
     setLoading(false);
   }
 
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const newImages: string[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setUploadProgress(`Uploading ${i + 1} of ${files.length}...`);
+      
+      // Create unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${formData.niche}/${formData.category || 'uncategorized'}/${Date.now()}-${i}.${fileExt}`;
+      
+      const { error } = await supabase.storage
+        .from('vault')
+        .upload(fileName, file);
+      
+      if (error) {
+        console.error('Upload error:', error);
+        alert(`Error uploading ${file.name}: ${error.message}`);
+      } else {
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('vault')
+          .getPublicUrl(fileName);
+        
+        newImages.push(publicUrl);
+      }
+    }
+    
+    setUploadedImages(prev => [...prev, ...newImages]);
+    setUploading(false);
+    setUploadProgress('');
+    e.target.value = ''; // Reset input
+  }
+
+  function removeImage(index: number) {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  }
+
+  function reorderImage(fromIndex: number, direction: 'up' | 'down') {
+    const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1;
+    if (toIndex < 0 || toIndex >= uploadedImages.length) return;
+    
+    const newImages = [...uploadedImages];
+    [newImages[fromIndex], newImages[toIndex]] = [newImages[toIndex], newImages[fromIndex]];
+    setUploadedImages(newImages);
+  }
+
   async function handleSave() {
-    const imagesArray = formData.images
-      .split('\n')
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
+    if (uploadedImages.length === 0 && !editingItem) {
+      alert('Please upload at least one image');
+      return;
+    }
 
     const itemData = {
       title: formData.title,
       niche: formData.niche,
       category: formData.category,
       content_type: formData.content_type,
-      slide_count: imagesArray.length,
-      folder_path: formData.folder_path,
-      images: imagesArray,
+      slide_count: uploadedImages.length || editingItem?.slide_count || 0,
+      folder_path: '', // Not used with Supabase storage
+      images: uploadedImages.length > 0 ? uploadedImages : editingItem?.images || [],
       is_active: formData.is_active,
       display_order: formData.display_order,
     };
@@ -123,11 +177,10 @@ export default function VaultAdminPage() {
       niche: item.niche,
       category: item.category,
       content_type: item.content_type,
-      folder_path: item.folder_path,
-      images: item.images.join('\n'),
       is_active: item.is_active,
       display_order: item.display_order,
     });
+    setUploadedImages(item.images);
     setIsCreating(true);
   }
 
@@ -137,30 +190,11 @@ export default function VaultAdminPage() {
       niche: 'pest-control',
       category: '',
       content_type: 'carousel',
-      folder_path: '',
-      images: '',
       is_active: true,
       display_order: 0,
     });
+    setUploadedImages([]);
     setEditingItem(null);
-  }
-
-  function generateImagePaths() {
-    if (!formData.folder_path) {
-      alert('Enter a folder path first');
-      return;
-    }
-    const count = parseInt(prompt('How many images?') || '0');
-    if (count <= 0) return;
-    
-    const prefix = prompt('Image filename prefix (e.g., "Slide" for Slide-1.PNG)') || 'Image';
-    const ext = prompt('File extension (e.g., PNG, jpg)') || 'PNG';
-    
-    const paths = [];
-    for (let i = 1; i <= count; i++) {
-      paths.push(`${formData.folder_path}/${prefix}-${i}.${ext}`);
-    }
-    setFormData({ ...formData, images: paths.join('\n') });
   }
 
   const filteredItems = filterNiche === 'all' 
@@ -209,17 +243,6 @@ export default function VaultAdminPage() {
             </button>
           )}
         </div>
-      </div>
-
-      {/* Instructions */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-        <h3 className="font-semibold text-blue-900 mb-2">How to Add Vault Content:</h3>
-        <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-          <li>Drop images in: <code className="bg-blue-100 px-1 rounded">/public/vault/[niche]/carousels/[folder-name]/</code></li>
-          <li>Click &quot;Add Item&quot; and fill in the details</li>
-          <li>Use &quot;Generate Paths&quot; to auto-create image paths</li>
-          <li>Save and deploy - images will appear in the vault</li>
-        </ol>
       </div>
 
       {/* Create/Edit Form */}
@@ -279,45 +302,12 @@ export default function VaultAdminPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-[#081F33] mb-2">Folder Path *</label>
-              <input
-                type="text"
-                value={formData.folder_path}
-                onChange={(e) => setFormData({ ...formData, folder_path: e.target.value })}
-                className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
-                placeholder="/vault/pest-control/carousels/roach-warning"
-              />
-            </div>
-            
-            <div>
               <label className="block text-sm font-medium text-[#081F33] mb-2">Display Order</label>
               <input
                 type="number"
                 value={formData.display_order}
                 onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
                 className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
-              />
-            </div>
-            
-            <div className="md:col-span-2">
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-[#081F33]">Image Paths * (one per line)</label>
-                <button
-                  type="button"
-                  onClick={generateImagePaths}
-                  className="text-sm text-[#C96A2B] hover:underline"
-                >
-                  Generate Paths
-                </button>
-              </div>
-              <textarea
-                value={formData.images}
-                onChange={(e) => setFormData({ ...formData, images: e.target.value })}
-                rows={6}
-                className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B] font-mono text-sm"
-                placeholder="/vault/pest-control/carousels/roach-warning/Slide-1.PNG
-/vault/pest-control/carousels/roach-warning/Slide-2.PNG
-..."
               />
             </div>
             
@@ -332,12 +322,89 @@ export default function VaultAdminPage() {
                 <span className="text-sm text-[#081F33]">Active (visible in vault)</span>
               </label>
             </div>
+            
+            {/* Image Upload Section */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-[#081F33] mb-2">
+                Images * ({uploadedImages.length} uploaded)
+              </label>
+              
+              {/* Upload Area */}
+              <div className="border-2 border-dashed border-[#E5E7EB] rounded-xl p-6 text-center hover:border-[#C96A2B] transition-colors mb-4">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="file-upload"
+                  disabled={uploading}
+                />
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  {uploading ? (
+                    <div className="flex flex-col items-center">
+                      <Loader2 className="w-10 h-10 text-[#C96A2B] animate-spin mb-2" />
+                      <p className="text-sm text-[#4B5563]">{uploadProgress}</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <Upload className="w-10 h-10 text-[#9CA3AF] mb-2" />
+                      <p className="text-sm text-[#4B5563]">
+                        <span className="text-[#C96A2B] font-semibold">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-[#9CA3AF] mt-1">PNG, JPG, MP4 up to 50MB each</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+              
+              {/* Image Preview Grid */}
+              {uploadedImages.length > 0 && (
+                <div className="grid grid-cols-5 gap-3">
+                  {uploadedImages.map((url, index) => (
+                    <div key={index} className="relative group aspect-square bg-[#F3F4F6] rounded-lg overflow-hidden">
+                      <Image
+                        src={url}
+                        alt={`Upload ${index + 1}`}
+                        fill
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => reorderImage(index, 'up')}
+                          disabled={index === 0}
+                          className="p-1 bg-white/20 rounded hover:bg-white/40 disabled:opacity-30"
+                        >
+                          <GripVertical className="w-4 h-4 text-white rotate-90" />
+                        </button>
+                        <button
+                          onClick={() => removeImage(index)}
+                          className="p-1 bg-red-500/80 rounded hover:bg-red-500"
+                        >
+                          <X className="w-4 h-4 text-white" />
+                        </button>
+                        <button
+                          onClick={() => reorderImage(index, 'down')}
+                          disabled={index === uploadedImages.length - 1}
+                          className="p-1 bg-white/20 rounded hover:bg-white/40 disabled:opacity-30"
+                        >
+                          <GripVertical className="w-4 h-4 text-white rotate-90" />
+                        </button>
+                      </div>
+                      <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                        {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="flex gap-4 mt-6">
             <button
               onClick={handleSave}
-              disabled={!formData.title || !formData.category || !formData.folder_path || !formData.images}
+              disabled={!formData.title || !formData.category || (uploadedImages.length === 0 && !editingItem)}
               className="bg-[#C96A2B] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#B55D24] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {editingItem ? 'Update Item' : 'Create Item'}
@@ -377,8 +444,19 @@ export default function VaultAdminPage() {
                   <tr key={item.id} className="hover:bg-[#F9FAFB]">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#F3F4F6] rounded-lg flex items-center justify-center">
-                          <ImageIcon className="w-5 h-5 text-[#9CA3AF]" />
+                        <div className="w-12 h-12 bg-[#F3F4F6] rounded-lg overflow-hidden relative">
+                          {item.images[0] ? (
+                            <Image
+                              src={item.images[0]}
+                              alt={item.title}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ImageIcon className="w-5 h-5 text-[#9CA3AF]" />
+                            </div>
+                          )}
                         </div>
                         <div className="font-medium text-[#081F33]">{item.title}</div>
                       </div>
