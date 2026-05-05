@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Sparkles, Target, TrendingUp, Building2, Bug, Wrench, Home, Briefcase, ChevronRight, Users, ShoppingBag, Dumbbell, Stethoscope, GraduationCap, Camera } from 'lucide-react';
+import { ArrowRight, Sparkles, Target, TrendingUp, Building2, Bug, Wrench, Home, Briefcase, ChevronRight, Users, ShoppingBag, Dumbbell, Stethoscope, GraduationCap, Camera, Eye } from 'lucide-react';
 
 const industries = [
   {
@@ -236,13 +236,22 @@ export default function HomePage() {
                 </p>
                 
                 {industry.available ? (
-                  <Link 
-                    href={`/industries/${industry.slug}`}
-                    className="inline-flex items-center gap-2 text-[#C96A2B] font-semibold hover:gap-3 transition-all"
-                  >
-                    Explore Asset Vault
-                    <ChevronRight className="w-5 h-5" />
-                  </Link>
+                  <div className="flex flex-col gap-2">
+                    <Link 
+                      href={`/vault/${industry.slug}`}
+                      className="inline-flex items-center gap-2 text-white/70 font-medium hover:text-white transition-all text-sm"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Preview Content
+                    </Link>
+                    <Link 
+                      href={`/industries/${industry.slug}`}
+                      className="inline-flex items-center gap-2 text-[#C96A2B] font-semibold hover:gap-3 transition-all"
+                    >
+                      Shop Asset Vault
+                      <ChevronRight className="w-5 h-5" />
+                    </Link>
+                  </div>
                 ) : (
                   <span className="text-sm font-medium text-[#9CA3AF]">Coming Soon</span>
                 )}

@@ -19,7 +19,8 @@ import {
   Shield,
   Zap,
   Download,
-  Mail
+  Mail,
+  Eye
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -189,6 +190,13 @@ export default function PestControlPage() {
             Pipeline <span className="text-[#C96A2B]">AI</span>
           </Link>
           <div className="flex items-center gap-4">
+            <Link 
+              href="/vault/pest-control"
+              className="hidden md:inline-flex items-center gap-1.5 text-white/80 hover:text-white font-medium text-sm"
+            >
+              <Eye className="w-4 h-4" />
+              Preview Content
+            </Link>
             <Link 
               href="#packages"
               className="hidden md:inline-block text-white/80 hover:text-white font-medium text-sm"
@@ -611,6 +619,25 @@ export default function PestControlPage() {
         </div>
       </section>
 
+      {/* Preview CTA Banner */}
+      <section className="py-12 bg-[#081F33]">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-center md:text-left">
+              <h3 className="text-2xl font-bold text-white mb-2">Want to See Before You Buy?</h3>
+              <p className="text-white/70">Preview our pest control content vault - watermarked samples of every campaign.</p>
+            </div>
+            <Link 
+              href="/vault/pest-control"
+              className="bg-white text-[#081F33] px-6 py-3 rounded-lg font-semibold inline-flex items-center gap-2 hover:bg-[#F8F3EA] transition-all whitespace-nowrap"
+            >
+              <Eye className="w-5 h-5" />
+              Preview Content Vault
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Individual Products Store */}
       <section id="store" className="py-24 bg-[#F8F3EA]">
         <div className="max-w-6xl mx-auto px-6">
@@ -654,9 +681,18 @@ export default function PestControlPage() {
                   </Link>
                 </div>
                 
-                <div className="mt-4 pt-4 border-t border-[#E5E7EB] flex items-center gap-2 text-xs text-[#22C55E]">
-                  <Check className="w-4 h-4" />
-                  <span>Full customization included</span>
+                <div className="mt-4 pt-4 border-t border-[#E5E7EB] flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs text-[#22C55E]">
+                    <Check className="w-4 h-4" />
+                    <span>Full customization included</span>
+                  </div>
+                  <Link 
+                    href="/vault/pest-control"
+                    className="flex items-center gap-1 text-xs text-[#4B5563] hover:text-[#C96A2B] transition-all"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Preview
+                  </Link>
                 </div>
               </div>
             ))}
