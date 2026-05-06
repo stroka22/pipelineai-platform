@@ -200,8 +200,8 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                       ) : (
                         <Image src={item.images[0]} alt={item.title} fill className="object-cover" draggable={false} />
                       )}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
-                        <div className="text-white text-4xl font-bold rotate-[-30deg] whitespace-nowrap">PIPELINE AI</div>
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="text-white/40 text-4xl font-bold rotate-[-30deg] whitespace-nowrap">PIPELINE AI</div>
                       </div>
                       <div className="absolute inset-0 bg-gradient-to-t from-[#081F33] via-transparent to-transparent" />
                     </div>
@@ -284,7 +284,7 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                   onContextMenu={(e) => e.preventDefault()}
                 />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="text-white/20 text-6xl font-bold rotate-[-30deg] whitespace-nowrap select-none">PIPELINE AI</div>
+                  <div className="text-white/40 text-6xl font-bold rotate-[-30deg] whitespace-nowrap select-none">PIPELINE AI</div>
                 </div>
               </>
             )}
