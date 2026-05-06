@@ -200,8 +200,19 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                       ) : (
                         <Image src={item.images[0]} alt={item.title} fill className="object-cover" draggable={false} />
                       )}
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="text-white/40 text-4xl font-bold rotate-[-30deg] whitespace-nowrap">PIPELINE AI</div>
+                      {/* Tiled watermark pattern */}
+                      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                        <div className="absolute inset-0 flex flex-col justify-around">
+                          {[0, 1, 2, 3].map((row) => (
+                            <div key={row} className="flex justify-around">
+                              {[0, 1, 2].map((col) => (
+                                <div key={col} className="text-white/30 text-2xl font-bold rotate-[-30deg] whitespace-nowrap">
+                                  PIPELINE AI
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                       <div className="absolute inset-0 bg-gradient-to-t from-[#081F33] via-transparent to-transparent" />
                     </div>
@@ -283,8 +294,19 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                   draggable={false}
                   onContextMenu={(e) => e.preventDefault()}
                 />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="text-white/40 text-6xl font-bold rotate-[-30deg] whitespace-nowrap select-none">PIPELINE AI</div>
+                {/* Tiled watermark pattern */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+                  <div className="absolute inset-0 flex flex-col justify-around py-8">
+                    {[0, 1, 2, 3, 4].map((row) => (
+                      <div key={row} className="flex justify-around">
+                        {[0, 1, 2, 3].map((col) => (
+                          <div key={col} className="text-white/35 text-3xl font-bold rotate-[-30deg] whitespace-nowrap">
+                            PIPELINE AI
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </>
             )}
