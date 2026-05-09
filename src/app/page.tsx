@@ -133,8 +133,8 @@ export default function HomePage() {
           </h1>
           
           <p className="text-xl md:text-2xl text-white/80 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Done-for-you social media campaigns, reels, carousels, and branded assets 
-            customized for your business. Your logo, your brand, your message.
+            Premium social media content packs ready to download and post. 
+            Carousels, reels, and campaigns designed to dominate your industry.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -177,9 +177,9 @@ export default function HomePage() {
               <div className="w-14 h-14 bg-[#081F33] rounded-xl flex items-center justify-center mb-6">
                 <Sparkles className="w-7 h-7 text-[#C96A2B]" />
               </div>
-              <h3 className="text-xl font-bold text-[#081F33] mb-3">Fully Customized</h3>
+              <h3 className="text-xl font-bold text-[#081F33] mb-3">Ready to Post</h3>
               <p className="text-[#4B5563]">
-                Your logo, phone number, website, service area, and brand colors on every single asset.
+                Instant download after purchase. No waiting, no back-and-forth. Start posting today.
               </p>
             </div>
             
@@ -269,16 +269,15 @@ export default function HomePage() {
               How It Works
             </h2>
             <p className="text-xl text-[#4B5563]">
-              From purchase to posting in 24-48 hours
+              From purchase to posting in minutes
             </p>
           </div>
           
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             {[
-              { step: '01', title: 'Choose', desc: 'Select your industry and pick a package or individual assets' },
-              { step: '02', title: 'Submit', desc: 'Send us your logo, colors, phone, and service area' },
-              { step: '03', title: 'Customize', desc: 'We brand every asset specifically for your company' },
-              { step: '04', title: 'Post', desc: 'Receive your content and start building trust online' },
+              { step: '01', title: 'Browse', desc: 'Preview our content vault and find assets perfect for your business' },
+              { step: '02', title: 'Purchase', desc: 'Secure checkout - pay once, own forever, use for your business' },
+              { step: '03', title: 'Download & Post', desc: 'Instant access to high-quality files ready for social media' },
             ].map((item) => (
               <div key={item.step} className="text-center">
                 <div className="text-5xl font-extrabold text-[#C96A2B]/20 mb-4">{item.step}</div>

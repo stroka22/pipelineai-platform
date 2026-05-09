@@ -17,6 +17,7 @@ export interface Product {
   items_count: number;
   preview_image?: string;
   stripe_link?: string;
+  download_files?: string[];
   is_active: boolean;
   is_featured: boolean;
   created_at: string;

@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Lock, ChevronLeft, ChevronRight, X, ShoppingBag, Eye, Shield, Loader2, Play } from 'lucide-react';
+import { Lock, ChevronLeft, ChevronRight, X, ShoppingBag, Eye, Shield, Loader2, Play, AlertTriangle } from 'lucide-react';
 import { supabase, VaultItem, Niche } from '@/lib/supabase';
 
 function isVideo(url: string): boolean {
@@ -21,6 +21,20 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [previewItem, setPreviewItem] = useState<VaultItem | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showWarning, setShowWarning] = useState(false);
+
+  // Show resale warning on first visit
+  useEffect(() => {
+    const hasSeenWarning = localStorage.getItem('vault_warning_seen');
+    if (!hasSeenWarning) {
+      setShowWarning(true);
+    }
+  }, []);
+
+  function acceptWarning() {
+    localStorage.setItem('vault_warning_seen', 'true');
+    setShowWarning(false);
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -345,6 +359,46 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
               <ShoppingBag className="w-5 h-5" />
               Get This Customized
             </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Resale Warning Modal */}
+      {showWarning && (
+        <div className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0a2540] rounded-2xl border border-[#C96A2B]/30 max-w-md w-full p-8 text-center">
+            <div className="w-16 h-16 bg-[#C96A2B]/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="w-8 h-8 text-[#C96A2B]" />
+            </div>
+            
+            <h2 className="text-2xl font-bold text-white mb-4">Content License Agreement</h2>
+            
+            <div className="text-white/70 text-sm space-y-4 mb-8 text-left">
+              <p>
+                All content displayed in this vault is protected by copyright and licensed 
+                exclusively for single-business commercial use.
+              </p>
+              <p className="font-semibold text-white">
+                By continuing, you agree that:
+              </p>
+              <ul className="list-disc list-inside space-y-2">
+                <li>You will not resell, redistribute, or share purchased content</li>
+                <li>You will not claim ownership or authorship of the content</li>
+                <li>You will use purchased content for one business only</li>
+                <li>Violations may result in legal action and account termination</li>
+              </ul>
+            </div>
+            
+            <button
+              onClick={acceptWarning}
+              className="w-full bg-[#C96A2B] text-white py-4 rounded-xl font-bold text-lg hover:bg-[#B55D24] transition-all"
+            >
+              I Understand & Agree
+            </button>
+            
+            <p className="text-white/40 text-xs mt-4">
+              Pipeline AI reserves the right to pursue legal remedies for license violations.
+            </p>
           </div>
         </div>
       )}

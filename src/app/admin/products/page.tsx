@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, Product } from '@/lib/supabase';
-import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Upload, Loader2, Download, FileIcon } from 'lucide-react';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
+  const [downloadFiles, setDownloadFiles] = useState<string[]>([]);
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -40,6 +44,41 @@ export default function ProductsPage() {
     setLoading(false);
   }
 
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const newFiles: string[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setUploadProgress(`Uploading ${i + 1} of ${files.length}...`);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${formData.category || 'products'}/${Date.now()}-${i}-${file.name}`;
+      
+      const { error } = await supabase.storage.from('downloads').upload(fileName, file);
+      
+      if (error) {
+        console.error('Upload error:', error);
+        alert(`Error uploading ${file.name}: ${error.message}`);
+      } else {
+        const { data: { publicUrl } } = supabase.storage.from('downloads').getPublicUrl(fileName);
+        newFiles.push(publicUrl);
+      }
+    }
+    
+    setDownloadFiles(prev => [...prev, ...newFiles]);
+    setUploading(false);
+    setUploadProgress('');
+    e.target.value = '';
+  }
+
+  function removeFile(index: number) {
+    setDownloadFiles(prev => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSave() {
     const productData = {
       title: formData.title,
@@ -50,6 +89,7 @@ export default function ProductsPage() {
       product_type: formData.product_type,
       items_count: parseInt(formData.items_count),
       stripe_link: formData.stripe_link || null,
+      download_files: downloadFiles.length > 0 ? downloadFiles : (editingProduct?.download_files || []),
       is_active: formData.is_active,
       is_featured: formData.is_featured,
     };
@@ -64,6 +104,8 @@ export default function ProductsPage() {
         alert('Error updating product: ' + error.message);
       } else {
         setEditingProduct(null);
+        setIsCreating(false);
+        resetForm();
         fetchProducts();
       }
     } else {
@@ -121,6 +163,7 @@ export default function ProductsPage() {
       is_active: product.is_active,
       is_featured: product.is_featured,
     });
+    setDownloadFiles(product.download_files || []);
     setIsCreating(true);
   }
 
@@ -137,6 +180,7 @@ export default function ProductsPage() {
       is_active: true,
       is_featured: false,
     });
+    setDownloadFiles([]);
     setEditingProduct(null);
   }
 
@@ -144,6 +188,10 @@ export default function ProductsPage() {
     setIsCreating(false);
     setEditingProduct(null);
     resetForm();
+  }
+
+  function getFileName(url: string) {
+    return url.split('/').pop() || 'file';
   }
 
   if (loading) {
@@ -220,7 +268,7 @@ export default function ProductsPage() {
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
-                placeholder="97.00"
+                placeholder="197.00"
                 step="0.01"
               />
             </div>
@@ -259,7 +307,7 @@ export default function ProductsPage() {
                 value={formData.items_count}
                 onChange={(e) => setFormData({ ...formData, items_count: e.target.value })}
                 className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
-                placeholder="1"
+                placeholder="10"
               />
             </div>
             
@@ -272,6 +320,72 @@ export default function ProductsPage() {
                 className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
                 placeholder="https://buy.stripe.com/..."
               />
+              <p className="text-xs text-[#9CA3AF] mt-1">Create a Payment Link in Stripe Dashboard and paste it here</p>
+            </div>
+
+            {/* Download Files Upload */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-[#081F33] mb-2">
+                Download Files ({downloadFiles.length} files)
+              </label>
+              <p className="text-xs text-[#9CA3AF] mb-3">Upload the actual content files customers will download after purchase</p>
+              
+              <div className="border-2 border-dashed border-[#E5E7EB] rounded-xl p-6 text-center hover:border-[#C96A2B] transition-colors mb-4">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,video/*,.zip,.pdf"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="file-upload"
+                  disabled={uploading}
+                />
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  {uploading ? (
+                    <div className="flex flex-col items-center">
+                      <Loader2 className="w-10 h-10 text-[#C96A2B] animate-spin mb-2" />
+                      <p className="text-sm text-[#4B5563]">{uploadProgress}</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <Upload className="w-10 h-10 text-[#9CA3AF] mb-2" />
+                      <p className="text-sm text-[#4B5563]">
+                        <span className="text-[#C96A2B] font-semibold">Click to upload</span> content files
+                      </p>
+                      <p className="text-xs text-[#9CA3AF] mt-1">Images, videos, PDFs, or ZIP files</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+              
+              {downloadFiles.length > 0 && (
+                <div className="space-y-2">
+                  {downloadFiles.map((url, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <FileIcon className="w-5 h-5 text-[#4B5563]" />
+                        <span className="text-sm text-[#081F33] truncate max-w-xs">{getFileName(url)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <a 
+                          href={url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="p-1 text-[#4B5563] hover:text-[#C96A2B]"
+                        >
+                          <Download className="w-4 h-4" />
+                        </a>
+                        <button
+                          onClick={() => removeFile(index)}
+                          className="p-1 text-[#4B5563] hover:text-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             
             <div className="flex items-center gap-6">
@@ -323,8 +437,8 @@ export default function ProductsPage() {
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Product</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Category</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Type</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Price</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Files</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-right text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Actions</th>
               </tr>
@@ -337,16 +451,20 @@ export default function ProductsPage() {
                     <div className="text-sm text-[#4B5563]">{product.items_count} item{product.items_count > 1 ? 's' : ''}</div>
                   </td>
                   <td className="px-6 py-4 text-[#4B5563]">{product.category}</td>
-                  <td className="px-6 py-4">
-                    <span className="text-xs bg-[#F3F4F6] text-[#4B5563] px-2 py-1 rounded-full">
-                      {product.product_type.replace('_', ' ')}
-                    </span>
-                  </td>
                   <td className="px-6 py-4 font-semibold text-[#081F33]">
                     ${product.price}
                     {product.sale_price && (
                       <span className="text-sm text-green-600 ml-2">${product.sale_price}</span>
                     )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      (product.download_files?.length || 0) > 0 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {product.download_files?.length || 0} files
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <button

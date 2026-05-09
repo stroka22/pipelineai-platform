@@ -20,7 +20,8 @@ import {
   Zap,
   Download,
   Mail,
-  Eye
+  Eye,
+  ShoppingBag
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -77,46 +78,46 @@ const sampleCampaigns = [
 
 const packages = [
   {
-    name: 'Starter Growth',
-    price: 297,
-    description: 'Perfect for getting started with consistent content',
+    name: 'Single Carousel',
+    price: 197,
+    description: 'One premium 10-image carousel, ready to post',
     features: [
-      '3 branded carousel campaigns',
-      '1 short-form reel',
-      'Captions included',
-      'Logo & phone customization',
-      'Delivered in 48 hours',
+      '10-image carousel set',
+      'High-resolution images',
+      'Instant download',
+      'Commercial license',
+      'Post-ready format',
     ],
     popular: false,
-    cta: 'Buy Starter Package',
+    cta: 'Buy Now',
   },
   {
-    name: 'Authority Growth',
+    name: '3-Pack Bundle',
     price: 497,
-    description: 'Build real authority with premium monthly content',
+    description: 'Best value - three complete carousel packs',
     features: [
-      '4 premium carousel campaigns',
-      '2 short-form reels',
-      'Monthly pest theme',
-      'Captions + CTAs',
-      'Full brand customization',
-      'Priority delivery (24 hrs)',
+      '3 x 10-image carousels',
+      '30 total images',
+      'Mix any pest types',
+      'Instant download',
+      'Commercial license',
+      'Save $94',
     ],
     popular: true,
-    cta: 'Start Authority Package',
+    cta: 'Buy Bundle',
   },
   {
-    name: 'Market Leader',
-    price: 697,
-    priceNote: 'Starting at',
-    description: 'Dominate your local market with maximum content',
+    name: 'Mega Pack',
+    price: 897,
+    priceNote: 'Best Value',
+    description: 'Complete pest content library',
     features: [
-      '8+ monthly assets',
-      'Reels + carousels',
-      'Seasonal campaigns',
-      'Google Business post ideas',
+      '6 carousel packs',
+      '60+ premium images',
+      'All pest categories',
+      'Reels included',
+      'Instant download',
       'Priority support',
-      'Strategy consultation',
     ],
     popular: false,
     cta: 'Book Strategy Call',
@@ -235,8 +236,8 @@ export default function PestControlPage() {
               </h1>
               
               <p className="text-xl text-white/80 mb-8 max-w-xl">
-                Get premium pest-specific reels, carousel campaigns, captions, and branded marketing 
-                assets customized with your logo, phone number, website, service area, and colors.
+                Premium pest-specific carousels, reels, and marketing content. 
+                Purchase, download instantly, and start posting today.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
@@ -291,11 +292,11 @@ export default function PestControlPage() {
                 
                 {/* Floating badges */}
                 <div className="absolute -top-4 -right-4 bg-[#22C55E] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-                  Customizable
+                  Instant Access
                 </div>
                 <div className="absolute -bottom-4 -left-4 bg-white text-[#081F33] text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1">
                   <Zap className="w-3 h-3 text-[#C96A2B]" />
-                  24-48hr Delivery
+                  Download Instantly
                 </div>
               </div>
             </div>
@@ -363,8 +364,8 @@ export default function PestControlPage() {
               The Pest Growth Asset Vault™
             </h2>
             <p className="text-xl text-[#4B5563] max-w-3xl mx-auto">
-              A growing library of pest-control-specific marketing campaigns designed 
-              to be quickly customized for your company.
+              A growing library of pest-control-specific marketing content. 
+              Purchase once, download instantly, post forever.
             </p>
           </div>
           
@@ -387,7 +388,7 @@ export default function PestControlPage() {
                   </span>
                 </div>
                 <div className="absolute top-4 right-4 bg-[#22C55E] text-white text-[10px] font-bold px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  Customizable
+                  Instant Download
                 </div>
               </div>
             ))}
@@ -403,8 +404,8 @@ export default function PestControlPage() {
               Preview The Content
             </h2>
             <p className="text-lg text-white/70 max-w-2xl mx-auto">
-              Sample previews are shown for demonstration only. Final assets are delivered 
-              after purchase and customized with your company branding.
+              Preview our content below. Purchase to unlock full high-resolution 
+              files ready for instant download.
             </p>
           </div>
           
@@ -444,34 +445,31 @@ export default function PestControlPage() {
         </div>
       </section>
 
-      {/* Customization Section */}
+      {/* How It Works Section */}
       <section className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-[#081F33] mb-4">
-              Every Asset Is Customized For Your Company
+              How It Works
             </h2>
             <p className="text-xl text-[#4B5563] max-w-2xl mx-auto">
-              We don&apos;t hand you generic graphics. Your assets are personalized so they look 
-              like professional campaigns created specifically for your company.
+              Get professional pest control content in minutes, not days.
             </p>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+          <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: ImageIcon, label: 'Company Logo' },
-              { icon: Phone, label: 'Phone Number' },
-              { icon: Globe, label: 'Website' },
-              { icon: MapPin, label: 'Service Area' },
-              { icon: Palette, label: 'Brand Colors' },
-              { icon: Zap, label: 'Offer/CTA' },
-              { icon: MapPin, label: 'City Version' },
+              { step: '01', icon: Eye, label: 'Browse & Preview', desc: 'Explore our content vault and preview any carousel or reel before buying.' },
+              { step: '02', icon: ShoppingBag, label: 'Purchase Securely', desc: 'One-time payment via Stripe. No subscriptions, no hidden fees.' },
+              { step: '03', icon: Download, label: 'Instant Download', desc: 'Get immediate access to high-resolution files ready to post.' },
             ].map((item, i) => (
-              <div key={i} className="bg-[#F8F3EA] rounded-xl p-5 text-center">
-                <div className="w-12 h-12 bg-[#081F33] rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <item.icon className="w-6 h-6 text-[#C96A2B]" />
+              <div key={i} className="bg-[#F8F3EA] rounded-xl p-8 text-center">
+                <div className="text-5xl font-extrabold text-[#C96A2B]/20 mb-4">{item.step}</div>
+                <div className="w-14 h-14 bg-[#081F33] rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <item.icon className="w-7 h-7 text-[#C96A2B]" />
                 </div>
-                <span className="text-sm font-medium text-[#081F33]">{item.label}</span>
+                <h3 className="text-xl font-bold text-[#081F33] mb-2">{item.label}</h3>
+                <p className="text-[#4B5563]">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -491,7 +489,7 @@ export default function PestControlPage() {
             {[
               {
                 icon: ImageIcon,
-                title: 'Branded Carousel Campaigns',
+                title: 'Carousel Campaigns',
                 desc: 'Educational multi-slide content built around termites, roaches, rodents, mosquitoes, ants, and seasonal pest issues.',
               },
               {
@@ -684,7 +682,7 @@ export default function PestControlPage() {
                 <div className="mt-4 pt-4 border-t border-[#E5E7EB] flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs text-[#22C55E]">
                     <Check className="w-4 h-4" />
-                    <span>Full customization included</span>
+                    <span>Instant download included</span>
                   </div>
                   <Link 
                     href="/vault/pest-control"
