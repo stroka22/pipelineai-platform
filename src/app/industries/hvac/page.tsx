@@ -19,11 +19,10 @@ import { useState, useEffect } from 'react';
 import { supabase, Product } from '@/lib/supabase';
 
 const vaultCategories = [
-  { name: 'Termite Pack', icon: '🪵', count: 12, slug: 'termites' },
-  { name: 'Roach Pack', icon: '🪳', count: 10, slug: 'roaches' },
-  { name: 'Rodent Pack', icon: '🐀', count: 10, slug: 'rodents' },
-  { name: 'Mosquito Pack', icon: '🦟', count: 8, slug: 'mosquitoes' },
-  { name: 'Ant Pack', icon: '🐜', count: 8, slug: 'ants' },
+  { name: 'AC Maintenance', icon: '❄️', count: 10, slug: 'ac' },
+  { name: 'Heating Systems', icon: '🔥', count: 10, slug: 'heating' },
+  { name: 'Emergency Repairs', icon: '🔧', count: 10, slug: 'repairs' },
+  { name: 'Seasonal Tips', icon: '📅', count: 10, slug: 'seasonal' },
 ];
 
 const pricing = {
@@ -32,7 +31,7 @@ const pricing = {
   tenSlide: 127,
 };
 
-export default function PestControlPage() {
+export default function HVACPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +41,7 @@ export default function PestControlPage() {
         .from('products')
         .select('*')
         .eq('is_active', true)
-        .eq('category', 'Pest Control')
+        .eq('category', 'HVAC')
         .order('is_featured', { ascending: false });
       
       if (data) setProducts(data);
@@ -71,7 +70,7 @@ export default function PestControlPage() {
             </Link>
           </nav>
           <Link 
-            href="/vault/pest-control"
+            href="/vault/hvac"
             className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all flex items-center gap-2"
           >
             <Eye className="w-4 h-4" />
@@ -89,17 +88,17 @@ export default function PestControlPage() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-[#C96A2B] px-4 py-2 rounded-full text-sm font-semibold mb-6">
               <Sparkles className="w-4 h-4" />
-              Pest Control Growth Vault
+              HVAC Growth Vault
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight">
-              Premium Pest Control Content That{' '}
+              Premium HVAC Content That{' '}
               <span className="text-[#C96A2B]">Builds Authority</span>
             </h1>
             
             <p className="text-xl text-white/60 mb-8 max-w-xl">
               Ready-to-post carousels and growth content designed to help 
-              pest control companies dominate social media.
+              HVAC companies dominate social media.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -111,7 +110,7 @@ export default function PestControlPage() {
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link 
-                href="/vault/pest-control"
+                href="/vault/hvac"
                 className="bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all inline-flex items-center justify-center gap-2"
               >
                 <Eye className="w-5 h-5" />
@@ -130,7 +129,7 @@ export default function PestControlPage() {
               </span>
               <span className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                50+ Assets Available
+                40+ Assets Available
               </span>
             </div>
           </div>
@@ -144,7 +143,7 @@ export default function PestControlPage() {
             {vaultCategories.map((cat) => (
               <Link
                 key={cat.slug}
-                href={`/vault/pest-control`}
+                href={`/vault/hvac`}
                 className="flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-3 rounded-xl hover:border-[#C96A2B]/50 transition-all group"
               >
                 <span className="text-2xl">{cat.icon}</span>
@@ -215,7 +214,7 @@ export default function PestControlPage() {
               Stack your content library and save $127
             </p>
             <Link 
-              href="/vault/pest-control"
+              href="/vault/hvac"
               className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold hover:bg-[#B55D24] transition-all"
             >
               Browse & Build Bundle
@@ -234,11 +233,11 @@ export default function PestControlPage() {
                 Browse Growth Content
               </h2>
               <p className="text-white/50">
-                Premium pest control social media assets
+                Premium HVAC social media assets
               </p>
             </div>
             <Link 
-              href="/vault/pest-control"
+              href="/vault/hvac"
               className="hidden md:flex items-center gap-2 text-[#C96A2B] font-semibold hover:gap-3 transition-all"
             >
               Preview All
@@ -258,9 +257,7 @@ export default function PestControlPage() {
                   className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden group hover:border-[#C96A2B]/50 transition-all"
                 >
                   <div className="aspect-square bg-gradient-to-br from-[#C96A2B]/20 to-[#081F33] flex items-center justify-center relative">
-                    <span className="text-7xl opacity-40 group-hover:opacity-60 transition-opacity">
-                      {product.product_type === 'reel' ? '🎬' : '🪲'}
-                    </span>
+                    <span className="text-7xl opacity-40 group-hover:opacity-60 transition-opacity">❄️</span>
                     {product.is_featured && (
                       <div className="absolute top-4 left-4 bg-[#C96A2B] text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
                         <Star className="w-3 h-3" fill="white" />
@@ -268,7 +265,7 @@ export default function PestControlPage() {
                       </div>
                     )}
                     <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full text-white text-xs">
-                      {product.items_count} {product.product_type === 'carousel' ? 'slides' : 'sec'}
+                      {product.items_count} slides
                     </div>
                   </div>
                   <div className="p-6">
@@ -280,9 +277,6 @@ export default function PestControlPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-2xl font-bold text-white">${product.price}</span>
-                        {product.sale_price && (
-                          <span className="text-sm text-white/40 line-through ml-2">${product.sale_price}</span>
-                        )}
                       </div>
                       {product.stripe_link ? (
                         <Link
@@ -294,7 +288,7 @@ export default function PestControlPage() {
                         </Link>
                       ) : (
                         <Link
-                          href="/vault/pest-control"
+                          href="/vault/hvac"
                           className="bg-white/10 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-white/20 transition-all flex items-center gap-2"
                         >
                           <Eye className="w-4 h-4" />
@@ -310,7 +304,7 @@ export default function PestControlPage() {
             <div className="text-center py-16">
               <p className="text-white/50 mb-6">Products coming soon! Preview the vault to see what&apos;s available.</p>
               <Link
-                href="/vault/pest-control"
+                href="/vault/hvac"
                 className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#B55D24] transition-all"
               >
                 <Eye className="w-5 h-5" />
@@ -339,7 +333,7 @@ export default function PestControlPage() {
                 step: '01', 
                 icon: Eye,
                 title: 'Browse & Preview', 
-                desc: 'Explore premium pest control carousels in the vault' 
+                desc: 'Explore premium HVAC carousels in the vault' 
               },
               { 
                 step: '02', 
@@ -375,16 +369,16 @@ export default function PestControlPage() {
             <span className="text-[#C96A2B]">Grow Faster.</span>
           </h2>
           <p className="text-xl text-white/50 mb-10 max-w-2xl mx-auto">
-            Stop wasting time creating content. Get premium, ready-to-post pest control 
+            Stop wasting time creating content. Get premium, ready-to-post HVAC 
             growth content designed to make your company stand out.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
-              href="/vault/pest-control"
+              href="/vault/hvac"
               className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all inline-flex items-center justify-center gap-2 group"
             >
-              Browse Pest Control Vault
+              Browse HVAC Vault
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>

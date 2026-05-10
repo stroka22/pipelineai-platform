@@ -8,7 +8,7 @@ const industryVaults = [
     name: 'Pest Control Growth Vault',
     slug: 'pest-control',
     image: '🪲',
-    assetCount: 50,
+    assetCount: 60,
     available: true,
     popular: true,
   },
@@ -16,16 +16,16 @@ const industryVaults = [
     name: 'Roofing Growth Vault',
     slug: 'roofing',
     image: '🏠',
-    assetCount: 0,
-    available: false,
+    assetCount: 50,
+    available: true,
     popular: false,
   },
   {
     name: 'HVAC Growth Vault',
     slug: 'hvac',
     image: '❄️',
-    assetCount: 0,
-    available: false,
+    assetCount: 40,
+    available: true,
     popular: false,
   },
   {
@@ -56,7 +56,7 @@ const industryVaults = [
 
 const bestSellers = [
   {
-    title: 'Termite Warning Signs Carousel',
+    title: 'Termite Warning Signs',
     category: 'Pest Control',
     type: '10-Slide Carousel',
     price: 127,
@@ -70,18 +70,18 @@ const bestSellers = [
     image: '🪳',
   },
   {
-    title: 'Rodent Season Alert Reel',
-    category: 'Pest Control',
-    type: 'AI Reel',
-    price: 97,
-    image: '🐀',
+    title: 'Storm Damage Inspection',
+    category: 'Roofing',
+    type: '10-Slide Carousel',
+    price: 127,
+    image: '🏠',
   },
   {
-    title: 'Mosquito Protection Guide',
-    category: 'Pest Control',
-    type: '5-Slide Carousel',
-    price: 57,
-    image: '🦟',
+    title: 'AC Maintenance Guide',
+    category: 'HVAC',
+    type: '10-Slide Carousel',
+    price: 127,
+    image: '❄️',
   },
 ];
 
@@ -103,18 +103,6 @@ const pricing = [
     name: '10-Slide Growth Carousel',
     price: 127,
     description: 'Premium authority carousel',
-  },
-  {
-    icon: Play,
-    name: 'AI Reel',
-    price: 97,
-    description: 'Short-form video content',
-  },
-  {
-    icon: Film,
-    name: '15-Sec Cinematic Video',
-    price: 197,
-    description: 'AI cinematic commercial',
   },
 ];
 
@@ -384,7 +372,7 @@ export default function HomePage() {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-5 gap-4 mb-12">
+          <div className="grid md:grid-cols-3 gap-6 mb-12 max-w-3xl mx-auto">
             {pricing.map((item, i) => (
               <div 
                 key={i}
@@ -419,54 +407,6 @@ export default function HomePage() {
               Shop Bundle Deal
               <ArrowRight className="w-5 h-5" />
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Cinematic Videos */}
-      <section className="py-20 bg-[#0a0a0a]">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                Cinematic AI Video Commercials
-              </h2>
-              <p className="text-white/50">
-                15-second premium video ads for your business
-              </p>
-            </div>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { title: 'Termite Damage Warning', category: 'Pest Control', price: 197 },
-              { title: 'Emergency Pest Response', category: 'Pest Control', price: 197 },
-              { title: 'Family Protection Ad', category: 'Pest Control', price: 197 },
-            ].map((video, i) => (
-              <div 
-                key={i}
-                className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden group hover:border-[#C96A2B]/50 transition-all"
-              >
-                <div className="aspect-video bg-gradient-to-br from-[#C96A2B]/30 to-[#081F33] flex items-center justify-center relative">
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                    <Play className="w-8 h-8 text-white ml-1" fill="white" />
-                  </div>
-                  <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full text-white text-xs font-medium">
-                    15 sec
-                  </div>
-                </div>
-                <div className="p-5">
-                  <span className="text-xs font-semibold text-[#C96A2B]">{video.category}</span>
-                  <h3 className="text-white font-bold mt-1 mb-3">{video.title}</h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-white">${video.price}</span>
-                    <button className="bg-[#C96A2B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#B55D24] transition-all">
-                      Purchase
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
