@@ -27,9 +27,9 @@ const vaultCategories = [
 ];
 
 const pricing = {
-  singleImage: 15,
-  fiveSlide: 57,
-  tenSlide: 127,
+  singleImage: { price: 15, link: 'https://buy.stripe.com/7sY5kE5SCajb73Ifd83cc03' },
+  fiveSlide: { price: 57, link: 'https://buy.stripe.com/fZubJ2ftcezr87M8OK3cc02' },
+  tenSlide: { price: 127, link: 'https://buy.stripe.com/6oU28s6WG2QJ1Jo3uq3cc04' },
 };
 
 export default function RoofingPage() {
@@ -171,25 +171,27 @@ export default function RoofingPage() {
           </div>
           
           <div className="grid md:grid-cols-3 gap-6 mb-12 max-w-3xl mx-auto">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center hover:border-[#C96A2B]/50 transition-all">
+            <Link href={pricing.singleImage.link} className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center hover:border-[#C96A2B]/50 transition-all group">
               <div className="w-12 h-12 bg-[#C96A2B]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <ImageIcon className="w-6 h-6 text-[#C96A2B]" />
               </div>
               <h3 className="text-white font-bold mb-1">Single Image</h3>
               <p className="text-white/40 text-xs mb-4">Premium social image</p>
-              <div className="text-3xl font-bold text-white">${pricing.singleImage}</div>
-            </div>
+              <div className="text-3xl font-bold text-white mb-3">${pricing.singleImage.price}</div>
+              <span className="text-[#C96A2B] text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Buy Now →</span>
+            </Link>
             
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center hover:border-[#C96A2B]/50 transition-all">
+            <Link href={pricing.fiveSlide.link} className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center hover:border-[#C96A2B]/50 transition-all group">
               <div className="w-12 h-12 bg-[#C96A2B]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <Images className="w-6 h-6 text-[#C96A2B]" />
               </div>
               <h3 className="text-white font-bold mb-1">5-Slide Carousel</h3>
               <p className="text-white/40 text-xs mb-4">Growth carousel</p>
-              <div className="text-3xl font-bold text-white">${pricing.fiveSlide}</div>
-            </div>
+              <div className="text-3xl font-bold text-white mb-3">${pricing.fiveSlide.price}</div>
+              <span className="text-[#C96A2B] text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Buy Now →</span>
+            </Link>
             
-            <div className="bg-[#C96A2B]/10 border border-[#C96A2B]/30 rounded-2xl p-6 text-center relative">
+            <Link href={pricing.tenSlide.link} className="bg-[#C96A2B]/10 border border-[#C96A2B]/30 rounded-2xl p-6 text-center relative group">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#C96A2B] text-white text-xs font-bold px-3 py-1 rounded-full">
                 POPULAR
               </div>
@@ -198,8 +200,9 @@ export default function RoofingPage() {
               </div>
               <h3 className="text-white font-bold mb-1">10-Slide Carousel</h3>
               <p className="text-white/40 text-xs mb-4">Premium authority</p>
-              <div className="text-3xl font-bold text-white">${pricing.tenSlide}</div>
-            </div>
+              <div className="text-3xl font-bold text-white mb-3">${pricing.tenSlide.price}</div>
+              <span className="text-[#C96A2B] text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Buy Now →</span>
+            </Link>
           </div>
           
           {/* Bundle Offer */}

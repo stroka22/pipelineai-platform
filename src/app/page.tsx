@@ -62,18 +62,21 @@ const pricing = [
     name: 'Single Image',
     price: 15,
     description: 'One premium social media image',
+    stripeLink: 'https://buy.stripe.com/7sY5kE5SCajb73Ifd83cc03',
   },
   {
     icon: Images,
     name: '5-Slide Growth Carousel',
     price: 57,
     description: 'Educational carousel pack',
+    stripeLink: 'https://buy.stripe.com/fZubJ2ftcezr87M8OK3cc02',
   },
   {
     icon: Package,
     name: '10-Slide Growth Carousel',
     price: 127,
     description: 'Premium authority carousel',
+    stripeLink: 'https://buy.stripe.com/6oU28s6WG2QJ1Jo3uq3cc04',
   },
 ];
 
