@@ -133,14 +133,17 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/" className="text-white/70 hover:text-white text-sm font-medium">
-              Back to Home
+              Home
+            </Link>
+            <Link href="/#vaults" className="text-white/70 hover:text-white text-sm font-medium">
+              All Vaults
             </Link>
             <Link 
               href={`/industries/${nicheSlug}`}
               className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all flex items-center gap-2"
             >
               <ShoppingBag className="w-4 h-4" />
-              Shop Vault
+              Shop {niche?.name || 'Vault'}
             </Link>
           </div>
         </div>
@@ -242,15 +245,30 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                     </div>
                   </div>
                   <div className="p-5">
-                    <span className="text-xs font-semibold text-[#C96A2B] bg-[#C96A2B]/10 px-3 py-1 rounded-full">{item.category}</span>
-                    <h3 className="text-lg font-bold text-white mt-3 mb-4">{item.title}</h3>
-                    <Link
-                      href={`/industries/${nicheSlug}`}
-                      className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all w-full justify-center"
-                    >
-                      <ShoppingBag className="w-4 h-4" />
-                      Purchase This
-                    </Link>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-[#C96A2B] bg-[#C96A2B]/10 px-3 py-1 rounded-full">{item.category}</span>
+                      {item.price && (
+                        <span className="text-xl font-bold text-white">${item.price}</span>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-4">{item.title}</h3>
+                    {item.stripe_link ? (
+                      <Link
+                        href={item.stripe_link}
+                        className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all w-full justify-center"
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                        Buy Now
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => { setPreviewItem(item); setCurrentSlide(0); }}
+                        className="inline-flex items-center gap-2 bg-white/10 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-white/20 transition-all w-full justify-center"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Preview
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

@@ -80,6 +80,8 @@ export interface VaultItem {
   folder_path: string;
   images: string[];
   product_id?: string;
+  price?: number;
+  stripe_link?: string;
   is_active: boolean;
   display_order: number;
   created_at: string;

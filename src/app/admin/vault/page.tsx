@@ -24,6 +24,8 @@ export default function VaultAdminPage() {
     niche: '',
     category: '',
     content_type: 'carousel' as typeof CONTENT_TYPES[number],
+    price: '',
+    stripe_link: '',
     is_active: true,
     display_order: 0,
   });
@@ -108,6 +110,8 @@ export default function VaultAdminPage() {
       slide_count: uploadedImages.length || editingItem?.slide_count || 0,
       folder_path: '',
       images: uploadedImages.length > 0 ? uploadedImages : editingItem?.images || [],
+      price: formData.price ? parseFloat(formData.price) : null,
+      stripe_link: formData.stripe_link || null,
       is_active: formData.is_active,
       display_order: formData.display_order,
     };
@@ -162,6 +166,8 @@ export default function VaultAdminPage() {
       niche: item.niche,
       category: item.category,
       content_type: item.content_type as typeof CONTENT_TYPES[number],
+      price: item.price?.toString() || '',
+      stripe_link: item.stripe_link || '',
       is_active: item.is_active,
       display_order: item.display_order,
     });
@@ -175,6 +181,8 @@ export default function VaultAdminPage() {
       niche: niches[0]?.slug || '',
       category: '',
       content_type: 'carousel',
+      price: '',
+      stripe_link: '',
       is_active: true,
       display_order: 0,
     });
@@ -349,6 +357,29 @@ export default function VaultAdminPage() {
             </div>
             
             <div>
+              <label className="block text-sm font-medium text-[#081F33] mb-2">Price ($)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
+                placeholder="e.g., 127"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-[#081F33] mb-2">Stripe Payment Link</label>
+              <input
+                type="url"
+                value={formData.stripe_link}
+                onChange={(e) => setFormData({ ...formData, stripe_link: e.target.value })}
+                className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
+                placeholder="https://buy.stripe.com/..."
+              />
+            </div>
+            
+            <div>
               <label className="block text-sm font-medium text-[#081F33] mb-2">Display Order</label>
               <input
                 type="number"
@@ -466,6 +497,7 @@ export default function VaultAdminPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Category</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Type</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Files</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Price</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Actions</th>
                 </tr>
@@ -501,6 +533,13 @@ export default function VaultAdminPage() {
                       <span className="text-xs bg-[#F3F4F6] text-[#4B5563] px-2 py-1 rounded-full capitalize">{item.content_type}</span>
                     </td>
                     <td className="px-6 py-4 text-[#4B5563]">{item.slide_count}</td>
+                    <td className="px-6 py-4">
+                      {item.price ? (
+                        <span className="font-semibold text-[#081F33]">${item.price}</span>
+                      ) : (
+                        <span className="text-[#9CA3AF]">—</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <button
                         onClick={() => toggleActive(item)}
