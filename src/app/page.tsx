@@ -1,260 +1,325 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Sparkles, Target, TrendingUp, Building2, Bug, Wrench, Home, Briefcase, ChevronRight, Users, ShoppingBag, Dumbbell, Stethoscope, GraduationCap, Camera, Eye } from 'lucide-react';
+import { ArrowRight, Sparkles, Play, ShoppingBag, Zap, ChevronRight, Eye, Star, Package, Film, Images, Image as ImageIcon, CheckCircle } from 'lucide-react';
 
-const industries = [
+const industryVaults = [
   {
-    name: 'Pest Control',
+    name: 'Pest Control Growth Vault',
     slug: 'pest-control',
-    icon: Bug,
-    description: 'Termite, roach, rodent & mosquito campaigns',
+    image: '🪲',
+    assetCount: 50,
     available: true,
-    featured: true,
+    popular: true,
   },
   {
-    name: 'Roofing',
+    name: 'Roofing Growth Vault',
     slug: 'roofing',
-    icon: Home,
-    description: 'Storm damage, inspections & replacement content',
+    image: '🏠',
+    assetCount: 0,
     available: false,
-    featured: false,
+    popular: false,
   },
   {
-    name: 'HVAC',
+    name: 'HVAC Growth Vault',
     slug: 'hvac',
-    icon: Wrench,
-    description: 'Seasonal maintenance & emergency repair campaigns',
+    image: '❄️',
+    assetCount: 0,
     available: false,
-    featured: false,
+    popular: false,
   },
   {
-    name: 'Real Estate',
-    slug: 'real-estate',
-    icon: Building2,
-    description: 'Listing content, market updates & buyer guides',
+    name: 'Med Spa Growth Vault',
+    slug: 'med-spa',
+    image: '💆',
+    assetCount: 0,
     available: false,
-    featured: false,
+    popular: false,
   },
   {
-    name: 'Coaches & Consultants',
-    slug: 'coaches',
-    icon: Users,
-    description: 'Authority-building content & client attraction',
-    available: false,
-    featured: false,
-  },
-  {
-    name: 'E-Commerce',
-    slug: 'ecommerce',
-    icon: ShoppingBag,
-    description: 'Product showcases, launches & promotional campaigns',
-    available: false,
-    featured: false,
-  },
-  {
-    name: 'Fitness & Wellness',
-    slug: 'fitness',
-    icon: Dumbbell,
-    description: 'Transformation content, tips & motivation',
-    available: false,
-    featured: false,
-  },
-  {
-    name: 'Healthcare & Medical',
-    slug: 'healthcare',
-    icon: Stethoscope,
-    description: 'Patient education & trust-building content',
-    available: false,
-    featured: false,
-  },
-  {
-    name: 'Education & Courses',
-    slug: 'education',
-    icon: GraduationCap,
-    description: 'Course promotion & thought leadership',
-    available: false,
-    featured: false,
-  },
-  {
-    name: 'Photographers',
-    slug: 'photographers',
-    icon: Camera,
-    description: 'Portfolio showcases & booking campaigns',
-    available: false,
-    featured: false,
-  },
-  {
-    name: 'Mortgage & Lending',
+    name: 'Mortgage Growth Vault',
     slug: 'mortgage',
-    icon: Briefcase,
-    description: 'Rate updates, loan education & trust-building content',
+    image: '🏦',
+    assetCount: 0,
     available: false,
-    featured: false,
+    popular: false,
+  },
+  {
+    name: 'Real Estate Growth Vault',
+    slug: 'real-estate',
+    image: '🔑',
+    assetCount: 0,
+    available: false,
+    popular: false,
+  },
+];
+
+const bestSellers = [
+  {
+    title: 'Termite Warning Signs Carousel',
+    category: 'Pest Control',
+    type: '10-Slide Carousel',
+    price: 127,
+    image: '🪵',
+  },
+  {
+    title: 'Roach Prevention Tips',
+    category: 'Pest Control',
+    type: '10-Slide Carousel',
+    price: 127,
+    image: '🪳',
+  },
+  {
+    title: 'Rodent Season Alert Reel',
+    category: 'Pest Control',
+    type: 'AI Reel',
+    price: 97,
+    image: '🐀',
+  },
+  {
+    title: 'Mosquito Protection Guide',
+    category: 'Pest Control',
+    type: '5-Slide Carousel',
+    price: 57,
+    image: '🦟',
+  },
+];
+
+const pricing = [
+  {
+    icon: ImageIcon,
+    name: 'Single Image',
+    price: 15,
+    description: 'One premium social media image',
+  },
+  {
+    icon: Images,
+    name: '5-Slide Growth Carousel',
+    price: 57,
+    description: 'Educational carousel pack',
+  },
+  {
+    icon: Package,
+    name: '10-Slide Growth Carousel',
+    price: 127,
+    description: 'Premium authority carousel',
+  },
+  {
+    icon: Play,
+    name: 'AI Reel',
+    price: 97,
+    description: 'Short-form video content',
+  },
+  {
+    icon: Film,
+    name: '15-Sec Cinematic Video',
+    price: 197,
+    description: 'AI cinematic commercial',
   },
 ];
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-[#0a0a0a]">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#081F33]/98 backdrop-blur-md">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold text-white">
             Pipeline <span className="text-[#C96A2B]">AI</span>
           </Link>
+          <nav className="hidden md:flex items-center gap-8">
+            <Link href="#vaults" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
+              Industry Vaults
+            </Link>
+            <Link href="#pricing" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
+              Pricing
+            </Link>
+            <Link href="/vault/pest-control" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
+              Browse Content
+            </Link>
+          </nav>
           <Link 
-            href="https://calendly.com/brian-stroka22/30min"
-            className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all btn-premium"
+            href="/industries/pest-control"
+            className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all"
           >
-            Book a Call
+            Shop Now
           </Link>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="gradient-navy text-white pt-32 pb-24 md:pt-40 md:pb-32 relative overflow-hidden">
-        {/* Subtle pattern overlay */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
-        </div>
+      <section className="pt-32 pb-20 md:pt-44 md:pb-28 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#C96A2B]/10 via-transparent to-transparent" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#C96A2B]/5 rounded-full blur-3xl" />
         
         <div className="max-w-5xl mx-auto px-6 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 bg-[#C96A2B]/20 border border-[#C96A2B]/30 text-[#FACC15] px-4 py-2 rounded-full text-sm font-semibold mb-8">
+          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-[#C96A2B] px-4 py-2 rounded-full text-sm font-semibold mb-8">
             <Sparkles className="w-4 h-4" />
-            Premium Social Media Content for Any Industry
+            Premium Social Media Growth Content for Businesses
           </div>
           
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
-            Content That Makes You <br className="hidden md:block" />
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 leading-tight">
+            Growth Content That Makes You{' '}
             <span className="text-[#C96A2B]">The Obvious Choice</span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-white/80 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Premium social media content packs ready to download and post. 
-            Carousels, reels, and campaigns designed to dominate your industry.
+          <p className="text-xl md:text-2xl text-white/60 mb-10 max-w-3xl mx-auto leading-relaxed">
+            Ready-to-post carousels, reels, cinematic videos, and industry growth vaults 
+            designed to help your business stand out online.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <Link 
-              href="https://calendly.com/brian-stroka22/30min"
-              className="bg-[#C96A2B] text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-[#B55D24] transition-all btn-premium inline-flex items-center justify-center gap-2"
+              href="#vaults"
+              className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all inline-flex items-center justify-center gap-2 group"
             >
-              Book Free Strategy Call
-              <ArrowRight className="w-5 h-5" />
+              Browse Industry Vaults
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link 
-              href="#industries"
-              className="bg-white/10 border border-white/20 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/20 transition-all inline-flex items-center justify-center gap-2"
+              href="/vault/pest-control"
+              className="bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all inline-flex items-center justify-center gap-2"
             >
-              Explore Industries
+              <Eye className="w-5 h-5" />
+              View Growth Content
             </Link>
           </div>
           
-          <p className="text-white/50 text-sm">
-            Currently serving pest control companies • More industries coming soon
-          </p>
-        </div>
-      </section>
-
-      {/* Value Props */}
-      <section className="py-20 bg-[#F8F3EA]">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-2xl shadow-sm">
-              <div className="w-14 h-14 bg-[#081F33] rounded-xl flex items-center justify-center mb-6">
-                <Target className="w-7 h-7 text-[#C96A2B]" />
-              </div>
-              <h3 className="text-xl font-bold text-[#081F33] mb-3">Industry-Specific</h3>
-              <p className="text-[#4B5563]">
-                Not generic templates. Real content built around what your audience actually cares about.
-              </p>
-            </div>
-            
-            <div className="bg-white p-8 rounded-2xl shadow-sm">
-              <div className="w-14 h-14 bg-[#081F33] rounded-xl flex items-center justify-center mb-6">
-                <Sparkles className="w-7 h-7 text-[#C96A2B]" />
-              </div>
-              <h3 className="text-xl font-bold text-[#081F33] mb-3">Ready to Post</h3>
-              <p className="text-[#4B5563]">
-                Instant download after purchase. No waiting, no back-and-forth. Start posting today.
-              </p>
-            </div>
-            
-            <div className="bg-white p-8 rounded-2xl shadow-sm">
-              <div className="w-14 h-14 bg-[#081F33] rounded-xl flex items-center justify-center mb-6">
-                <TrendingUp className="w-7 h-7 text-[#C96A2B]" />
-              </div>
-              <h3 className="text-xl font-bold text-[#081F33] mb-3">Trust-Building</h3>
-              <p className="text-[#4B5563]">
-                Educational content that positions you as the expert your audience trusts first.
-              </p>
-            </div>
+          <div className="flex items-center justify-center gap-6 text-white/40 text-sm">
+            <span className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              Instant Download
+            </span>
+            <span className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              Commercial License
+            </span>
+            <span className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              Ready to Post
+            </span>
           </div>
         </div>
       </section>
 
-      {/* Industries Section */}
-      <section id="industries" className="py-24 bg-white">
+      {/* Featured Industry Vaults */}
+      <section id="vaults" className="py-20 bg-[#0a0a0a]">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-[#081F33] mb-4">
-              Choose Your Industry
-            </h2>
-            <p className="text-xl text-[#4B5563] max-w-2xl mx-auto">
-              Premium content vaults built for specific industries. 
-              Each vault contains campaigns tailored to your market.
-            </p>
+          <div className="flex items-center justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                Industry Growth Vaults
+              </h2>
+              <p className="text-white/50">
+                Premium content libraries for your industry
+              </p>
+            </div>
+            <Link 
+              href="/vault/pest-control"
+              className="hidden md:flex items-center gap-2 text-[#C96A2B] font-semibold hover:gap-3 transition-all"
+            >
+              View All
+              <ChevronRight className="w-5 h-5" />
+            </Link>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {industries.map((industry) => (
+            {industryVaults.map((vault) => (
               <div 
-                key={industry.slug}
-                className={`relative rounded-2xl p-8 transition-all vault-card ${
-                  industry.available 
-                    ? 'bg-[#081F33] text-white cursor-pointer' 
-                    : 'bg-[#F3F4F6] text-[#9CA3AF]'
-                } ${industry.featured ? 'ring-2 ring-[#C96A2B] ring-offset-4' : ''}`}
+                key={vault.slug}
+                className={`relative rounded-2xl p-8 transition-all group ${
+                  vault.available 
+                    ? 'bg-white/5 border border-white/10 hover:border-[#C96A2B]/50 cursor-pointer' 
+                    : 'bg-white/[0.02] border border-white/5'
+                }`}
               >
-                {industry.featured && (
-                  <div className="absolute -top-3 left-6 bg-[#C96A2B] text-white text-xs font-bold px-3 py-1 rounded-full">
-                    NOW AVAILABLE
+                {vault.popular && (
+                  <div className="absolute -top-3 right-6 bg-[#C96A2B] text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                    <Star className="w-3 h-3" fill="white" />
+                    POPULAR
                   </div>
                 )}
                 
-                <industry.icon className={`w-10 h-10 mb-4 ${industry.available ? 'text-[#C96A2B]' : 'text-[#9CA3AF]'}`} />
+                <div className="text-5xl mb-6">{vault.image}</div>
                 
-                <h3 className={`text-2xl font-bold mb-2 ${industry.available ? 'text-white' : 'text-[#6B7280]'}`}>
-                  {industry.name}
+                <h3 className={`text-xl font-bold mb-2 ${vault.available ? 'text-white' : 'text-white/40'}`}>
+                  {vault.name}
                 </h3>
                 
-                <p className={`mb-6 ${industry.available ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
-                  {industry.description}
+                <p className={`text-sm mb-6 ${vault.available ? 'text-white/50' : 'text-white/30'}`}>
+                  {vault.available ? `${vault.assetCount}+ assets available` : 'Coming Soon'}
                 </p>
                 
-                {industry.available ? (
-                  <div className="flex flex-col gap-2">
+                {vault.available ? (
+                  <div className="flex gap-3">
                     <Link 
-                      href={`/vault/${industry.slug}`}
-                      className="inline-flex items-center gap-2 text-white/70 font-medium hover:text-white transition-all text-sm"
+                      href={`/vault/${vault.slug}`}
+                      className="flex-1 bg-white/5 border border-white/10 text-white py-2.5 rounded-lg font-medium text-sm text-center hover:bg-white/10 transition-all"
                     >
-                      <Eye className="w-4 h-4" />
-                      Preview Content
+                      Preview
                     </Link>
                     <Link 
-                      href={`/industries/${industry.slug}`}
-                      className="inline-flex items-center gap-2 text-[#C96A2B] font-semibold hover:gap-3 transition-all"
+                      href={`/industries/${vault.slug}`}
+                      className="flex-1 bg-[#C96A2B] text-white py-2.5 rounded-lg font-medium text-sm text-center hover:bg-[#B55D24] transition-all"
                     >
-                      Shop Asset Vault
-                      <ChevronRight className="w-5 h-5" />
+                      Shop Vault
                     </Link>
                   </div>
                 ) : (
-                  <span className="text-sm font-medium text-[#9CA3AF]">Coming Soon</span>
+                  <div className="bg-white/5 text-white/30 py-2.5 rounded-lg font-medium text-sm text-center">
+                    Notify Me
+                  </div>
                 )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Best Selling Growth Content */}
+      <section className="py-20 bg-[#111111]">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex items-center justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                Best Selling Growth Content
+              </h2>
+              <p className="text-white/50">
+                Top-performing social media assets
+              </p>
+            </div>
+            <Link 
+              href="/industries/pest-control"
+              className="hidden md:flex items-center gap-2 text-[#C96A2B] font-semibold hover:gap-3 transition-all"
+            >
+              Shop All
+              <ChevronRight className="w-5 h-5" />
+            </Link>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {bestSellers.map((item, i) => (
+              <div 
+                key={i}
+                className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden group hover:border-[#C96A2B]/50 transition-all"
+              >
+                <div className="aspect-square bg-gradient-to-br from-[#C96A2B]/20 to-[#081F33] flex items-center justify-center relative">
+                  <span className="text-6xl opacity-50 group-hover:opacity-70 transition-opacity">{item.image}</span>
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Eye className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <div className="p-5">
+                  <span className="text-xs font-semibold text-[#C96A2B]">{item.type}</span>
+                  <h3 className="text-white font-bold mt-1 mb-3">{item.title}</h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-white">${item.price}</span>
+                    <button className="bg-[#C96A2B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#B55D24] transition-all flex items-center gap-1">
+                      <ShoppingBag className="w-4 h-4" />
+                      Add
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -262,78 +327,195 @@ export default function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section className="py-24 bg-[#F8F3EA]">
+      <section className="py-20 bg-[#0a0a0a]">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-[#081F33] mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               How It Works
             </h2>
-            <p className="text-xl text-[#4B5563]">
-              From purchase to posting in minutes
+            <p className="text-white/50 text-lg">
+              From browsing to posting in minutes
             </p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { step: '01', title: 'Browse', desc: 'Preview our content vault and find assets perfect for your business' },
-              { step: '02', title: 'Purchase', desc: 'Secure checkout - pay once, own forever, use for your business' },
-              { step: '03', title: 'Download & Post', desc: 'Instant access to high-quality files ready for social media' },
+              { 
+                step: '01', 
+                icon: Eye,
+                title: 'Browse Vault', 
+                desc: 'Explore industry-specific content packs, carousels, reels, and cinematic videos' 
+              },
+              { 
+                step: '02', 
+                icon: ShoppingBag,
+                title: 'Purchase Content', 
+                desc: 'One-time payment via Stripe. No subscriptions. Own it forever.' 
+              },
+              { 
+                step: '03', 
+                icon: Zap,
+                title: 'Post & Grow', 
+                desc: 'Download instantly and post to build authority, trust, and engagement' 
+              },
             ].map((item) => (
               <div key={item.step} className="text-center">
-                <div className="text-5xl font-extrabold text-[#C96A2B]/20 mb-4">{item.step}</div>
-                <h3 className="text-xl font-bold text-[#081F33] mb-2">{item.title}</h3>
-                <p className="text-[#4B5563]">{item.desc}</p>
+                <div className="w-16 h-16 bg-[#C96A2B]/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <item.icon className="w-8 h-8 text-[#C96A2B]" />
+                </div>
+                <div className="text-4xl font-extrabold text-white/10 mb-2">{item.step}</div>
+                <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
+                <p className="text-white/50">{item.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 gradient-navy text-white">
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 bg-[#111111]">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-white/50 text-lg">
+              Pay once. Download instantly. Post forever.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-5 gap-4 mb-12">
+            {pricing.map((item, i) => (
+              <div 
+                key={i}
+                className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center hover:border-[#C96A2B]/50 transition-all"
+              >
+                <div className="w-12 h-12 bg-[#C96A2B]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <item.icon className="w-6 h-6 text-[#C96A2B]" />
+                </div>
+                <h3 className="text-white font-bold mb-1">{item.name}</h3>
+                <p className="text-white/40 text-xs mb-4">{item.description}</p>
+                <div className="text-3xl font-bold text-white">${item.price}</div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Bundle Offer */}
+          <div className="bg-gradient-to-r from-[#C96A2B]/20 to-[#C96A2B]/5 border border-[#C96A2B]/30 rounded-2xl p-8 text-center">
+            <div className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-4 py-1.5 rounded-full text-sm font-bold mb-4">
+              <Sparkles className="w-4 h-4" />
+              BUNDLE & SAVE
+            </div>
+            <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
+              Buy Any 2 Premium 10-Slide Carousels, Get 1 Free
+            </h3>
+            <p className="text-white/60 mb-6">
+              Stack your content library and save $127
+            </p>
+            <Link 
+              href="/industries/pest-control"
+              className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold hover:bg-[#B55D24] transition-all"
+            >
+              Shop Bundle Deal
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Cinematic Videos */}
+      <section className="py-20 bg-[#0a0a0a]">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex items-center justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                Cinematic AI Video Commercials
+              </h2>
+              <p className="text-white/50">
+                15-second premium video ads for your business
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { title: 'Termite Damage Warning', category: 'Pest Control', price: 197 },
+              { title: 'Emergency Pest Response', category: 'Pest Control', price: 197 },
+              { title: 'Family Protection Ad', category: 'Pest Control', price: 197 },
+            ].map((video, i) => (
+              <div 
+                key={i}
+                className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden group hover:border-[#C96A2B]/50 transition-all"
+              >
+                <div className="aspect-video bg-gradient-to-br from-[#C96A2B]/30 to-[#081F33] flex items-center justify-center relative">
+                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                    <Play className="w-8 h-8 text-white ml-1" fill="white" />
+                  </div>
+                  <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full text-white text-xs font-medium">
+                    15 sec
+                  </div>
+                </div>
+                <div className="p-5">
+                  <span className="text-xs font-semibold text-[#C96A2B]">{video.category}</span>
+                  <h3 className="text-white font-bold mt-1 mb-3">{video.title}</h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-white">${video.price}</span>
+                    <button className="bg-[#C96A2B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#B55D24] transition-all">
+                      Purchase
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-24 bg-gradient-to-b from-[#111111] to-[#0a0a0a]">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Ready to Look Like the <span className="text-[#C96A2B]">Obvious Expert</span>?
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Build Authority. Increase Engagement.{' '}
+            <span className="text-[#C96A2B]">Grow Faster.</span>
           </h2>
-          <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-            Stop posting random content. Start posting campaigns that make your 
-            audience trust you before they ever reach out.
+          <p className="text-xl text-white/50 mb-10 max-w-2xl mx-auto">
+            Stop wasting time creating content from scratch. Get premium, ready-to-post 
+            growth content designed to make your business stand out.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
-              href="https://calendly.com/brian-stroka22/30min"
-              className="bg-[#C96A2B] text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-[#B55D24] transition-all btn-premium inline-flex items-center justify-center gap-2"
+              href="/vault/pest-control"
+              className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all inline-flex items-center justify-center gap-2 group"
             >
-              Book Free Strategy Call
-              <ArrowRight className="w-5 h-5" />
+              Browse Growth Content
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link 
               href="/industries/pest-control"
-              className="bg-white/10 border border-white/20 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/20 transition-all inline-flex items-center justify-center gap-2"
+              className="bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all inline-flex items-center justify-center gap-2"
             >
+              <ShoppingBag className="w-5 h-5" />
               Shop Pest Control Vault
             </Link>
           </div>
-          
-          <p className="text-white/40 text-sm mt-8">
-            Currently onboarding pest control companies at founder pricing
-          </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#081F33] text-white/60 py-12 border-t border-white/10">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <Link href="/" className="text-2xl font-bold text-white mb-4 inline-block">
-            Pipeline <span className="text-[#C96A2B]">AI</span>
-          </Link>
-          <p className="text-sm mb-4">
-            Premium social media content for businesses that want to stand out
-          </p>
-          <p className="text-xs text-white/40">
-            © {new Date().getFullYear()} Pipeline AI. All rights reserved.
-          </p>
+      <footer className="bg-[#0a0a0a] text-white/40 py-12 border-t border-white/5">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <Link href="/" className="text-2xl font-bold text-white">
+              Pipeline <span className="text-[#C96A2B]">AI</span>
+            </Link>
+            <p className="text-sm text-center md:text-left">
+              Premium Social Media Growth Content for Local Businesses
+            </p>
+            <p className="text-xs">
+              © {new Date().getFullYear()} Pipeline AI. All rights reserved.
+            </p>
+          </div>
         </div>
       </footer>
     </main>

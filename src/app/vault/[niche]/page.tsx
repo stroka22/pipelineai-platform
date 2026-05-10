@@ -136,10 +136,11 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
               Back to Home
             </Link>
             <Link 
-              href="https://calendly.com/brian-stroka22/30min"
-              className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all"
+              href={`/industries/${nicheSlug}`}
+              className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all flex items-center gap-2"
             >
-              Book a Call
+              <ShoppingBag className="w-4 h-4" />
+              Shop Vault
             </Link>
           </div>
         </div>
@@ -155,7 +156,7 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
             {niche?.name} Content <span className="text-[#C96A2B]">Vault</span>
           </h1>
           <p className="text-xl text-white/60 max-w-2xl mx-auto">
-            {niche?.description || `Preview our ready-to-customize ${niche?.name} content. Each piece gets branded with your logo, colors, and contact info before delivery.`}
+            {niche?.description || `Preview premium ${niche?.name} growth content. Purchase and download instantly to start posting today.`}
           </p>
         </div>
       </section>
@@ -244,11 +245,11 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                     <span className="text-xs font-semibold text-[#C96A2B] bg-[#C96A2B]/10 px-3 py-1 rounded-full">{item.category}</span>
                     <h3 className="text-lg font-bold text-white mt-3 mb-4">{item.title}</h3>
                     <Link
-                      href="https://calendly.com/brian-stroka22/30min"
+                      href={`/industries/${nicheSlug}`}
                       className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all w-full justify-center"
                     >
                       <ShoppingBag className="w-4 h-4" />
-                      Get This Customized
+                      Purchase This
                     </Link>
                   </div>
                 </div>
@@ -260,10 +261,11 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
 
       <section className="py-16 border-t border-white/10">
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to Stand Out on Social Media?</h2>
-          <p className="text-lg text-white/60 mb-8">Get professionally designed content customized with your branding.</p>
-          <Link href="https://calendly.com/brian-stroka22/30min" className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold hover:bg-[#B55D24] transition-all">
-            Book a Call
+          <h2 className="text-3xl font-bold text-white mb-4">Ready to Grow Your Social Media Presence?</h2>
+          <p className="text-lg text-white/60 mb-8">Purchase premium content and start posting today. Instant download after payment.</p>
+          <Link href={`/industries/${nicheSlug}`} className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold hover:bg-[#B55D24] transition-all inline-flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5" />
+            Shop This Vault
           </Link>
         </div>
       </section>
@@ -355,9 +357,9 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
           )}
           
           <div className="absolute bottom-6 right-6">
-            <Link href="https://calendly.com/brian-stroka22/30min" className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#B55D24] transition-all" onClick={(e) => e.stopPropagation()}>
+            <Link href={`/industries/${nicheSlug}`} className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#B55D24] transition-all" onClick={(e) => e.stopPropagation()}>
               <ShoppingBag className="w-5 h-5" />
-              Get This Customized
+              Purchase This
             </Link>
           </div>
         </div>
