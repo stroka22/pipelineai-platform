@@ -1,87 +1,58 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Sparkles, Play, ShoppingBag, Zap, ChevronRight, Eye, Star, Package, Film, Images, Image as ImageIcon, CheckCircle } from 'lucide-react';
+import { ArrowRight, Sparkles, ShoppingBag, Zap, ChevronRight, Eye, Star, Package, Images, Image as ImageIcon, CheckCircle } from 'lucide-react';
+import { supabase, Product } from '@/lib/supabase';
 
-const industryVaults = [
+const industryVaultsBase = [
   {
     name: 'Pest Control Growth Vault',
     slug: 'pest-control',
+    category: 'Pest Control',
     image: '🪲',
-    assetCount: 60,
     available: true,
     popular: true,
   },
   {
     name: 'Roofing Growth Vault',
     slug: 'roofing',
+    category: 'Roofing',
     image: '🏠',
-    assetCount: 50,
     available: true,
     popular: false,
   },
   {
     name: 'HVAC Growth Vault',
     slug: 'hvac',
+    category: 'HVAC',
     image: '❄️',
-    assetCount: 40,
     available: true,
     popular: false,
   },
   {
     name: 'Med Spa Growth Vault',
     slug: 'med-spa',
+    category: 'Med Spa',
     image: '💆',
-    assetCount: 0,
     available: false,
     popular: false,
   },
   {
     name: 'Mortgage Growth Vault',
     slug: 'mortgage',
+    category: 'Mortgage',
     image: '🏦',
-    assetCount: 0,
     available: false,
     popular: false,
   },
   {
     name: 'Real Estate Growth Vault',
     slug: 'real-estate',
+    category: 'Real Estate',
     image: '🔑',
-    assetCount: 0,
     available: false,
     popular: false,
-  },
-];
-
-const bestSellers = [
-  {
-    title: 'Termite Warning Signs',
-    category: 'Pest Control',
-    type: '10-Slide Carousel',
-    price: 127,
-    image: '🪵',
-  },
-  {
-    title: 'Roach Prevention Tips',
-    category: 'Pest Control',
-    type: '10-Slide Carousel',
-    price: 127,
-    image: '🪳',
-  },
-  {
-    title: 'Storm Damage Inspection',
-    category: 'Roofing',
-    type: '10-Slide Carousel',
-    price: 127,
-    image: '🏠',
-  },
-  {
-    title: 'AC Maintenance Guide',
-    category: 'HVAC',
-    type: '10-Slide Carousel',
-    price: 127,
-    image: '❄️',
   },
 ];
 
@@ -107,6 +78,61 @@ const pricing = [
 ];
 
 export default function HomePage() {
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [productCounts, setProductCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      // Fetch featured products for Best Sellers
+      const { data: featured } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .eq('is_featured', true)
+        .order('created_at', { ascending: false })
+        .limit(4);
+      
+      if (featured) setFeaturedProducts(featured);
+
+      // Fetch product counts per category
+      const { data: allProducts } = await supabase
+        .from('products')
+        .select('category')
+        .eq('is_active', true);
+      
+      if (allProducts) {
+        const counts: Record<string, number> = {};
+        allProducts.forEach(p => {
+          counts[p.category] = (counts[p.category] || 0) + 1;
+        });
+        setProductCounts(counts);
+      }
+      
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
+
+  // Merge vault data with dynamic counts
+  const industryVaults = industryVaultsBase.map(vault => ({
+    ...vault,
+    assetCount: productCounts[vault.category] || 0,
+  }));
+
+  const getCategoryIcon = (category: string) => {
+    const icons: Record<string, string> = {
+      'Pest Control': '🪲',
+      'Roofing': '🏠',
+      'HVAC': '❄️',
+      'Termites': '🪵',
+      'Roaches': '🪳',
+      'Rodents': '🐀',
+      'Mosquitoes': '🦟',
+    };
+    return icons[category] || '📦';
+  };
+
   return (
     <main className="min-h-screen bg-[#0a0a0a]">
       {/* Header */}
@@ -235,7 +261,11 @@ export default function HomePage() {
                 </h3>
                 
                 <p className={`text-sm mb-6 ${vault.available ? 'text-white/50' : 'text-white/30'}`}>
-                  {vault.available ? `${vault.assetCount}+ assets available` : 'Coming Soon'}
+                  {vault.available 
+                    ? vault.assetCount > 0 
+                      ? `${vault.assetCount} products available` 
+                      : 'Products coming soon'
+                    : 'Coming Soon'}
                 </p>
                 
                 {vault.available ? (
@@ -264,13 +294,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Best Selling Growth Content */}
+      {/* Best Selling Growth Content - Dynamic */}
       <section className="py-20 bg-[#111111]">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex items-center justify-between mb-12">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                Best Selling Growth Content
+                {featuredProducts.length > 0 ? 'Featured Growth Content' : 'Growth Content'}
               </h2>
               <p className="text-white/50">
                 Top-performing social media assets
@@ -285,32 +315,71 @@ export default function HomePage() {
             </Link>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {bestSellers.map((item, i) => (
-              <div 
-                key={i}
-                className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden group hover:border-[#C96A2B]/50 transition-all"
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#C96A2B]"></div>
+            </div>
+          ) : featuredProducts.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <div 
+                  key={product.id}
+                  className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden group hover:border-[#C96A2B]/50 transition-all"
+                >
+                  <div className="aspect-square bg-gradient-to-br from-[#C96A2B]/20 to-[#081F33] flex items-center justify-center relative">
+                    <span className="text-6xl opacity-50 group-hover:opacity-70 transition-opacity">
+                      {getCategoryIcon(product.category)}
+                    </span>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Eye className="w-8 h-8 text-white" />
+                    </div>
+                    {product.is_featured && (
+                      <div className="absolute top-3 left-3 bg-[#C96A2B] text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                        FEATURED
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <span className="text-xs font-semibold text-[#C96A2B]">
+                      {product.product_type === 'carousel' ? `${product.items_count}-Slide Carousel` : product.product_type}
+                    </span>
+                    <h3 className="text-white font-bold mt-1 mb-3 line-clamp-1">{product.title}</h3>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold text-white">${product.price}</span>
+                      {product.stripe_link ? (
+                        <Link
+                          href={product.stripe_link}
+                          className="bg-[#C96A2B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#B55D24] transition-all flex items-center gap-1"
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                          Buy
+                        </Link>
+                      ) : (
+                        <Link
+                          href={`/industries/${product.category?.toLowerCase().replace(' ', '-') || 'pest-control'}`}
+                          className="bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white/20 transition-all flex items-center gap-1"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-white/50 mb-6">Featured products coming soon!</p>
+              <Link
+                href="/industries/pest-control"
+                className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#B55D24] transition-all"
               >
-                <div className="aspect-square bg-gradient-to-br from-[#C96A2B]/20 to-[#081F33] flex items-center justify-center relative">
-                  <span className="text-6xl opacity-50 group-hover:opacity-70 transition-opacity">{item.image}</span>
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Eye className="w-8 h-8 text-white" />
-                  </div>
-                </div>
-                <div className="p-5">
-                  <span className="text-xs font-semibold text-[#C96A2B]">{item.type}</span>
-                  <h3 className="text-white font-bold mt-1 mb-3">{item.title}</h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-white">${item.price}</span>
-                    <button className="bg-[#C96A2B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#B55D24] transition-all flex items-center gap-1">
-                      <ShoppingBag className="w-4 h-4" />
-                      Add
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                Browse All Products
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
@@ -332,7 +401,7 @@ export default function HomePage() {
                 step: '01', 
                 icon: Eye,
                 title: 'Browse Vault', 
-                desc: 'Explore industry-specific content packs, carousels, reels, and cinematic videos' 
+                desc: 'Explore industry-specific content packs and carousels' 
               },
               { 
                 step: '02', 
