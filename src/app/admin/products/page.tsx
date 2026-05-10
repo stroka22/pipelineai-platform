@@ -58,13 +58,13 @@ export default function ProductsPage() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${formData.category || 'products'}/${Date.now()}-${i}-${file.name}`;
       
-      const { error } = await supabase.storage.from('vault').upload(fileName, file);
+      const { error } = await supabase.storage.from('Vault').upload(fileName, file);
       
       if (error) {
         console.error('Upload error:', error);
         alert(`Error uploading ${file.name}: ${error.message}`);
       } else {
-        const { data: { publicUrl } } = supabase.storage.from('vault').getPublicUrl(fileName);
+        const { data: { publicUrl } } = supabase.storage.from('Vault').getPublicUrl(fileName);
         newFiles.push(publicUrl);
       }
     }

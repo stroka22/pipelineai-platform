@@ -65,13 +65,13 @@ export default function VaultAdminPage() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${formData.niche}/${formData.category || 'general'}/${Date.now()}-${i}.${fileExt}`;
       
-      const { error } = await supabase.storage.from('vault').upload(fileName, file);
+      const { error } = await supabase.storage.from('Vault').upload(fileName, file);
       
       if (error) {
         console.error('Upload error:', error);
         alert(`Error uploading ${file.name}: ${error.message}`);
       } else {
-        const { data: { publicUrl } } = supabase.storage.from('vault').getPublicUrl(fileName);
+        const { data: { publicUrl } } = supabase.storage.from('Vault').getPublicUrl(fileName);
         newImages.push(publicUrl);
       }
     }
