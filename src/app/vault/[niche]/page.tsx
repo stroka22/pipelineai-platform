@@ -392,10 +392,17 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
           )}
           
           <div className="absolute bottom-6 right-6">
-            <Link href={`/industries/${nicheSlug}`} className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#B55D24] transition-all" onClick={(e) => e.stopPropagation()}>
-              <ShoppingBag className="w-5 h-5" />
-              Purchase This
-            </Link>
+            {previewItem.stripe_link ? (
+              <Link href={previewItem.stripe_link} className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#B55D24] transition-all" onClick={(e) => e.stopPropagation()}>
+                <ShoppingBag className="w-5 h-5" />
+                Buy Now {previewItem.price && `- $${previewItem.price}`}
+              </Link>
+            ) : (
+              <span className="inline-flex items-center gap-2 bg-white/20 text-white/70 px-6 py-3 rounded-xl font-semibold">
+                <ShoppingBag className="w-5 h-5" />
+                Coming Soon
+              </span>
+            )}
           </div>
         </div>
       )}
