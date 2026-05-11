@@ -89,6 +89,7 @@ export interface VaultItem {
   slide_count: number;
   folder_path: string;
   images: string[];
+  download_files?: string[];
   product_id?: string;
   price?: number;
   stripe_link?: string;
@@ -96,6 +97,19 @@ export interface VaultItem {
   display_order: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface Purchase {
+  id: string;
+  stripe_session_id: string;
+  stripe_payment_intent?: string;
+  customer_email: string;
+  vault_item_id: string;
+  amount_paid: number;
+  currency: string;
+  status: string;
+  download_count: number;
+  created_at: string;
 }
 
 export interface Niche {

@@ -35,6 +35,8 @@ export default function VaultAdminPage() {
   
   const [newNiche, setNewNiche] = useState({ name: '', slug: '', description: '' });
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [downloadFiles, setDownloadFiles] = useState<string[]>([]);
+  const [uploadingDownloads, setUploadingDownloads] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -101,6 +103,38 @@ export default function VaultAdminPage() {
     setUploadedImages(newImages);
   }
 
+  async function handleDownloadFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingDownloads(true);
+    const newFiles: string[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `downloads/${formData.niche}/${Date.now()}-${i}.${fileExt}`;
+      
+      const { error } = await supabase.storage.from('downloads').upload(fileName, file);
+      
+      if (error) {
+        console.error('Upload error:', error);
+        alert(`Error uploading ${file.name}: ${error.message}`);
+      } else {
+        const { data: { publicUrl } } = supabase.storage.from('downloads').getPublicUrl(fileName);
+        newFiles.push(publicUrl);
+      }
+    }
+    
+    setDownloadFiles(prev => [...prev, ...newFiles]);
+    setUploadingDownloads(false);
+    e.target.value = '';
+  }
+
+  function removeDownloadFile(index: number) {
+    setDownloadFiles(prev => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSave() {
     if (uploadedImages.length === 0 && !editingItem) {
       alert('Please upload at least one image or video');
@@ -115,6 +149,7 @@ export default function VaultAdminPage() {
       slide_count: uploadedImages.length || editingItem?.slide_count || 0,
       folder_path: '',
       images: uploadedImages.length > 0 ? uploadedImages : editingItem?.images || [],
+      download_files: downloadFiles.length > 0 ? downloadFiles : editingItem?.download_files || [],
       price: formData.price ? parseFloat(formData.price) : null,
       stripe_link: formData.stripe_link || null,
       is_active: formData.is_active,
@@ -177,6 +212,7 @@ export default function VaultAdminPage() {
       display_order: item.display_order,
     });
     setUploadedImages(item.images);
+    setDownloadFiles(item.download_files || []);
     setIsCreating(true);
   }
 
@@ -192,6 +228,7 @@ export default function VaultAdminPage() {
       display_order: 0,
     });
     setUploadedImages([]);
+    setDownloadFiles([]);
     setEditingItem(null);
   }
 
@@ -466,6 +503,56 @@ export default function VaultAdminPage() {
                         </button>
                       </div>
                       <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">{index + 1}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Download Files Section */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-[#081F33] mb-2">
+                Download Files (clean, no watermark) - {downloadFiles.length} uploaded
+              </label>
+              <p className="text-xs text-[#9CA3AF] mb-3">
+                These are the files customers receive after purchase. Upload the same images without watermarks.
+              </p>
+              
+              <div className="border-2 border-dashed border-green-300 bg-green-50 rounded-xl p-6 text-center hover:border-green-500 transition-colors mb-4">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={handleDownloadFileUpload}
+                  className="hidden"
+                  id="download-upload"
+                  disabled={uploadingDownloads}
+                />
+                <label htmlFor="download-upload" className="cursor-pointer">
+                  {uploadingDownloads ? (
+                    <div className="flex flex-col items-center">
+                      <Loader2 className="w-10 h-10 text-green-600 animate-spin mb-2" />
+                      <p className="text-sm text-green-700">Uploading...</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <Upload className="w-10 h-10 text-green-600 mb-2" />
+                      <p className="text-sm text-green-700">
+                        <span className="font-semibold">Upload clean files</span> for customer download
+                      </p>
+                    </div>
+                  )}
+                </label>
+              </div>
+              
+              {downloadFiles.length > 0 && (
+                <div className="space-y-2">
+                  {downloadFiles.map((url, index) => (
+                    <div key={index} className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+                      <span className="text-sm text-green-800 truncate flex-1">File {index + 1}</span>
+                      <button onClick={() => removeDownloadFile(index)} className="p-1 text-red-500 hover:bg-red-100 rounded">
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
                 </div>
