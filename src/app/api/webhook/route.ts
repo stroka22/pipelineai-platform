@@ -73,34 +73,39 @@ export async function POST(request: NextRequest) {
               <meta charset="utf-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
             </head>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #081F33; margin: 0; padding: 40px 20px;">
-              <div style="max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #0a2540 0%, #081F33 100%); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-                <div style="padding: 40px; text-align: center;">
-                  <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 8px;">Pipeline <span style="color: #C96A2B;">AI</span></h1>
-                  <p style="color: rgba(255,255,255,0.5); margin: 0; font-size: 14px;">Premium Social Media Content</p>
+            <body style="font-family: Arial, Helvetica, sans-serif; background-color: #f5f5f5; margin: 0; padding: 40px 20px;">
+              <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                
+                <div style="background-color: #081F33; padding: 32px; text-align: center;">
+                  <h1 style="color: #ffffff; font-size: 28px; margin: 0;">Pipeline <span style="color: #C96A2B;">AI</span></h1>
+                  <p style="color: #9ca3af; margin: 8px 0 0; font-size: 14px;">Premium Social Media Content</p>
                 </div>
                 
-                <div style="padding: 0 40px 40px;">
-                  <div style="background: rgba(201,106,43,0.1); border: 1px solid rgba(201,106,43,0.3); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
-                    <p style="color: #22c55e; font-size: 14px; font-weight: 600; margin: 0 0 8px;">✓ Payment Successful</p>
-                    <h2 style="color: #ffffff; font-size: 20px; margin: 0;">${itemTitle}</h2>
+                <div style="padding: 40px;">
+                  <div style="background-color: #ecfdf5; border: 2px solid #22c55e; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+                    <p style="color: #22c55e; font-size: 16px; font-weight: bold; margin: 0;">✓ Payment Successful</p>
                   </div>
                   
-                  <p style="color: rgba(255,255,255,0.7); font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
+                  <div style="background-color: #f8f9fa; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+                    <p style="color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px;">Your Purchase</p>
+                    <h2 style="color: #081F33; font-size: 22px; font-weight: bold; margin: 0;">${itemTitle}</h2>
+                  </div>
+                  
+                  <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 24px; text-align: center;">
                     Thank you for your purchase! Your content is ready to download. Click the button below to access your files.
                   </p>
                   
-                  <a href="${downloadUrl}" style="display: block; background: #C96A2B; color: #ffffff; text-decoration: none; padding: 16px 24px; border-radius: 12px; font-weight: 600; font-size: 16px; text-align: center;">
+                  <a href="${downloadUrl}" style="display: block; background-color: #C96A2B; color: #ffffff; text-decoration: none; padding: 18px 24px; border-radius: 12px; font-weight: bold; font-size: 16px; text-align: center;">
                     Download Your Files
                   </a>
                   
-                  <p style="color: rgba(255,255,255,0.4); font-size: 13px; margin: 24px 0 0; text-align: center;">
-                    Bookmark this email to access your download anytime.
+                  <p style="color: #9ca3af; font-size: 13px; margin: 24px 0 0; text-align: center;">
+                    Save this email to access your download anytime.
                   </p>
                 </div>
                 
-                <div style="background: rgba(0,0,0,0.2); padding: 20px 40px; text-align: center;">
-                  <p style="color: rgba(255,255,255,0.4); font-size: 12px; margin: 0;">
+                <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+                  <p style="color: #9ca3af; font-size: 12px; margin: 0;">
                     © ${new Date().getFullYear()} Pipeline AI. All rights reserved.
                   </p>
                 </div>
