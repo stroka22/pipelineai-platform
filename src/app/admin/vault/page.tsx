@@ -8,6 +8,12 @@ import Image from 'next/image';
 
 const CONTENT_TYPES = ['carousel', 'reel', 'video', 'image'] as const;
 
+const CATEGORIES_BY_NICHE: Record<string, string[]> = {
+  'pest-control': ['Termites', 'Roaches', 'Rodents', 'Mosquitoes', 'Ants', 'Bed Bugs', 'General'],
+  'hvac': ['AC Repair', 'Heating', 'Maintenance', 'Installation', 'Energy Efficiency', 'General'],
+  'roofing': ['Storm Damage', 'Repairs', 'Replacement', 'Inspection', 'Materials', 'General'],
+};
+
 export default function VaultAdminPage() {
   const [items, setItems] = useState<VaultItem[]>([]);
   const [niches, setNiches] = useState<Niche[]>([]);
@@ -333,13 +339,16 @@ export default function VaultAdminPage() {
             
             <div>
               <label className="block text-sm font-medium text-[#081F33] mb-2">Category *</label>
-              <input
-                type="text"
+              <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
-                placeholder="e.g., Roaches, AC Repair, Storm Damage"
-              />
+              >
+                <option value="">Select a category</option>
+                {(CATEGORIES_BY_NICHE[formData.niche] || ['General']).map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
             </div>
             
             <div>
