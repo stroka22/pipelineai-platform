@@ -222,13 +222,20 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                         <Image src={item.images[0]} alt={item.title} fill className="object-cover" draggable={false} />
                       )}
                       {/* Tiled watermark pattern */}
-                      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                        <div className="absolute inset-0 flex flex-col justify-around">
-                          {[0, 1, 2, 3].map((row) => (
+                      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+                        <div className="absolute inset-0 flex flex-col justify-around py-4">
+                          {[0, 1, 2, 3, 4, 5].map((row) => (
                             <div key={row} className="flex justify-around">
-                              {[0, 1, 2].map((col) => (
-                                <div key={col} className="text-white/30 text-2xl font-bold rotate-[-30deg] whitespace-nowrap">
-                                  PIPELINE AI
+                              {[0, 1, 2, 3].map((col) => (
+                                <div 
+                                  key={col} 
+                                  className="text-white font-black rotate-[-30deg] whitespace-nowrap text-lg"
+                                  style={{ 
+                                    textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+                                    opacity: 0.5
+                                  }}
+                                >
+                                  PREVIEW
                                 </div>
                               ))}
                             </div>
@@ -334,11 +341,18 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                 {/* Tiled watermark pattern */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
                   <div className="absolute inset-0 flex flex-col justify-around py-8">
-                    {[0, 1, 2, 3, 4].map((row) => (
+                    {[0, 1, 2, 3, 4, 5, 6].map((row) => (
                       <div key={row} className="flex justify-around">
-                        {[0, 1, 2, 3].map((col) => (
-                          <div key={col} className="text-white/35 text-3xl font-bold rotate-[-30deg] whitespace-nowrap">
-                            PIPELINE AI
+                        {[0, 1, 2, 3, 4].map((col) => (
+                          <div 
+                            key={col} 
+                            className="text-white font-black rotate-[-30deg] whitespace-nowrap text-2xl md:text-3xl"
+                            style={{ 
+                              textShadow: '2px 2px 6px rgba(0,0,0,0.9)',
+                              opacity: 0.6
+                            }}
+                          >
+                            PREVIEW
                           </div>
                         ))}
                       </div>

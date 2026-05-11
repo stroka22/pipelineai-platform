@@ -70,6 +70,16 @@ export interface Coupon {
   created_at: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  niche_slug: string;
+  icon?: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
 export interface VaultItem {
   id: string;
   title: string;

@@ -11,36 +11,36 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { supabase, VaultItem } from '@/lib/supabase';
+import { supabase, VaultItem, Category } from '@/lib/supabase';
 import Image from 'next/image';
-
-const vaultCategories = [
-  { name: 'Termites', icon: '🪵', slug: 'Termites' },
-  { name: 'Roaches', icon: '🪳', slug: 'Roaches' },
-  { name: 'Rodents', icon: '🐀', slug: 'Rodents' },
-  { name: 'Mosquitoes', icon: '🦟', slug: 'Mosquitoes' },
-  { name: 'Ants', icon: '🐜', slug: 'Ants' },
-  { name: 'Bed Bugs', icon: '🛏️', slug: 'Bed Bugs' },
-  { name: 'General', icon: '🏠', slug: 'General' },
-];
 
 export default function PestControlPage() {
   const [vaultItems, setVaultItems] = useState<VaultItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchVaultItems() {
-      const { data } = await supabase
-        .from('vault_items')
-        .select('*')
-        .eq('is_active', true)
-        .eq('niche', 'pest-control')
-        .order('display_order');
+    async function fetchData() {
+      const [itemsRes, catsRes] = await Promise.all([
+        supabase
+          .from('vault_items')
+          .select('*')
+          .eq('is_active', true)
+          .eq('niche', 'pest-control')
+          .order('display_order'),
+        supabase
+          .from('categories')
+          .select('*')
+          .eq('niche_slug', 'pest-control')
+          .eq('is_active', true)
+          .order('display_order')
+      ]);
       
-      if (data) setVaultItems(data);
+      if (itemsRes.data) setVaultItems(itemsRes.data);
+      if (catsRes.data) setCategories(catsRes.data);
       setLoading(false);
     }
-    fetchVaultItems();
+    fetchData();
   }, []);
 
   return (
@@ -140,13 +140,13 @@ export default function PestControlPage() {
             </Link>
           </div>
           <div className="flex flex-wrap gap-3">
-            {vaultCategories.map((cat) => (
+            {categories.map((cat) => (
               <Link
-                key={cat.slug}
-                href={`/vault/pest-control?category=${encodeURIComponent(cat.slug)}`}
+                key={cat.id}
+                href={`/vault/pest-control?category=${encodeURIComponent(cat.name)}`}
                 className="flex items-center gap-3 bg-white/5 border border-white/10 hover:border-[#C96A2B]/50 rounded-xl px-5 py-3 transition-all group"
               >
-                <span className="text-2xl">{cat.icon}</span>
+                <span className="text-2xl">{cat.icon || '📁'}</span>
                 <span className="text-white font-semibold text-sm group-hover:text-[#C96A2B] transition-colors">
                   {cat.name}
                 </span>
