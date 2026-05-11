@@ -5,14 +5,24 @@ import {
   ArrowRight, 
   Check, 
   Sparkles, 
-  Star,
   Download,
   Eye,
   ShoppingBag,
+  ChevronRight,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase, VaultItem } from '@/lib/supabase';
 import Image from 'next/image';
+
+const vaultCategories = [
+  { name: 'Termites', icon: '🪵', slug: 'Termites' },
+  { name: 'Roaches', icon: '🪳', slug: 'Roaches' },
+  { name: 'Rodents', icon: '🐀', slug: 'Rodents' },
+  { name: 'Mosquitoes', icon: '🦟', slug: 'Mosquitoes' },
+  { name: 'Ants', icon: '🐜', slug: 'Ants' },
+  { name: 'Bed Bugs', icon: '🛏️', slug: 'Bed Bugs' },
+  { name: 'General', icon: '🏠', slug: 'General' },
+];
 
 export default function PestControlPage() {
   const [vaultItems, setVaultItems] = useState<VaultItem[]>([]);
@@ -112,6 +122,36 @@ export default function PestControlPage() {
                 {vaultItems.length} Items Available
               </span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Category Buttons */}
+      <section className="py-12 bg-[#0a0a0a] border-t border-white/5">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white">Browse by Category</h2>
+            <Link 
+              href="/vault/pest-control"
+              className="text-[#C96A2B] text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all"
+            >
+              View All
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {vaultCategories.map((cat) => (
+              <Link
+                key={cat.slug}
+                href={`/vault/pest-control?category=${encodeURIComponent(cat.slug)}`}
+                className="flex items-center gap-3 bg-white/5 border border-white/10 hover:border-[#C96A2B]/50 rounded-xl px-5 py-3 transition-all group"
+              >
+                <span className="text-2xl">{cat.icon}</span>
+                <span className="text-white font-semibold text-sm group-hover:text-[#C96A2B] transition-colors">
+                  {cat.name}
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>

@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import { Lock, ChevronLeft, ChevronRight, X, ShoppingBag, Eye, Shield, Loader2, Play, AlertTriangle } from 'lucide-react';
 import { supabase, VaultItem, Niche } from '@/lib/supabase';
 
@@ -12,13 +13,15 @@ function isVideo(url: string): boolean {
 
 export default function VaultPage({ params }: { params: Promise<{ niche: string }> }) {
   const { niche: nicheSlug } = use(params);
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get('category');
   
   const [niche, setNiche] = useState<Niche | null>(null);
   const [items, setItems] = useState<VaultItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [categories, setCategories] = useState<{name: string; count: number}[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState(categoryParam || 'All');
   const [previewItem, setPreviewItem] = useState<VaultItem | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
