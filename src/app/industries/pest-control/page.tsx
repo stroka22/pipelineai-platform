@@ -5,50 +5,32 @@ import {
   ArrowRight, 
   Check, 
   Sparkles, 
-  ChevronRight,
   Star,
-  Zap,
   Download,
   Eye,
   ShoppingBag,
-  Package,
-  Image as ImageIcon,
-  Images
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { supabase, Product } from '@/lib/supabase';
-
-const vaultCategories = [
-  { name: 'Termite Pack', icon: '🪵', count: 12, slug: 'termites' },
-  { name: 'Roach Pack', icon: '🪳', count: 10, slug: 'roaches' },
-  { name: 'Rodent Pack', icon: '🐀', count: 10, slug: 'rodents' },
-  { name: 'Mosquito Pack', icon: '🦟', count: 8, slug: 'mosquitoes' },
-  { name: 'Ant Pack', icon: '🐜', count: 8, slug: 'ants' },
-];
-
-const pricing = {
-  singleImage: { price: 15, link: 'https://buy.stripe.com/7sY5kE5SCajb73Ifd83cc03' },
-  fiveSlide: { price: 57, link: 'https://buy.stripe.com/fZubJ2ftcezr87M8OK3cc02' },
-  tenSlide: { price: 127, link: 'https://buy.stripe.com/6oU28s6WG2QJ1Jo3uq3cc04' },
-};
+import { supabase, VaultItem } from '@/lib/supabase';
+import Image from 'next/image';
 
 export default function PestControlPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [vaultItems, setVaultItems] = useState<VaultItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchProducts() {
+    async function fetchVaultItems() {
       const { data } = await supabase
-        .from('products')
+        .from('vault_items')
         .select('*')
         .eq('is_active', true)
-        .eq('category', 'Pest Control')
-        .order('is_featured', { ascending: false });
+        .eq('niche', 'pest-control')
+        .order('display_order');
       
-      if (data) setProducts(data);
+      if (data) setVaultItems(data);
       setLoading(false);
     }
-    fetchProducts();
+    fetchVaultItems();
   }, []);
 
   return (
@@ -60,14 +42,11 @@ export default function PestControlPage() {
             Pipeline <span className="text-[#C96A2B]">AI</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
+            <Link href="/" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
+              Home
+            </Link>
             <Link href="/#vaults" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
               All Vaults
-            </Link>
-            <Link href="#content" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
-              Browse Content
-            </Link>
-            <Link href="#pricing" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
-              Pricing
             </Link>
           </nav>
           <Link 
@@ -115,7 +94,7 @@ export default function PestControlPage() {
                 className="bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all inline-flex items-center justify-center gap-2"
               >
                 <Eye className="w-5 h-5" />
-                Preview Vault
+                Preview with Watermarks
               </Link>
             </div>
             
@@ -130,100 +109,9 @@ export default function PestControlPage() {
               </span>
               <span className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                50+ Assets Available
+                {vaultItems.length} Items Available
               </span>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Category Navigation */}
-      <section className="py-8 bg-[#111111] border-y border-white/5">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex flex-wrap justify-center gap-4">
-            {vaultCategories.map((cat) => (
-              <Link
-                key={cat.slug}
-                href={`/vault/pest-control`}
-                className="flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-3 rounded-xl hover:border-[#C96A2B]/50 transition-all group"
-              >
-                <span className="text-2xl">{cat.icon}</span>
-                <div>
-                  <div className="text-white font-semibold text-sm group-hover:text-[#C96A2B] transition-colors">{cat.name}</div>
-                  <div className="text-white/40 text-xs">{cat.count} assets</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Grid */}
-      <section id="pricing" className="py-20 bg-[#0a0a0a]">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Simple Pricing
-            </h2>
-            <p className="text-white/50 text-lg">
-              Pay once. Download instantly. Post forever.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6 mb-12 max-w-3xl mx-auto">
-            <Link href={pricing.singleImage.link} className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center hover:border-[#C96A2B]/50 transition-all group">
-              <div className="w-12 h-12 bg-[#C96A2B]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <ImageIcon className="w-6 h-6 text-[#C96A2B]" />
-              </div>
-              <h3 className="text-white font-bold mb-1">Single Image</h3>
-              <p className="text-white/40 text-xs mb-4">Premium social image</p>
-              <div className="text-3xl font-bold text-white mb-3">${pricing.singleImage.price}</div>
-              <span className="text-[#C96A2B] text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Buy Now →</span>
-            </Link>
-            
-            <Link href={pricing.fiveSlide.link} className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center hover:border-[#C96A2B]/50 transition-all group">
-              <div className="w-12 h-12 bg-[#C96A2B]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Images className="w-6 h-6 text-[#C96A2B]" />
-              </div>
-              <h3 className="text-white font-bold mb-1">5-Slide Carousel</h3>
-              <p className="text-white/40 text-xs mb-4">Growth carousel</p>
-              <div className="text-3xl font-bold text-white mb-3">${pricing.fiveSlide.price}</div>
-              <span className="text-[#C96A2B] text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Buy Now →</span>
-            </Link>
-            
-            <Link href={pricing.tenSlide.link} className="bg-[#C96A2B]/10 border border-[#C96A2B]/30 rounded-2xl p-6 text-center relative group">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#C96A2B] text-white text-xs font-bold px-3 py-1 rounded-full">
-                POPULAR
-              </div>
-              <div className="w-12 h-12 bg-[#C96A2B]/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Package className="w-6 h-6 text-[#C96A2B]" />
-              </div>
-              <h3 className="text-white font-bold mb-1">10-Slide Carousel</h3>
-              <p className="text-white/40 text-xs mb-4">Premium authority</p>
-              <div className="text-3xl font-bold text-white mb-3">${pricing.tenSlide.price}</div>
-              <span className="text-[#C96A2B] text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Buy Now →</span>
-            </Link>
-          </div>
-          
-          {/* Bundle Offer */}
-          <div className="bg-gradient-to-r from-[#C96A2B]/20 to-[#C96A2B]/5 border border-[#C96A2B]/30 rounded-2xl p-8 text-center">
-            <div className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-4 py-1.5 rounded-full text-sm font-bold mb-4">
-              <Zap className="w-4 h-4" />
-              BUNDLE DEAL
-            </div>
-            <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
-              Buy Any 2 Premium 10-Slide Carousels, Get 1 Free
-            </h3>
-            <p className="text-white/60 mb-6">
-              Stack your content library and save $97
-            </p>
-            <Link 
-              href="/vault/pest-control"
-              className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold hover:bg-[#B55D24] transition-all"
-            >
-              Browse & Build Bundle
-              <ArrowRight className="w-5 h-5" />
-            </Link>
           </div>
         </div>
       </section>
@@ -231,78 +119,68 @@ export default function PestControlPage() {
       {/* Content Grid */}
       <section id="content" className="py-20 bg-[#111111]">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                Browse Growth Content
-              </h2>
-              <p className="text-white/50">
-                Premium pest control social media assets
-              </p>
-            </div>
-            <Link 
-              href="/vault/pest-control"
-              className="hidden md:flex items-center gap-2 text-[#C96A2B] font-semibold hover:gap-3 transition-all"
-            >
-              Preview All
-              <ChevronRight className="w-5 h-5" />
-            </Link>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Browse & Buy
+            </h2>
+            <p className="text-white/50 text-lg">
+              Click any item to preview, then buy and download instantly
+            </p>
           </div>
           
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C96A2B]"></div>
             </div>
-          ) : products.length > 0 ? (
+          ) : vaultItems.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((product) => (
+              {vaultItems.map((item) => (
                 <div 
-                  key={product.id}
+                  key={item.id}
                   className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden group hover:border-[#C96A2B]/50 transition-all"
                 >
-                  <div className="aspect-square bg-gradient-to-br from-[#C96A2B]/20 to-[#081F33] flex items-center justify-center relative">
-                    <span className="text-7xl opacity-40 group-hover:opacity-60 transition-opacity">
-                      {product.product_type === 'reel' ? '🎬' : '🪲'}
-                    </span>
-                    {product.is_featured && (
-                      <div className="absolute top-4 left-4 bg-[#C96A2B] text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                        <Star className="w-3 h-3" fill="white" />
-                        FEATURED
+                  <div className="aspect-square bg-gradient-to-br from-[#C96A2B]/20 to-[#081F33] relative overflow-hidden">
+                    {item.images[0] && (
+                      <Image 
+                        src={item.images[0]} 
+                        alt={item.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-all" />
+                    <div className="absolute top-4 left-4 bg-[#C96A2B] text-white text-xs font-bold px-3 py-1 rounded-full">
+                      {item.content_type === 'image' ? 'Single Image' : `${item.slide_count} Slides`}
+                    </div>
+                    {item.price && (
+                      <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-sm text-white text-lg font-bold px-3 py-1 rounded-full">
+                        ${item.price}
                       </div>
                     )}
-                    <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full text-white text-xs">
-                      {product.items_count} {product.product_type === 'carousel' ? 'slides' : 'sec'}
-                    </div>
                   </div>
                   <div className="p-6">
-                    <span className="text-xs font-semibold text-[#C96A2B] uppercase">
-                      {product.product_type.replace('_', ' ')}
-                    </span>
-                    <h3 className="text-white font-bold text-lg mt-1 mb-2">{product.title}</h3>
-                    <p className="text-white/50 text-sm mb-4 line-clamp-2">{product.description}</p>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-2xl font-bold text-white">${product.price}</span>
-                        {product.sale_price && (
-                          <span className="text-sm text-white/40 line-through ml-2">${product.sale_price}</span>
-                        )}
-                      </div>
-                      {product.stripe_link ? (
+                    <span className="text-xs font-semibold text-[#C96A2B] uppercase">{item.category}</span>
+                    <h3 className="text-white font-bold text-lg mt-1 mb-4">{item.title}</h3>
+                    <div className="flex gap-3">
+                      <Link
+                        href="/vault/pest-control"
+                        className="flex-1 bg-white/10 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Preview
+                      </Link>
+                      {item.stripe_link ? (
                         <Link
-                          href={product.stripe_link}
-                          className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#B55D24] transition-all flex items-center gap-2"
+                          href={item.stripe_link}
+                          className="flex-1 bg-[#C96A2B] text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#B55D24] transition-all flex items-center justify-center gap-2"
                         >
                           <ShoppingBag className="w-4 h-4" />
                           Buy Now
                         </Link>
                       ) : (
-                        <Link
-                          href="/vault/pest-control"
-                          className="bg-white/10 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-white/20 transition-all flex items-center gap-2"
-                        >
-                          <Eye className="w-4 h-4" />
-                          Preview
-                        </Link>
+                        <span className="flex-1 bg-white/5 text-white/50 px-4 py-2.5 rounded-lg text-sm font-semibold text-center">
+                          Coming Soon
+                        </span>
                       )}
                     </div>
                   </div>
@@ -311,7 +189,7 @@ export default function PestControlPage() {
             </div>
           ) : (
             <div className="text-center py-16">
-              <p className="text-white/50 mb-6">Products coming soon! Preview the vault to see what&apos;s available.</p>
+              <p className="text-white/50 mb-6">No content available yet. Check back soon!</p>
               <Link
                 href="/vault/pest-control"
                 className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#B55D24] transition-all"
@@ -341,14 +219,14 @@ export default function PestControlPage() {
               { 
                 step: '01', 
                 icon: Eye,
-                title: 'Browse & Preview', 
-                desc: 'Explore premium pest control carousels in the vault' 
+                title: 'Preview Content', 
+                desc: 'Browse watermarked previews to see what you\'re getting' 
               },
               { 
                 step: '02', 
                 icon: ShoppingBag,
-                title: 'Purchase Content', 
-                desc: 'One-time payment via Stripe. No subscriptions required.' 
+                title: 'Buy Instantly', 
+                desc: 'One-time payment via Stripe. No subscriptions.' 
               },
               { 
                 step: '03', 
@@ -382,15 +260,13 @@ export default function PestControlPage() {
             growth content designed to make your company stand out.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="/vault/pest-control"
-              className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all inline-flex items-center justify-center gap-2 group"
-            >
-              Browse Pest Control Vault
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
+          <Link 
+            href="#content"
+            className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all inline-flex items-center justify-center gap-2 group"
+          >
+            Browse Content
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </Link>
         </div>
       </section>
 
