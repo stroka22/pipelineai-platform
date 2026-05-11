@@ -28,7 +28,6 @@ export default function VaultAdminPage() {
     category: '',
     content_type: 'carousel' as typeof CONTENT_TYPES[number],
     price: '',
-    stripe_link: '',
     is_active: true,
     display_order: 0,
   });
@@ -119,7 +118,6 @@ export default function VaultAdminPage() {
       images: uploadedImages.length > 0 ? uploadedImages : editingItem?.images || [],
 
       price: formData.price ? parseFloat(formData.price) : null,
-      stripe_link: formData.stripe_link || null,
       is_active: formData.is_active,
       display_order: formData.display_order,
     };
@@ -175,7 +173,6 @@ export default function VaultAdminPage() {
       category: item.category,
       content_type: item.content_type as typeof CONTENT_TYPES[number],
       price: item.price?.toString() || '',
-      stripe_link: item.stripe_link || '',
       is_active: item.is_active,
       display_order: item.display_order,
     });
@@ -191,7 +188,6 @@ export default function VaultAdminPage() {
       category: '',
       content_type: 'carousel',
       price: '',
-      stripe_link: '',
       is_active: true,
       display_order: 0,
     });
@@ -383,16 +379,7 @@ export default function VaultAdminPage() {
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-[#081F33] mb-2">Stripe Payment Link</label>
-              <input
-                type="url"
-                value={formData.stripe_link}
-                onChange={(e) => setFormData({ ...formData, stripe_link: e.target.value })}
-                className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
-                placeholder="https://buy.stripe.com/..."
-              />
-            </div>
+
             
             <div>
               <label className="block text-sm font-medium text-[#081F33] mb-2">Display Order</label>
