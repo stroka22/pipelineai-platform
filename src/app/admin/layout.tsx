@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
-  Package, 
   ShoppingCart, 
   Users, 
   Ticket,
@@ -18,10 +17,9 @@ import {
 
 const navItems = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Products', href: '/admin/products', icon: Package },
+  { name: 'Vault', href: '/admin/vault', icon: FolderLock },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Leads', href: '/admin/leads', icon: Users },
-  { name: 'Vault', href: '/admin/vault', icon: FolderLock },
   { name: 'Coupons', href: '/admin/coupons', icon: Ticket },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
