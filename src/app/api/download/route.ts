@@ -42,10 +42,10 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Fetch vault item with download files
+    // Fetch vault item
     const { data: item, error } = await supabase
       .from('vault_items')
-      .select('title, category, content_type, download_files')
+      .select('title, category, content_type, images')
       .eq('id', vaultItemId)
       .single();
 
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
         title: item.title,
         category: item.category,
         content_type: item.content_type,
-        download_files: item.download_files || [],
+        download_files: item.images || [],
       },
       customer_email: session.customer_details?.email,
     });
