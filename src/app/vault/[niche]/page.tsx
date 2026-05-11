@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { Lock, ChevronLeft, ChevronRight, X, ShoppingBag, Eye, Shield, Loader2, Play, AlertTriangle } from 'lucide-react';
 import { supabase, VaultItem, Niche } from '@/lib/supabase';
+import BuyButton from '@/components/BuyButton';
 
 function isVideo(url: string): boolean {
   return /\.(mp4|webm|mov|avi)$/i.test(url);
@@ -262,23 +263,26 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                       )}
                     </div>
                     <h3 className="text-lg font-bold text-white mb-4">{item.title}</h3>
-                    {item.stripe_link ? (
-                      <Link
-                        href={item.stripe_link}
-                        className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all w-full justify-center"
-                      >
-                        <ShoppingBag className="w-4 h-4" />
-                        Buy Now
-                      </Link>
-                    ) : (
+                    <div className="flex gap-2">
                       <button
                         onClick={() => { setPreviewItem(item); setCurrentSlide(0); }}
-                        className="inline-flex items-center gap-2 bg-white/10 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-white/20 transition-all w-full justify-center"
+                        className="flex-1 inline-flex items-center gap-2 bg-white/10 text-white px-4 py-2.5 rounded-lg font-semibold text-sm hover:bg-white/20 transition-all justify-center"
                       >
                         <Eye className="w-4 h-4" />
                         Preview
                       </button>
-                    )}
+                      {item.price ? (
+                        <BuyButton 
+                          vaultItemId={item.id} 
+                          price={item.price} 
+                          className="flex-1 px-4 py-2.5 rounded-lg text-sm"
+                        />
+                      ) : (
+                        <span className="flex-1 inline-flex items-center justify-center bg-white/5 text-white/50 px-4 py-2.5 rounded-lg text-sm">
+                          Coming Soon
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -391,12 +395,13 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
             </div>
           )}
           
-          <div className="absolute bottom-6 right-6">
-            {previewItem.stripe_link ? (
-              <Link href={previewItem.stripe_link} className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#B55D24] transition-all" onClick={(e) => e.stopPropagation()}>
-                <ShoppingBag className="w-5 h-5" />
-                Buy Now {previewItem.price && `- $${previewItem.price}`}
-              </Link>
+          <div className="absolute bottom-6 right-6" onClick={(e) => e.stopPropagation()}>
+            {previewItem.price ? (
+              <BuyButton 
+                vaultItemId={previewItem.id} 
+                price={previewItem.price} 
+                className="px-6 py-3 rounded-xl"
+              />
             ) : (
               <span className="inline-flex items-center gap-2 bg-white/20 text-white/70 px-6 py-3 rounded-xl font-semibold">
                 <ShoppingBag className="w-5 h-5" />

@@ -13,6 +13,7 @@ import {
 import { useState, useEffect } from 'react';
 import { supabase, VaultItem, Category } from '@/lib/supabase';
 import Image from 'next/image';
+import BuyButton from '@/components/BuyButton';
 
 export default function PestControlPage() {
   const [vaultItems, setVaultItems] = useState<VaultItem[]>([]);
@@ -209,14 +210,12 @@ export default function PestControlPage() {
                         <Eye className="w-4 h-4" />
                         Preview
                       </Link>
-                      {item.stripe_link ? (
-                        <Link
-                          href={item.stripe_link}
-                          className="flex-1 bg-[#C96A2B] text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#B55D24] transition-all flex items-center justify-center gap-2"
-                        >
-                          <ShoppingBag className="w-4 h-4" />
-                          Buy Now
-                        </Link>
+                      {item.price ? (
+                        <BuyButton 
+                          vaultItemId={item.id} 
+                          price={item.price} 
+                          className="flex-1 px-4 py-2.5 rounded-lg text-sm"
+                        />
                       ) : (
                         <span className="flex-1 bg-white/5 text-white/50 px-4 py-2.5 rounded-lg text-sm font-semibold text-center">
                           Coming Soon
