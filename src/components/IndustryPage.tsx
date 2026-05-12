@@ -192,7 +192,7 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
                     <h3 className="text-white font-bold text-lg mt-1 mb-4">{item.title}</h3>
                     <div className="flex gap-3">
                       <Link
-                        href={`/vault/${nicheSlug}`}
+                        href={`/vault/${nicheSlug}?preview=${item.id}`}
                         className="flex-1 bg-white/10 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-white/20 transition-all flex items-center justify-center gap-2"
                       >
                         <Eye className="w-4 h-4" />

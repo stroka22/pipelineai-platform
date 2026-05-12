@@ -16,6 +16,7 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
   const { niche: nicheSlug } = use(params);
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get('category');
+  const previewParam = searchParams.get('preview');
   
   const [niche, setNiche] = useState<Niche | null>(null);
   const [allNiches, setAllNiches] = useState<Niche[]>([]);
@@ -91,9 +92,18 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
         setCategories(cats);
       }
       setLoading(false);
+      
+      // Open preview if query param is set
+      if (previewParam && itemsData) {
+        const itemToPreview = itemsData.find(i => i.id === previewParam);
+        if (itemToPreview) {
+          setPreviewItem(itemToPreview);
+          setCurrentSlide(0);
+        }
+      }
     }
     fetchData();
-  }, [nicheSlug]);
+  }, [nicheSlug, previewParam]);
 
   const getNicheEmoji = (n: Niche) => {
     if (n.icon) return n.icon;
