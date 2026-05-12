@@ -13,12 +13,14 @@ import {
   Menu,
   X,
   FolderLock,
-  Tags
+  Tags,
+  Layers
 } from 'lucide-react';
 
 const navItems = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Vault', href: '/admin/vault', icon: FolderLock },
+  { name: 'Niches', href: '/admin/niches', icon: Layers },
   { name: 'Categories', href: '/admin/categories', icon: Tags },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Leads', href: '/admin/leads', icon: Users },
