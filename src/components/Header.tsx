@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Eye } from 'lucide-react';
+import { ChevronDown, Eye, Menu, X } from 'lucide-react';
 import { supabase, Niche } from '@/lib/supabase';
 
 interface HeaderProps {
@@ -12,7 +12,7 @@ interface HeaderProps {
 export default function Header({ currentNiche }: HeaderProps) {
   const [niches, setNiches] = useState<Niche[]>([]);
   const [showNicheMenu, setShowNicheMenu] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     async function fetchNiches() {
@@ -40,17 +40,18 @@ export default function Header({ currentNiche }: HeaderProps) {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold text-white">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
+        <Link href="/" className="text-xl md:text-2xl font-bold text-white">
           Pipeline <span className="text-[#C96A2B]">AI</span>
         </Link>
+        
+        {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
           <Link href="/" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
             Home
           </Link>
           <div 
             className="relative"
-            ref={menuRef}
             onMouseEnter={() => setShowNicheMenu(true)}
             onMouseLeave={() => setShowNicheMenu(false)}
           >
@@ -86,23 +87,94 @@ export default function Header({ currentNiche }: HeaderProps) {
             How It Works
           </Link>
         </nav>
-        {currentNiche ? (
-          <Link 
-            href={`/vault/${currentNiche}`}
-            className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all flex items-center gap-2"
-          >
-            <Eye className="w-4 h-4" />
-            Preview Vault
-          </Link>
-        ) : (
-          <Link 
-            href="/#vaults"
-            className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all"
-          >
-            Browse Vaults
-          </Link>
-        )}
+
+        {/* Desktop CTA */}
+        <div className="hidden md:block">
+          {currentNiche ? (
+            <Link 
+              href={`/vault/${currentNiche}`}
+              className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all flex items-center gap-2"
+            >
+              <Eye className="w-4 h-4" />
+              Preview Vault
+            </Link>
+          ) : (
+            <Link 
+              href="/#vaults"
+              className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all"
+            >
+              Browse Vaults
+            </Link>
+          )}
+        </div>
+
+        {/* Mobile Menu Button */}
+        <button 
+          className="md:hidden text-white p-2"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
       </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-[#0a0a0a] border-t border-white/5">
+          <nav className="px-4 py-4 space-y-1">
+            <Link 
+              href="/" 
+              className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-base font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <div className="px-4 py-2 text-white/40 text-xs uppercase tracking-wider">Niches</div>
+            {niches.map(niche => (
+              <Link
+                key={niche.slug}
+                href={`/industries/${niche.slug}`}
+                className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-base"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {getNicheEmoji(niche)} {niche.name}
+              </Link>
+            ))}
+            <Link 
+              href="/#vaults" 
+              className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-base font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              All Vaults
+            </Link>
+            <Link 
+              href="/#how-it-works" 
+              className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-base font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              How It Works
+            </Link>
+            <div className="pt-4">
+              {currentNiche ? (
+                <Link 
+                  href={`/vault/${currentNiche}`}
+                  className="block w-full bg-[#C96A2B] text-white px-5 py-3 rounded-lg font-semibold text-center hover:bg-[#B55D24] transition-all"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Preview Vault
+                </Link>
+              ) : (
+                <Link 
+                  href="/#vaults"
+                  className="block w-full bg-[#C96A2B] text-white px-5 py-3 rounded-lg font-semibold text-center hover:bg-[#B55D24] transition-all"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Browse Vaults
+                </Link>
+              )}
+            </div>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
