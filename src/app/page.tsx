@@ -41,13 +41,16 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-  const getNicheEmoji = (slug: string) => {
-    const emojis: Record<string, string> = {
+  const getNicheEmoji = (niche: Niche) => {
+    // Use icon from database if set, otherwise fallback
+    if (niche.icon) return niche.icon;
+    const fallbacks: Record<string, string> = {
       'pest-control': '🪲',
       'roofing': '🏠',
       'hvac': '❄️',
+      'plumbing': '🔧',
     };
-    return emojis[slug] || '📦';
+    return fallbacks[niche.slug] || '📦';
   };
 
   return (
@@ -76,7 +79,7 @@ export default function HomePage() {
                       className="block px-4 py-2 text-white/70 hover:text-white hover:bg-white/5 text-sm"
                       onClick={() => setShowNicheMenu(false)}
                     >
-                      {getNicheEmoji(niche.slug)} {niche.name}
+                      {getNicheEmoji(niche)} {niche.name}
                     </Link>
                   ))}
                 </div>
@@ -176,7 +179,7 @@ export default function HomePage() {
                     </div>
                   )}
                   
-                  <div className="text-5xl mb-6">{getNicheEmoji(niche.slug)}</div>
+                  <div className="text-5xl mb-6">{getNicheEmoji(niche)}</div>
                   
                   <h3 className="text-xl font-bold text-white mb-2">
                     {niche.name} Growth Vault

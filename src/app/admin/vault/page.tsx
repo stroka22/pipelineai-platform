@@ -32,7 +32,7 @@ export default function VaultAdminPage() {
     display_order: 0,
   });
   
-  const [newNiche, setNewNiche] = useState({ name: '', slug: '', description: '' });
+  const [newNiche, setNewNiche] = useState({ name: '', slug: '', description: '', icon: '' });
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
   useEffect(() => {
@@ -143,13 +143,14 @@ export default function VaultAdminPage() {
       name: newNiche.name,
       slug: newNiche.slug.toLowerCase().replace(/\s+/g, '-'),
       description: newNiche.description || null,
+      icon: newNiche.icon || null,
       display_order: niches.length + 1,
     }]);
     
     if (error) alert('Error adding niche: ' + error.message);
     else {
       setIsAddingNiche(false);
-      setNewNiche({ name: '', slug: '', description: '' });
+      setNewNiche({ name: '', slug: '', description: '', icon: '' });
       fetchData();
     }
   }
@@ -281,6 +282,16 @@ export default function VaultAdminPage() {
               />
             </div>
             <div>
+              <label className="block text-sm font-medium text-[#081F33] mb-2">Icon (emoji)</label>
+              <input
+                type="text"
+                value={newNiche.icon}
+                onChange={(e) => setNewNiche({ ...newNiche, icon: e.target.value })}
+                className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
+                placeholder="🔧"
+              />
+            </div>
+            <div>
               <label className="block text-sm font-medium text-[#081F33] mb-2">Description</label>
               <input
                 type="text"
@@ -295,7 +306,7 @@ export default function VaultAdminPage() {
             <button onClick={handleAddNiche} className="bg-[#C96A2B] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#B55D24] transition-all">
               Add Niche
             </button>
-            <button onClick={() => { setIsAddingNiche(false); setNewNiche({ name: '', slug: '', description: '' }); }} className="border border-[#E5E7EB] text-[#4B5563] px-6 py-2 rounded-lg font-semibold hover:bg-[#F3F4F6] transition-all">
+            <button onClick={() => { setIsAddingNiche(false); setNewNiche({ name: '', slug: '', description: '', icon: '' }); }} className="border border-[#E5E7EB] text-[#4B5563] px-6 py-2 rounded-lg font-semibold hover:bg-[#F3F4F6] transition-all">
               Cancel
             </button>
           </div>
