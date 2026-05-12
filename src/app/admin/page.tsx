@@ -1,20 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase, Product, Order, Lead } from '@/lib/supabase';
-import { Package, ShoppingCart, Users, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { supabase, VaultItem, Lead, Purchase } from '@/lib/supabase';
+import { Package, ShoppingCart, Users, DollarSign, TrendingUp, Clock, FolderLock } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
-    totalProducts: 0,
-    activeProducts: 0,
-    totalOrders: 0,
-    pendingOrders: 0,
+    totalVaultItems: 0,
+    activeVaultItems: 0,
+    totalPurchases: 0,
     totalLeads: 0,
     totalRevenue: 0,
   });
-  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [recentPurchases, setRecentPurchases] = useState<(Purchase & { vault_item?: VaultItem })[]>([]);
   const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,30 +23,29 @@ export default function AdminDashboard() {
 
   async function fetchDashboardData() {
     try {
-      // Fetch products count
-      const { count: totalProducts } = await supabase
-        .from('products')
+      // Fetch vault items count
+      const { count: totalVaultItems } = await supabase
+        .from('vault_items')
         .select('*', { count: 'exact', head: true });
 
-      const { count: activeProducts } = await supabase
-        .from('products')
+      const { count: activeVaultItems } = await supabase
+        .from('vault_items')
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true);
 
-      // Fetch orders
-      const { data: orders, count: totalOrders } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact' })
+      // Fetch purchases with vault item info
+      const { data: purchases, count: totalPurchases } = await supabase
+        .from('purchases')
+        .select('*, vault_item:vault_items(title, category)')
         .order('created_at', { ascending: false })
         .limit(5);
 
-      const { count: pendingOrders } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['new', 'waiting_for_info', 'in_production']);
-
-      // Calculate revenue
-      const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.amount), 0) || 0;
+      // Calculate revenue from purchases
+      const { data: allPurchases } = await supabase
+        .from('purchases')
+        .select('amount_paid');
+      
+      const totalRevenue = allPurchases?.reduce((sum, p) => sum + Number(p.amount_paid || 0), 0) || 0;
 
       // Fetch leads
       const { data: leads, count: totalLeads } = await supabase
@@ -57,14 +55,13 @@ export default function AdminDashboard() {
         .limit(5);
 
       setStats({
-        totalProducts: totalProducts || 0,
-        activeProducts: activeProducts || 0,
-        totalOrders: totalOrders || 0,
-        pendingOrders: pendingOrders || 0,
+        totalVaultItems: totalVaultItems || 0,
+        activeVaultItems: activeVaultItems || 0,
+        totalPurchases: totalPurchases || 0,
         totalLeads: totalLeads || 0,
         totalRevenue,
       });
-      setRecentOrders(orders || []);
+      setRecentPurchases(purchases || []);
       setRecentLeads(leads || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -75,23 +72,23 @@ export default function AdminDashboard() {
 
   const statCards = [
     { 
-      name: 'Total Products', 
-      value: stats.totalProducts, 
-      subtext: `${stats.activeProducts} active`,
-      icon: Package, 
+      name: 'Vault Items', 
+      value: stats.totalVaultItems, 
+      subtext: `${stats.activeVaultItems} active`,
+      icon: FolderLock, 
       color: 'bg-blue-500',
-      href: '/admin/products'
+      href: '/admin/vault'
     },
     { 
-      name: 'Total Orders', 
-      value: stats.totalOrders, 
-      subtext: `${stats.pendingOrders} pending`,
+      name: 'Purchases', 
+      value: stats.totalPurchases, 
+      subtext: 'All time',
       icon: ShoppingCart, 
       color: 'bg-green-500',
       href: '/admin/orders'
     },
     { 
-      name: 'Total Leads', 
+      name: 'Leads', 
       value: stats.totalLeads, 
       subtext: 'All time',
       icon: Users, 
@@ -101,27 +98,12 @@ export default function AdminDashboard() {
     { 
       name: 'Revenue', 
       value: `$${stats.totalRevenue.toLocaleString()}`, 
-      subtext: 'From orders',
+      subtext: 'From purchases',
       icon: DollarSign, 
       color: 'bg-[#C96A2B]',
       href: '/admin/orders'
     },
   ];
-
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      new: 'bg-blue-100 text-blue-800',
-      waiting_for_info: 'bg-yellow-100 text-yellow-800',
-      in_production: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-green-100 text-green-800',
-      completed: 'bg-gray-100 text-gray-800',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
-
-  const formatStatus = (status: string) => {
-    return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
 
   if (loading) {
     return (
@@ -160,29 +142,31 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Recent Orders */}
+        {/* Recent Purchases */}
         <div className="bg-white rounded-xl shadow-sm">
           <div className="p-6 border-b border-[#E5E7EB] flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-[#081F33]">Recent Orders</h2>
+            <h2 className="text-lg font-semibold text-[#081F33]">Recent Purchases</h2>
             <Link href="/admin/orders" className="text-sm text-[#C96A2B] hover:underline">
               View all
             </Link>
           </div>
           <div className="p-6">
-            {recentOrders.length === 0 ? (
-              <p className="text-[#9CA3AF] text-center py-8">No orders yet</p>
+            {recentPurchases.length === 0 ? (
+              <p className="text-[#9CA3AF] text-center py-8">No purchases yet</p>
             ) : (
               <div className="space-y-4">
-                {recentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between">
+                {recentPurchases.map((purchase) => (
+                  <div key={purchase.id} className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-[#081F33]">{order.company_name}</div>
-                      <div className="text-sm text-[#4B5563]">{order.product_title}</div>
+                      <div className="font-medium text-[#081F33]">
+                        {(purchase.vault_item as any)?.title || 'Unknown Item'}
+                      </div>
+                      <div className="text-sm text-[#4B5563]">{purchase.customer_email}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold text-[#081F33]">${order.amount}</div>
-                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
-                        {formatStatus(order.status)}
+                      <div className="font-semibold text-[#081F33]">${purchase.amount_paid}</div>
+                      <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                        {purchase.status}
                       </span>
                     </div>
                   </div>

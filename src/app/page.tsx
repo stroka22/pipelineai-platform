@@ -2,114 +2,38 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Sparkles, ShoppingBag, Zap, ChevronRight, Eye, Star, Package, Images, Image as ImageIcon, CheckCircle } from 'lucide-react';
-import { supabase, Product } from '@/lib/supabase';
-
-const industryVaultsBase = [
-  {
-    name: 'Pest Control Growth Vault',
-    slug: 'pest-control',
-    category: 'Pest Control',
-    image: '🪲',
-    available: true,
-    popular: true,
-  },
-  {
-    name: 'Roofing Growth Vault',
-    slug: 'roofing',
-    category: 'Roofing',
-    image: '🏠',
-    available: true,
-    popular: false,
-  },
-  {
-    name: 'HVAC Growth Vault',
-    slug: 'hvac',
-    category: 'HVAC',
-    image: '❄️',
-    available: true,
-    popular: false,
-  },
-  {
-    name: 'Med Spa Growth Vault',
-    slug: 'med-spa',
-    category: 'Med Spa',
-    image: '💆',
-    available: false,
-    popular: false,
-  },
-  {
-    name: 'Mortgage Growth Vault',
-    slug: 'mortgage',
-    category: 'Mortgage',
-    image: '🏦',
-    available: false,
-    popular: false,
-  },
-  {
-    name: 'Real Estate Growth Vault',
-    slug: 'real-estate',
-    category: 'Real Estate',
-    image: '🔑',
-    available: false,
-    popular: false,
-  },
-];
-
-const pricing = [
-  {
-    icon: ImageIcon,
-    name: 'Single Image',
-    price: 15,
-    description: 'One premium social media image',
-    stripeLink: 'https://buy.stripe.com/7sY5kE5SCajb73Ifd83cc03',
-  },
-  {
-    icon: Images,
-    name: '5-Slide Growth Carousel',
-    price: 57,
-    description: 'Educational carousel pack',
-    stripeLink: 'https://buy.stripe.com/fZubJ2ftcezr87M8OK3cc02',
-  },
-  {
-    icon: Package,
-    name: '10-Slide Growth Carousel',
-    price: 127,
-    description: 'Premium authority carousel',
-    stripeLink: 'https://buy.stripe.com/6oU28s6WG2QJ1Jo3uq3cc04',
-  },
-];
+import { ArrowRight, Sparkles, ShoppingBag, Zap, ChevronRight, Eye, Star, CheckCircle, ChevronDown, Mail } from 'lucide-react';
+import { supabase, Niche } from '@/lib/supabase';
 
 export default function HomePage() {
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [productCounts, setProductCounts] = useState<Record<string, number>>({});
+  const [niches, setNiches] = useState<Niche[]>([]);
+  const [nicheCounts, setNicheCounts] = useState<Record<string, number>>({});
+  const [showNicheMenu, setShowNicheMenu] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
-      // Fetch featured products for Best Sellers
-      const { data: featured } = await supabase
-        .from('products')
+      // Fetch active niches
+      const { data: nicheData } = await supabase
+        .from('niches')
         .select('*')
         .eq('is_active', true)
-        .eq('is_featured', true)
-        .order('created_at', { ascending: false })
-        .limit(4);
+        .order('display_order');
       
-      if (featured) setFeaturedProducts(featured);
+      if (nicheData) setNiches(nicheData);
 
-      // Fetch product counts per category
-      const { data: allProducts } = await supabase
-        .from('products')
-        .select('category')
+      // Fetch vault item counts per niche
+      const { data: vaultItems } = await supabase
+        .from('vault_items')
+        .select('niche')
         .eq('is_active', true);
       
-      if (allProducts) {
+      if (vaultItems) {
         const counts: Record<string, number> = {};
-        allProducts.forEach(p => {
-          counts[p.category] = (counts[p.category] || 0) + 1;
+        vaultItems.forEach(item => {
+          counts[item.niche] = (counts[item.niche] || 0) + 1;
         });
-        setProductCounts(counts);
+        setNicheCounts(counts);
       }
       
       setLoading(false);
@@ -117,23 +41,13 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-  // Merge vault data with dynamic counts
-  const industryVaults = industryVaultsBase.map(vault => ({
-    ...vault,
-    assetCount: productCounts[vault.category] || 0,
-  }));
-
-  const getCategoryIcon = (category: string) => {
-    const icons: Record<string, string> = {
-      'Pest Control': '🪲',
-      'Roofing': '🏠',
-      'HVAC': '❄️',
-      'Termites': '🪵',
-      'Roaches': '🪳',
-      'Rodents': '🐀',
-      'Mosquitoes': '🦟',
+  const getNicheEmoji = (slug: string) => {
+    const emojis: Record<string, string> = {
+      'pest-control': '🪲',
+      'roofing': '🏠',
+      'hvac': '❄️',
     };
-    return icons[category] || '📦';
+    return emojis[slug] || '📦';
   };
 
   return (
@@ -145,21 +59,41 @@ export default function HomePage() {
             Pipeline <span className="text-[#C96A2B]">AI</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
+            <div className="relative">
+              <button 
+                onClick={() => setShowNicheMenu(!showNicheMenu)}
+                className="text-white/70 hover:text-white transition-colors text-sm font-medium flex items-center gap-1"
+              >
+                Niches
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              {showNicheMenu && (
+                <div className="absolute top-full left-0 mt-2 bg-[#1a1a1a] border border-white/10 rounded-lg py-2 min-w-[200px] shadow-xl">
+                  {niches.map(niche => (
+                    <Link
+                      key={niche.slug}
+                      href={`/industries/${niche.slug}`}
+                      className="block px-4 py-2 text-white/70 hover:text-white hover:bg-white/5 text-sm"
+                      onClick={() => setShowNicheMenu(false)}
+                    >
+                      {getNicheEmoji(niche.slug)} {niche.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
             <Link href="#vaults" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
-              Industry Vaults
+              Vaults
             </Link>
-            <Link href="#pricing" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
-              Pricing
-            </Link>
-            <Link href="/vault/pest-control" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
-              Browse Content
+            <Link href="#how-it-works" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
+              How It Works
             </Link>
           </nav>
           <Link 
-            href="/industries/pest-control"
+            href="#vaults"
             className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all"
           >
-            Shop Now
+            Browse Vaults
           </Link>
         </div>
       </header>
@@ -181,7 +115,7 @@ export default function HomePage() {
           </h1>
           
           <p className="text-xl md:text-2xl text-white/60 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Ready-to-post carousels, reels, cinematic videos, and industry growth vaults 
+            Ready-to-post carousels, reels, and growth content 
             designed to help your business stand out online.
           </p>
           
@@ -193,16 +127,9 @@ export default function HomePage() {
               Browse Industry Vaults
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link 
-              href="/vault/pest-control"
-              className="bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all inline-flex items-center justify-center gap-2"
-            >
-              <Eye className="w-5 h-5" />
-              View Growth Content
-            </Link>
           </div>
           
-          <div className="flex items-center justify-center gap-6 text-white/40 text-sm">
+          <div className="flex items-center justify-center gap-6 text-white/40 text-sm flex-wrap">
             <span className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-green-500" />
               Instant Download
@@ -213,181 +140,77 @@ export default function HomePage() {
             </span>
             <span className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-green-500" />
-              Ready to Post
+              Download Link Emailed
             </span>
           </div>
         </div>
       </section>
 
-      {/* Featured Industry Vaults */}
+      {/* Industry Vaults */}
       <section id="vaults" className="py-20 bg-[#0a0a0a]">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                Industry Growth Vaults
-              </h2>
-              <p className="text-white/50">
-                Premium content libraries for your industry
-              </p>
-            </div>
-            <Link 
-              href="/vault/pest-control"
-              className="hidden md:flex items-center gap-2 text-[#C96A2B] font-semibold hover:gap-3 transition-all"
-            >
-              View All
-              <ChevronRight className="w-5 h-5" />
-            </Link>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {industryVaults.map((vault) => (
-              <div 
-                key={vault.slug}
-                className={`relative rounded-2xl p-8 transition-all group ${
-                  vault.available 
-                    ? 'bg-white/5 border border-white/10 hover:border-[#C96A2B]/50 cursor-pointer' 
-                    : 'bg-white/[0.02] border border-white/5'
-                }`}
-              >
-                {vault.popular && (
-                  <div className="absolute -top-3 right-6 bg-[#C96A2B] text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                    <Star className="w-3 h-3" fill="white" />
-                    POPULAR
-                  </div>
-                )}
-                
-                <div className="text-5xl mb-6">{vault.image}</div>
-                
-                <h3 className={`text-xl font-bold mb-2 ${vault.available ? 'text-white' : 'text-white/40'}`}>
-                  {vault.name}
-                </h3>
-                
-                <p className={`text-sm mb-6 ${vault.available ? 'text-white/50' : 'text-white/30'}`}>
-                  {vault.available 
-                    ? vault.assetCount > 0 
-                      ? `${vault.assetCount} products available` 
-                      : 'Products coming soon'
-                    : 'Coming Soon'}
-                </p>
-                
-                {vault.available ? (
-                  <div className="flex gap-3">
-                    <Link 
-                      href={`/vault/${vault.slug}`}
-                      className="flex-1 bg-white/5 border border-white/10 text-white py-2.5 rounded-lg font-medium text-sm text-center hover:bg-white/10 transition-all"
-                    >
-                      Preview
-                    </Link>
-                    <Link 
-                      href={`/industries/${vault.slug}`}
-                      className="flex-1 bg-[#C96A2B] text-white py-2.5 rounded-lg font-medium text-sm text-center hover:bg-[#B55D24] transition-all"
-                    >
-                      Shop Vault
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="bg-white/5 text-white/30 py-2.5 rounded-lg font-medium text-sm text-center">
-                    Notify Me
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Best Selling Growth Content - Dynamic */}
-      <section className="py-20 bg-[#111111]">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                {featuredProducts.length > 0 ? 'Featured Growth Content' : 'Growth Content'}
-              </h2>
-              <p className="text-white/50">
-                Top-performing social media assets
-              </p>
-            </div>
-            <Link 
-              href="/industries/pest-control"
-              className="hidden md:flex items-center gap-2 text-[#C96A2B] font-semibold hover:gap-3 transition-all"
-            >
-              Shop All
-              <ChevronRight className="w-5 h-5" />
-            </Link>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Industry Growth Vaults
+            </h2>
+            <p className="text-white/50">
+              Premium content libraries tailored to your industry
+            </p>
           </div>
           
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#C96A2B]"></div>
             </div>
-          ) : featuredProducts.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => (
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {niches.map((niche) => (
                 <div 
-                  key={product.id}
-                  className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden group hover:border-[#C96A2B]/50 transition-all"
+                  key={niche.slug}
+                  className="relative rounded-2xl p-8 bg-white/5 border border-white/10 hover:border-[#C96A2B]/50 transition-all group"
                 >
-                  <div className="aspect-square bg-gradient-to-br from-[#C96A2B]/20 to-[#081F33] flex items-center justify-center relative">
-                    <span className="text-6xl opacity-50 group-hover:opacity-70 transition-opacity">
-                      {getCategoryIcon(product.category)}
-                    </span>
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Eye className="w-8 h-8 text-white" />
+                  {niche.slug === 'pest-control' && (
+                    <div className="absolute -top-3 right-6 bg-[#C96A2B] text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                      <Star className="w-3 h-3" fill="white" />
+                      POPULAR
                     </div>
-                    {product.is_featured && (
-                      <div className="absolute top-3 left-3 bg-[#C96A2B] text-white text-[10px] font-bold px-2 py-1 rounded-full">
-                        FEATURED
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <span className="text-xs font-semibold text-[#C96A2B]">
-                      {product.product_type === 'carousel' ? `${product.items_count}-Slide Carousel` : product.product_type}
-                    </span>
-                    <h3 className="text-white font-bold mt-1 mb-3 line-clamp-1">{product.title}</h3>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-white">${product.price}</span>
-                      {product.stripe_link ? (
-                        <Link
-                          href={product.stripe_link}
-                          className="bg-[#C96A2B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#B55D24] transition-all flex items-center gap-1"
-                        >
-                          <ShoppingBag className="w-4 h-4" />
-                          Buy
-                        </Link>
-                      ) : (
-                        <Link
-                          href={`/industries/${product.category?.toLowerCase().replace(' ', '-') || 'pest-control'}`}
-                          className="bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white/20 transition-all flex items-center gap-1"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View
-                        </Link>
-                      )}
-                    </div>
+                  )}
+                  
+                  <div className="text-5xl mb-6">{getNicheEmoji(niche.slug)}</div>
+                  
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    {niche.name} Growth Vault
+                  </h3>
+                  
+                  <p className="text-sm text-white/50 mb-6">
+                    {nicheCounts[niche.slug] || 0} items available
+                  </p>
+                  
+                  <div className="flex gap-3">
+                    <Link 
+                      href={`/vault/${niche.slug}`}
+                      className="flex-1 bg-white/5 border border-white/10 text-white py-2.5 rounded-lg font-medium text-sm text-center hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Preview
+                    </Link>
+                    <Link 
+                      href={`/industries/${niche.slug}`}
+                      className="flex-1 bg-[#C96A2B] text-white py-2.5 rounded-lg font-medium text-sm text-center hover:bg-[#B55D24] transition-all flex items-center justify-center gap-2"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      Shop
+                    </Link>
                   </div>
                 </div>
               ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-white/50 mb-6">Featured products coming soon!</p>
-              <Link
-                href="/industries/pest-control"
-                className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#B55D24] transition-all"
-              >
-                Browse All Products
-                <ArrowRight className="w-5 h-5" />
-              </Link>
             </div>
           )}
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-[#0a0a0a]">
+      <section id="how-it-works" className="py-20 bg-[#111111]">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
@@ -398,85 +221,65 @@ export default function HomePage() {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-4 gap-8">
             {[
               { 
                 step: '01', 
                 icon: Eye,
-                title: 'Browse Vault', 
-                desc: 'Explore industry-specific content packs and carousels' 
+                title: 'Preview Content', 
+                desc: 'Browse watermarked previews in your industry vault' 
               },
               { 
                 step: '02', 
                 icon: ShoppingBag,
-                title: 'Purchase Content', 
-                desc: 'One-time payment via Stripe. No subscriptions. Own it forever.' 
+                title: 'Purchase', 
+                desc: 'One-time payment via Stripe. No subscriptions.' 
               },
               { 
                 step: '03', 
+                icon: Mail,
+                title: 'Get Download Link', 
+                desc: 'Receive email with your download link instantly' 
+              },
+              { 
+                step: '04', 
                 icon: Zap,
                 title: 'Post & Grow', 
-                desc: 'Download instantly and post to build authority, trust, and engagement' 
+                desc: 'Download and post to build authority and engagement' 
               },
             ].map((item) => (
               <div key={item.step} className="text-center">
-                <div className="w-16 h-16 bg-[#C96A2B]/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <item.icon className="w-8 h-8 text-[#C96A2B]" />
+                <div className="w-14 h-14 bg-[#C96A2B]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <item.icon className="w-7 h-7 text-[#C96A2B]" />
                 </div>
-                <div className="text-4xl font-extrabold text-white/10 mb-2">{item.step}</div>
-                <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
-                <p className="text-white/50">{item.desc}</p>
+                <div className="text-3xl font-extrabold text-white/10 mb-2">{item.step}</div>
+                <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
+                <p className="text-white/50 text-sm">{item.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-[#111111]">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-white/50 text-lg">
-              Pay once. Download instantly. Post forever.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6 mb-12 max-w-3xl mx-auto">
-            {pricing.map((item, i) => (
-              <div 
-                key={i}
-                className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center hover:border-[#C96A2B]/50 transition-all"
-              >
-                <div className="w-12 h-12 bg-[#C96A2B]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <item.icon className="w-6 h-6 text-[#C96A2B]" />
-                </div>
-                <h3 className="text-white font-bold mb-1">{item.name}</h3>
-                <p className="text-white/40 text-xs mb-4">{item.description}</p>
-                <div className="text-3xl font-bold text-white">${item.price}</div>
-              </div>
-            ))}
-          </div>
-          
-          {/* Bundle Offer */}
-          <div className="bg-gradient-to-r from-[#C96A2B]/20 to-[#C96A2B]/5 border border-[#C96A2B]/30 rounded-2xl p-8 text-center">
+      {/* Bundle Offer */}
+      <section className="py-20 bg-[#0a0a0a]">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="bg-gradient-to-r from-[#C96A2B]/20 to-[#C96A2B]/5 border border-[#C96A2B]/30 rounded-2xl p-8 md:p-12 text-center">
             <div className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-4 py-1.5 rounded-full text-sm font-bold mb-4">
               <Sparkles className="w-4 h-4" />
               BUNDLE & SAVE
             </div>
-            <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
+            <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
               Buy Any 2 Premium 10-Slide Carousels, Get 1 Free
             </h3>
             <p className="text-white/60 mb-6">
-              Stack your content library and save $127
+              Stack your content library and save big
             </p>
             <Link 
-              href="/industries/pest-control"
+              href="#vaults"
               className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold hover:bg-[#B55D24] transition-all"
             >
-              Shop Bundle Deal
+              Browse Vaults
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
@@ -484,7 +287,7 @@ export default function HomePage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-24 bg-gradient-to-b from-[#111111] to-[#0a0a0a]">
+      <section className="py-24 bg-gradient-to-b from-[#0a0a0a] to-[#111111]">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             Build Authority. Increase Engagement.{' '}
@@ -495,22 +298,13 @@ export default function HomePage() {
             growth content designed to make your business stand out.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="/vault/pest-control"
-              className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all inline-flex items-center justify-center gap-2 group"
-            >
-              Browse Growth Content
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link 
-              href="/industries/pest-control"
-              className="bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all inline-flex items-center justify-center gap-2"
-            >
-              <ShoppingBag className="w-5 h-5" />
-              Shop Pest Control Vault
-            </Link>
-          </div>
+          <Link 
+            href="#vaults"
+            className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all inline-flex items-center justify-center gap-2 group"
+          >
+            Browse Industry Vaults
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </Link>
         </div>
       </section>
 
