@@ -2,8 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, VaultItem, Lead, Purchase } from '@/lib/supabase';
-import { Package, ShoppingCart, Users, DollarSign, TrendingUp, Clock, FolderLock } from 'lucide-react';
+import { Package, ShoppingCart, Users, DollarSign, TrendingUp, Clock, FolderLock, Eye, Globe } from 'lucide-react';
 import Link from 'next/link';
+
+interface PageViewStats {
+  today: number;
+  thisWeek: number;
+  thisMonth: number;
+  topPages: { page_path: string; count: number }[];
+  topReferrers: { referrer: string; count: number }[];
+}
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -12,6 +20,13 @@ export default function AdminDashboard() {
     totalPurchases: 0,
     totalLeads: 0,
     totalRevenue: 0,
+  });
+  const [pageViews, setPageViews] = useState<PageViewStats>({
+    today: 0,
+    thisWeek: 0,
+    thisMonth: 0,
+    topPages: [],
+    topReferrers: [],
   });
   const [recentPurchases, setRecentPurchases] = useState<(Purchase & { vault_item?: VaultItem })[]>([]);
   const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
@@ -63,6 +78,55 @@ export default function AdminDashboard() {
       });
       setRecentPurchases(purchases || []);
       setRecentLeads(leads || []);
+
+      // Fetch page view stats
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const [todayViews, weekViews, monthViews, topPagesData, topReferrersData] = await Promise.all([
+        supabase.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
+        supabase.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', weekStart),
+        supabase.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', monthStart),
+        supabase.from('page_views').select('page_path').gte('created_at', monthStart),
+        supabase.from('page_views').select('referrer').gte('created_at', monthStart).not('referrer', 'is', null),
+      ]);
+
+      // Count top pages
+      const pageCounts: Record<string, number> = {};
+      topPagesData.data?.forEach(v => {
+        pageCounts[v.page_path] = (pageCounts[v.page_path] || 0) + 1;
+      });
+      const topPages = Object.entries(pageCounts)
+        .map(([page_path, count]) => ({ page_path, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      // Count top referrers
+      const refCounts: Record<string, number> = {};
+      topReferrersData.data?.forEach(v => {
+        if (v.referrer) {
+          try {
+            const host = new URL(v.referrer).hostname.replace('www.', '');
+            refCounts[host] = (refCounts[host] || 0) + 1;
+          } catch {
+            refCounts[v.referrer] = (refCounts[v.referrer] || 0) + 1;
+          }
+        }
+      });
+      const topReferrers = Object.entries(refCounts)
+        .map(([referrer, count]) => ({ referrer, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      setPageViews({
+        today: todayViews.count || 0,
+        thisWeek: weekViews.count || 0,
+        thisMonth: monthViews.count || 0,
+        topPages,
+        topReferrers,
+      });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -71,6 +135,14 @@ export default function AdminDashboard() {
   }
 
   const statCards = [
+    { 
+      name: 'Page Views', 
+      value: pageViews.thisMonth, 
+      subtext: `${pageViews.today} today`,
+      icon: Eye, 
+      color: 'bg-indigo-500',
+      href: '#traffic'
+    },
     { 
       name: 'Vault Items', 
       value: stats.totalVaultItems, 
@@ -86,14 +158,6 @@ export default function AdminDashboard() {
       icon: ShoppingCart, 
       color: 'bg-green-500',
       href: '/admin/orders'
-    },
-    { 
-      name: 'Leads', 
-      value: stats.totalLeads, 
-      subtext: 'All time',
-      icon: Users, 
-      color: 'bg-purple-500',
-      href: '/admin/leads'
     },
     { 
       name: 'Revenue', 
@@ -139,6 +203,57 @@ export default function AdminDashboard() {
             <div className="text-xs text-[#9CA3AF] mt-1">{stat.subtext}</div>
           </Link>
         ))}
+      </div>
+
+      {/* Traffic Stats */}
+      <div id="traffic" className="grid lg:grid-cols-2 gap-6 mb-8">
+        {/* Top Pages */}
+        <div className="bg-white rounded-xl shadow-sm">
+          <div className="p-6 border-b border-[#E5E7EB]">
+            <h2 className="text-lg font-semibold text-[#081F33]">Top Pages (This Month)</h2>
+          </div>
+          <div className="p-6">
+            {pageViews.topPages.length === 0 ? (
+              <p className="text-[#9CA3AF] text-center py-8">No page views yet</p>
+            ) : (
+              <div className="space-y-3">
+                {pageViews.topPages.map((page, i) => (
+                  <div key={page.page_path} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-[#9CA3AF] w-6">{i + 1}.</span>
+                      <span className="text-[#081F33] font-medium truncate max-w-[200px]">{page.page_path}</span>
+                    </div>
+                    <span className="text-[#4B5563] font-semibold">{page.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Top Referrers */}
+        <div className="bg-white rounded-xl shadow-sm">
+          <div className="p-6 border-b border-[#E5E7EB]">
+            <h2 className="text-lg font-semibold text-[#081F33]">Top Referrers (This Month)</h2>
+          </div>
+          <div className="p-6">
+            {pageViews.topReferrers.length === 0 ? (
+              <p className="text-[#9CA3AF] text-center py-8">No referrer data yet</p>
+            ) : (
+              <div className="space-y-3">
+                {pageViews.topReferrers.map((ref, i) => (
+                  <div key={ref.referrer} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-4 h-4 text-[#9CA3AF]" />
+                      <span className="text-[#081F33] font-medium">{ref.referrer}</span>
+                    </div>
+                    <span className="text-[#4B5563] font-semibold">{ref.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
