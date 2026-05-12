@@ -5,14 +5,19 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Download, CheckCircle, XCircle, Loader2, ArrowLeft } from 'lucide-react';
 
+interface DownloadItem {
+  id?: string;
+  title: string;
+  category: string;
+  content_type: string;
+  download_files: string[];
+}
+
 interface DownloadData {
   success: boolean;
-  item?: {
-    title: string;
-    category: string;
-    content_type: string;
-    download_files: string[];
-  };
+  isCart?: boolean;
+  item?: DownloadItem;
+  items?: DownloadItem[];
   customer_email?: string;
   error?: string;
 }
@@ -74,6 +79,9 @@ function DownloadContent() {
     );
   }
 
+  // Get all items (either single or cart)
+  const allItems: DownloadItem[] = data.isCart && data.items ? data.items : (data.item ? [data.item] : []);
+
   return (
     <div className="min-h-screen bg-[#081F33]">
       <header className="bg-[#081F33] border-b border-white/10">
@@ -96,61 +104,27 @@ function DownloadContent() {
           </p>
         </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
-          <div className="mb-6">
-            <span className="text-xs font-semibold text-[#C96A2B] uppercase">{data.item?.category}</span>
-            <h2 className="text-2xl font-bold text-white mt-1">{data.item?.title}</h2>
-            <p className="text-white/50 text-sm mt-1">
-              {data.item?.content_type === 'carousel' 
-                ? `${data.item?.download_files?.length || 0} files included`
-                : data.item?.content_type}
-            </p>
-          </div>
+        {allItems.map((item, itemIndex) => (
+          <div key={item.id || itemIndex} className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-6">
+            <div className="mb-6">
+              <span className="text-xs font-semibold text-[#C96A2B] uppercase">{item.category}</span>
+              <h2 className="text-2xl font-bold text-white mt-1">{item.title}</h2>
+              <p className="text-white/50 text-sm mt-1">
+                {item.content_type === 'carousel' 
+                  ? `${item.download_files?.length || 0} files included`
+                  : item.content_type}
+              </p>
+            </div>
 
-          {data.item?.download_files && data.item.download_files.length > 0 ? (
-            <div className="space-y-3">
-              <p className="text-white/70 text-sm mb-4">Click to download your files:</p>
-              {data.item.download_files.map((url, index) => {
-                const fileName = `${data.item?.title?.replace(/[^a-z0-9]/gi, '-')}-${index + 1}.${url.split('.').pop()}`;
-                return (
-                  <button
-                    key={index}
-                    onClick={async () => {
-                      try {
-                        const response = await fetch(url);
-                        const blob = await response.blob();
-                        const blobUrl = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = blobUrl;
-                        a.download = fileName;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        window.URL.revokeObjectURL(blobUrl);
-                      } catch {
-                        window.open(url, '_blank');
-                      }
-                    }}
-                    className="w-full flex items-center justify-between bg-[#C96A2B]/10 hover:bg-[#C96A2B]/20 border border-[#C96A2B]/30 rounded-xl px-5 py-4 transition-all group"
-                  >
-                    <span className="text-white font-medium">
-                      {data.item?.content_type === 'carousel' 
-                        ? `Slide ${index + 1}` 
-                        : `Download ${index + 1}`}
-                    </span>
-                    <Download className="w-5 h-5 text-[#C96A2B] group-hover:translate-y-0.5 transition-transform" />
-                  </button>
-                );
-              })}
-              
-              {data.item.download_files.length > 1 && (
-                <div className="pt-4 border-t border-white/10 mt-6">
-                  <button
-                    onClick={async () => {
-                      for (let i = 0; i < (data.item?.download_files?.length || 0); i++) {
-                        const url = data.item?.download_files?.[i];
-                        if (!url) continue;
-                        const fileName = `${data.item?.title?.replace(/[^a-z0-9]/gi, '-')}-${i + 1}.${url.split('.').pop()}`;
+            {item.download_files && item.download_files.length > 0 ? (
+              <div className="space-y-3">
+                <p className="text-white/70 text-sm mb-4">Click to download your files:</p>
+                {item.download_files.map((url, index) => {
+                  const fileName = `${item.title?.replace(/[^a-z0-9]/gi, '-')}-${index + 1}.${url.split('.').pop()}`;
+                  return (
+                    <button
+                      key={index}
+                      onClick={async () => {
                         try {
                           const response = await fetch(url);
                           const blob = await response.blob();
@@ -162,26 +136,62 @@ function DownloadContent() {
                           a.click();
                           document.body.removeChild(a);
                           window.URL.revokeObjectURL(blobUrl);
-                          await new Promise(resolve => setTimeout(resolve, 500));
                         } catch {
                           window.open(url, '_blank');
                         }
-                      }
-                    }}
-                    className="w-full bg-[#C96A2B] hover:bg-[#B55D24] text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-2 transition-all"
-                  >
-                    <Download className="w-5 h-5" />
-                    Download All Files
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-white/50">
-              <p>Download files are being prepared. Please check back shortly or contact support.</p>
-            </div>
-          )}
-        </div>
+                      }}
+                      className="w-full flex items-center justify-between bg-[#C96A2B]/10 hover:bg-[#C96A2B]/20 border border-[#C96A2B]/30 rounded-xl px-5 py-4 transition-all group"
+                    >
+                      <span className="text-white font-medium">
+                        {item.content_type === 'carousel' 
+                          ? `Slide ${index + 1}` 
+                          : `Download ${index + 1}`}
+                      </span>
+                      <Download className="w-5 h-5 text-[#C96A2B] group-hover:translate-y-0.5 transition-transform" />
+                    </button>
+                  );
+                })}
+                
+                {item.download_files.length > 1 && (
+                  <div className="pt-4 border-t border-white/10 mt-6">
+                    <button
+                      onClick={async () => {
+                        for (let i = 0; i < (item.download_files?.length || 0); i++) {
+                          const url = item.download_files?.[i];
+                          if (!url) continue;
+                          const fileName = `${item.title?.replace(/[^a-z0-9]/gi, '-')}-${i + 1}.${url.split('.').pop()}`;
+                          try {
+                            const response = await fetch(url);
+                            const blob = await response.blob();
+                            const blobUrl = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = blobUrl;
+                            a.download = fileName;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            window.URL.revokeObjectURL(blobUrl);
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                          } catch {
+                            window.open(url, '_blank');
+                          }
+                        }
+                      }}
+                      className="w-full bg-[#C96A2B] hover:bg-[#B55D24] text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-2 transition-all"
+                    >
+                      <Download className="w-5 h-5" />
+                      Download All Files
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-white/50">
+                <p>Download files are being prepared. Please check back shortly or contact support.</p>
+              </div>
+            )}
+          </div>
+        ))}
 
         <div className="text-center mt-8">
           <p className="text-white/40 text-sm mb-4">

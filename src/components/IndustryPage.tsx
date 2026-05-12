@@ -15,6 +15,7 @@ import { useState, useEffect } from 'react';
 import { supabase, VaultItem, Category } from '@/lib/supabase';
 import Image from 'next/image';
 import BuyButton from '@/components/BuyButton';
+import AddToCartButton from '@/components/AddToCartButton';
 import Header from '@/components/Header';
 
 interface IndustryPageProps {
@@ -199,11 +200,17 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
                         Preview
                       </Link>
                       {item.price ? (
-                        <BuyButton 
-                          vaultItemId={item.id} 
-                          price={item.price} 
-                          className="flex-1 px-4 py-2.5 rounded-lg text-sm"
-                        />
+                        <>
+                          <AddToCartButton 
+                            item={item} 
+                            className="flex-1 px-4 py-2.5 rounded-lg text-sm"
+                          />
+                          <BuyButton 
+                            vaultItemId={item.id} 
+                            price={item.price} 
+                            className="flex-1 px-4 py-2.5 rounded-lg text-sm"
+                          />
+                        </>
                       ) : (
                         <span className="flex-1 bg-white/5 text-white/50 px-4 py-2.5 rounded-lg text-sm font-semibold text-center">
                           Coming Soon

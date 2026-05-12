@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { Lock, ChevronLeft, ChevronRight, X, ShoppingBag, Eye, Shield, Loader2, Play, AlertTriangle, ChevronDown, Menu } from 'lucide-react';
 import { supabase, VaultItem, Niche } from '@/lib/supabase';
 import BuyButton from '@/components/BuyButton';
+import AddToCartButton from '@/components/AddToCartButton';
 
 function isVideo(url: string): boolean {
   return /\.(mp4|webm|mov|avi)$/i.test(url);
@@ -382,11 +383,17 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                         Preview
                       </button>
                       {item.price ? (
-                        <BuyButton 
-                          vaultItemId={item.id} 
-                          price={item.price} 
-                          className="flex-1 px-4 py-2.5 rounded-lg text-sm"
-                        />
+                        <>
+                          <AddToCartButton 
+                            item={item} 
+                            className="flex-1 px-4 py-2.5 rounded-lg text-sm"
+                          />
+                          <BuyButton 
+                            vaultItemId={item.id} 
+                            price={item.price} 
+                            className="flex-1 px-4 py-2.5 rounded-lg text-sm"
+                          />
+                        </>
                       ) : (
                         <span className="flex-1 inline-flex items-center justify-center bg-white/5 text-white/50 px-4 py-2.5 rounded-lg text-sm">
                           Coming Soon
@@ -505,13 +512,19 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
             </div>
           )}
           
-          <div className="absolute bottom-6 right-6" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute bottom-6 right-6 flex gap-3" onClick={(e) => e.stopPropagation()}>
             {previewItem.price ? (
-              <BuyButton 
-                vaultItemId={previewItem.id} 
-                price={previewItem.price} 
-                className="px-6 py-3 rounded-xl"
-              />
+              <>
+                <AddToCartButton 
+                  item={previewItem} 
+                  className="px-6 py-3 rounded-xl"
+                />
+                <BuyButton 
+                  vaultItemId={previewItem.id} 
+                  price={previewItem.price} 
+                  className="px-6 py-3 rounded-xl"
+                />
+              </>
             ) : (
               <span className="inline-flex items-center gap-2 bg-white/20 text-white/70 px-6 py-3 rounded-xl font-semibold">
                 <ShoppingBag className="w-5 h-5" />

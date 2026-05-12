@@ -33,7 +33,40 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const vaultItemId = session.metadata?.vault_item_id;
+    // Check for cart purchase (multiple items)
+    const vaultItemIds = session.metadata?.vault_item_ids?.split(',').filter(Boolean) || [];
+    const singleItemId = session.metadata?.vault_item_id;
+
+    if (vaultItemIds.length > 0) {
+      // Cart purchase - fetch multiple items
+      const { data: items, error } = await supabase
+        .from('vault_items')
+        .select('id, title, category, content_type, images')
+        .in('id', vaultItemIds);
+
+      if (error || !items || items.length === 0) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Items not found' 
+        }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        isCart: true,
+        items: items.map(item => ({
+          id: item.id,
+          title: item.title,
+          category: item.category,
+          content_type: item.content_type,
+          download_files: item.images || [],
+        })),
+        customer_email: session.customer_details?.email,
+      });
+    }
+
+    // Single item purchase
+    const vaultItemId = singleItemId;
 
     if (!vaultItemId) {
       return NextResponse.json({ 
@@ -66,15 +99,6 @@ export async function GET(request: NextRequest) {
       currency: session.currency || 'usd',
       status: 'completed',
     }, { onConflict: 'stripe_session_id' });
-
-    // Increment download count (optional - RPC may not exist)
-    try {
-      await supabase.from('purchases')
-        .update({ download_count: 1 })
-        .eq('stripe_session_id', sessionId);
-    } catch {
-      // Ignore if fails
-    }
 
     return NextResponse.json({
       success: true,

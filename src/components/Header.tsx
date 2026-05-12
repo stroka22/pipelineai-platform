@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Eye, Menu, X } from 'lucide-react';
+import { ChevronDown, Eye, Menu, X, ShoppingCart } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
 import { supabase, Niche } from '@/lib/supabase';
 
 interface HeaderProps {
@@ -13,6 +14,7 @@ export default function Header({ currentNiche }: HeaderProps) {
   const [niches, setNiches] = useState<Niche[]>([]);
   const [showNicheMenu, setShowNicheMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { itemCount } = useCart();
 
   useEffect(() => {
     async function fetchNiches() {
@@ -88,8 +90,16 @@ export default function Header({ currentNiche }: HeaderProps) {
           </Link>
         </nav>
 
-        {/* Desktop CTA */}
-        <div className="hidden md:block">
+        {/* Desktop CTA + Cart */}
+        <div className="hidden md:flex items-center gap-4">
+          <Link href="/cart" className="relative text-white/70 hover:text-white transition-colors p-2">
+            <ShoppingCart className="w-5 h-5" />
+            {itemCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-[#C96A2B] text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                {itemCount}
+              </span>
+            )}
+          </Link>
           {currentNiche ? (
             <Link 
               href={`/vault/${currentNiche}`}
@@ -145,6 +155,14 @@ export default function Header({ currentNiche }: HeaderProps) {
               onClick={() => setMobileMenuOpen(false)}
             >
               All Vaults
+            </Link>
+            <Link 
+              href="/cart" 
+              className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-base font-medium flex items-center gap-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <ShoppingCart className="w-5 h-5" />
+              Cart {itemCount > 0 && `(${itemCount})`}
             </Link>
             <Link 
               href="/#how-it-works" 

@@ -44,19 +44,41 @@ export async function POST(request: NextRequest) {
     const itemTitle = session.metadata?.item_title || 'Your Purchase';
     const downloadUrl = `${process.env.NEXT_PUBLIC_APP_URL}/download?session_id=${session.id}`;
 
-    // Record the purchase
-    const { error } = await supabase.from('purchases').insert({
-      stripe_session_id: session.id,
-      stripe_payment_intent: session.payment_intent as string,
-      customer_email: customerEmail,
-      vault_item_id: session.metadata?.vault_item_id,
-      amount_paid: (session.amount_total || 0) / 100,
-      currency: session.currency || 'usd',
-      status: 'completed',
-    });
+    // Handle cart purchases (multiple items)
+    const vaultItemIds = session.metadata?.vault_item_ids?.split(',') || [];
+    const itemQuantities = session.metadata?.item_quantities?.split(',').map(Number) || [];
+    
+    if (vaultItemIds.length > 1) {
+      // Cart purchase - create a purchase record for each item
+      for (let i = 0; i < vaultItemIds.length; i++) {
+        const quantity = itemQuantities[i] || 1;
+        for (let q = 0; q < quantity; q++) {
+          await supabase.from('purchases').insert({
+            stripe_session_id: session.id,
+            stripe_payment_intent: session.payment_intent as string,
+            customer_email: customerEmail,
+            vault_item_id: vaultItemIds[i],
+            amount_paid: (session.amount_total || 0) / 100 / vaultItemIds.length,
+            currency: session.currency || 'usd',
+            status: 'completed',
+          });
+        }
+      }
+    } else {
+      // Single item purchase
+      const { error } = await supabase.from('purchases').insert({
+        stripe_session_id: session.id,
+        stripe_payment_intent: session.payment_intent as string,
+        customer_email: customerEmail,
+        vault_item_id: session.metadata?.vault_item_id || vaultItemIds[0],
+        amount_paid: (session.amount_total || 0) / 100,
+        currency: session.currency || 'usd',
+        status: 'completed',
+      });
 
-    if (error) {
-      console.error('Error recording purchase:', error);
+      if (error) {
+        console.error('Error recording purchase:', error);
+      }
     }
 
     // Send download email to customer
