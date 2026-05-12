@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Download, CheckCircle, XCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { Download, CheckCircle, XCircle, Loader2, ArrowLeft, Copy, Check } from 'lucide-react';
 
 interface DownloadItem {
   id?: string;
@@ -11,6 +11,7 @@ interface DownloadItem {
   category: string;
   content_type: string;
   download_files: string[];
+  caption?: string | null;
 }
 
 interface DownloadData {
@@ -27,6 +28,13 @@ function DownloadContent() {
   const sessionId = searchParams.get('session_id');
   const [data, setData] = useState<DownloadData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copiedCaption, setCopiedCaption] = useState<string | null>(null);
+
+  const copyCaption = async (caption: string, itemId: string) => {
+    await navigator.clipboard.writeText(caption);
+    setCopiedCaption(itemId);
+    setTimeout(() => setCopiedCaption(null), 2000);
+  };
 
   useEffect(() => {
     if (!sessionId) {
@@ -115,6 +123,32 @@ function DownloadContent() {
                   : item.content_type}
               </p>
             </div>
+
+            {/* Caption with copy button */}
+            {item.caption && (
+              <div className="mb-6 bg-white/5 border border-white/10 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/50 text-sm font-medium">Caption for your post:</span>
+                  <button
+                    onClick={() => copyCaption(item.caption!, item.id || item.title)}
+                    className="flex items-center gap-1.5 text-sm text-[#C96A2B] hover:text-[#B55D24] transition-colors"
+                  >
+                    {copiedCaption === (item.id || item.title) ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Copy
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-white text-sm whitespace-pre-wrap">{item.caption}</p>
+              </div>
+            )}
 
             {item.download_files && item.download_files.length > 0 ? (
               <div className="space-y-3">

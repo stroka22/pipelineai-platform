@@ -28,6 +28,7 @@ export default function VaultAdminPage() {
     category: '',
     content_type: 'carousel' as typeof CONTENT_TYPES[number],
     price: '',
+    caption: '',
     is_active: true,
     display_order: 0,
   });
@@ -116,8 +117,8 @@ export default function VaultAdminPage() {
       slide_count: uploadedImages.length || editingItem?.slide_count || 0,
       folder_path: '',
       images: uploadedImages.length > 0 ? uploadedImages : editingItem?.images || [],
-
       price: formData.price ? parseFloat(formData.price) : null,
+      caption: formData.caption || null,
       is_active: formData.is_active,
       display_order: formData.display_order,
     };
@@ -174,11 +175,11 @@ export default function VaultAdminPage() {
       category: item.category,
       content_type: item.content_type as typeof CONTENT_TYPES[number],
       price: item.price?.toString() || '',
+      caption: item.caption || '',
       is_active: item.is_active,
       display_order: item.display_order,
     });
     setUploadedImages(item.images);
-
     setIsCreating(true);
   }
 
@@ -189,11 +190,11 @@ export default function VaultAdminPage() {
       category: '',
       content_type: 'carousel',
       price: '',
+      caption: '',
       is_active: true,
       display_order: 0,
     });
     setUploadedImages([]);
-
     setEditingItem(null);
   }
 
@@ -387,6 +388,17 @@ export default function VaultAdminPage() {
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
                 placeholder="e.g., 127"
+              />
+            </div>
+            
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-[#081F33] mb-2">Caption (for social media post)</label>
+              <textarea
+                value={formData.caption}
+                onChange={(e) => setFormData({ ...formData, caption: e.target.value })}
+                rows={3}
+                className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
+                placeholder="Enter the caption customers can use when posting this content..."
               />
             </div>
             

@@ -93,6 +93,7 @@ export interface VaultItem {
   product_id?: string;
   price?: number;
   stripe_link?: string;
+  caption?: string;
   is_active: boolean;
   display_order: number;
   created_at: string;

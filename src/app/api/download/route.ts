@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       // Cart purchase - fetch multiple items
       const { data: items, error } = await supabase
         .from('vault_items')
-        .select('id, title, category, content_type, images')
+        .select('id, title, category, content_type, images, caption')
         .in('id', vaultItemIds);
 
       if (error || !items || items.length === 0) {
@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
           category: item.category,
           content_type: item.content_type,
           download_files: item.images || [],
+          caption: item.caption || null,
         })),
         customer_email: session.customer_details?.email,
       });
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
     // Fetch vault item
     const { data: item, error } = await supabase
       .from('vault_items')
-      .select('title, category, content_type, images')
+      .select('title, category, content_type, images, caption')
       .eq('id', vaultItemId)
       .single();
 
@@ -107,6 +108,7 @@ export async function GET(request: NextRequest) {
         category: item.category,
         content_type: item.content_type,
         download_files: item.images || [],
+        caption: item.caption || null,
       },
       customer_email: session.customer_details?.email,
     });
