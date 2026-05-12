@@ -81,9 +81,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Fetch caption for single item purchase
+    let caption = '';
+    const singleItemId = session.metadata?.vault_item_id;
+    if (singleItemId) {
+      const { data: vaultItem } = await supabase
+        .from('vault_items')
+        .select('caption')
+        .eq('id', singleItemId)
+        .single();
+      caption = vaultItem?.caption || '';
+    }
+
     // Send download email to customer
     if (customerEmail) {
       try {
+        const captionHtml = caption ? `
+                  <div style="background-color: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                    <p style="color: #0369a1; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px; font-weight: bold;">Caption for Your Post:</p>
+                    <p style="color: #1e3a5f; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${caption}</p>
+                  </div>
+        ` : '';
+
         await resend.emails.send({
           from: 'Pipeline AI <noreply@getpipelineai.com>',
           to: customerEmail,
@@ -116,6 +135,8 @@ export async function POST(request: NextRequest) {
                   <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 24px; text-align: center;">
                     Thank you for your purchase! Your content is ready to download. Click the button below to access your files.
                   </p>
+                  
+                  ${captionHtml}
                   
                   <a href="${downloadUrl}" style="display: block; background-color: #C96A2B; color: #ffffff; text-decoration: none; padding: 18px 24px; border-radius: 12px; font-weight: bold; font-size: 16px; text-align: center;">
                     Download Your Files
