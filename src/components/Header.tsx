@@ -61,7 +61,8 @@ export default function Header({ currentNiche }: HeaderProps) {
               <ChevronDown className={`w-4 h-4 transition-transform ${showNicheMenu ? 'rotate-180' : ''}`} />
             </button>
             {showNicheMenu && (
-              <div className="absolute top-full left-0 mt-2 bg-[#1a1a1a] border border-white/10 rounded-lg py-2 min-w-[200px] shadow-xl">
+              <div className="absolute top-full left-0 pt-2">
+                <div className="bg-[#1a1a1a] border border-white/10 rounded-lg py-2 min-w-[200px] shadow-xl">
                 {niches.map(niche => (
                   <Link
                     key={niche.slug}
@@ -74,6 +75,7 @@ export default function Header({ currentNiche }: HeaderProps) {
                 {niches.length === 0 && (
                   <span className="block px-4 py-2 text-white/50 text-sm">Loading...</span>
                 )}
+                </div>
               </div>
             )}
           </div>

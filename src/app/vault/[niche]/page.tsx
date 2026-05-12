@@ -171,16 +171,18 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                 <ChevronDown className={`w-4 h-4 transition-transform ${showNicheMenu ? 'rotate-180' : ''}`} />
               </button>
               {showNicheMenu && (
-                <div className="absolute top-full left-0 mt-2 bg-[#0a1a2a] border border-white/10 rounded-lg py-2 min-w-[200px] shadow-xl">
-                  {allNiches.map(n => (
-                    <Link
-                      key={n.slug}
-                      href={`/industries/${n.slug}`}
-                      className="block px-4 py-2 text-white/70 hover:text-white hover:bg-white/5 text-sm"
-                    >
-                      {getNicheEmoji(n)} {n.name}
-                    </Link>
-                  ))}
+                <div className="absolute top-full left-0 pt-2">
+                  <div className="bg-[#0a1a2a] border border-white/10 rounded-lg py-2 min-w-[200px] shadow-xl">
+                    {allNiches.map(n => (
+                      <Link
+                        key={n.slug}
+                        href={`/industries/${n.slug}`}
+                        className="block px-4 py-2 text-white/70 hover:text-white hover:bg-white/5 text-sm"
+                      >
+                        {getNicheEmoji(n)} {n.name}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
