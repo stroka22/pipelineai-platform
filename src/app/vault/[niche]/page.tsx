@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { Lock, ChevronLeft, ChevronRight, X, ShoppingBag, Eye, Shield, Loader2, Play, AlertTriangle } from 'lucide-react';
+import { Lock, ChevronLeft, ChevronRight, X, ShoppingBag, Eye, Shield, Loader2, Play, AlertTriangle, ChevronDown } from 'lucide-react';
 import { supabase, VaultItem, Niche } from '@/lib/supabase';
 import BuyButton from '@/components/BuyButton';
 
@@ -18,6 +18,8 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
   const categoryParam = searchParams.get('category');
   
   const [niche, setNiche] = useState<Niche | null>(null);
+  const [allNiches, setAllNiches] = useState<Niche[]>([]);
+  const [showNicheMenu, setShowNicheMenu] = useState(false);
   const [items, setItems] = useState<VaultItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -42,6 +44,15 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
 
   useEffect(() => {
     async function fetchData() {
+      // Fetch all active niches for dropdown
+      const { data: allNichesData } = await supabase
+        .from('niches')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+      
+      if (allNichesData) setAllNiches(allNichesData);
+
       // Fetch niche info
       const { data: nicheData } = await supabase
         .from('niches')
@@ -82,6 +93,17 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
     }
     fetchData();
   }, [nicheSlug]);
+
+  const getNicheEmoji = (n: Niche) => {
+    if (n.icon) return n.icon;
+    const fallbacks: Record<string, string> = {
+      'pest-control': '🪲',
+      'roofing': '🏠',
+      'hvac': '❄️',
+      'plumbing': '🔧',
+    };
+    return fallbacks[n.slug] || '📦';
+  };
 
   const filteredItems = selectedCategory === 'All' 
     ? items 
@@ -135,10 +157,33 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
           <Link href="/" className="text-2xl font-bold text-white">
             Pipeline <span className="text-[#C96A2B]">AI</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <Link href="/" className="text-white/70 hover:text-white text-sm font-medium">
               Home
             </Link>
+            <div 
+              className="relative"
+              onMouseEnter={() => setShowNicheMenu(true)}
+              onMouseLeave={() => setShowNicheMenu(false)}
+            >
+              <button className="text-white/70 hover:text-white text-sm font-medium flex items-center gap-1">
+                Niches
+                <ChevronDown className={`w-4 h-4 transition-transform ${showNicheMenu ? 'rotate-180' : ''}`} />
+              </button>
+              {showNicheMenu && (
+                <div className="absolute top-full left-0 mt-2 bg-[#0a1a2a] border border-white/10 rounded-lg py-2 min-w-[200px] shadow-xl">
+                  {allNiches.map(n => (
+                    <Link
+                      key={n.slug}
+                      href={`/industries/${n.slug}`}
+                      className="block px-4 py-2 text-white/70 hover:text-white hover:bg-white/5 text-sm"
+                    >
+                      {getNicheEmoji(n)} {n.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
             <Link href="/#vaults" className="text-white/70 hover:text-white text-sm font-medium">
               All Vaults
             </Link>
