@@ -138,19 +138,35 @@ Create a DALL-E 3 prompt to recreate this image with the branding incorporated. 
     const dallePrompt = promptResponse.choices[0].message.content;
 
     // Step 3: Generate the branded image with DALL-E 3
-    // Generate the branded image
-    console.log('Attempting to generate image with prompt:', dallePrompt?.substring(0, 100));
+    // Generate the branded image using REST API directly
+    const imagePrompt = dallePrompt || `Professional social media carousel image for ${businessName}`;
+    console.log('Attempting to generate image with prompt:', imagePrompt.substring(0, 100));
     
-    const imageResponse = await openai.images.generate({
-      model: "gpt-image",
-      prompt: dallePrompt || `Professional social media carousel image for ${businessName}`,
-      n: 1,
-      size: "1024x1024",
+    const imageApiResponse = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt: imagePrompt,
+        n: 1,
+        size: '1024x1024',
+      }),
     });
-    
-    console.log('Image response:', JSON.stringify(imageResponse, null, 2));
 
-    const generatedImageUrl = imageResponse.data?.[0]?.url;
+    const imageResponse = await imageApiResponse.json();
+    console.log('Image API response:', JSON.stringify(imageResponse, null, 2));
+
+    if (!imageApiResponse.ok) {
+      return NextResponse.json({ 
+        error: imageResponse.error?.message || 'Image generation failed',
+        details: imageResponse.error
+      }, { status: 400 });
+    }
+
+    const generatedImageUrl = imageResponse.data?.[0]?.url || imageResponse.data?.[0]?.b64_json;
 
     if (!generatedImageUrl) {
       return NextResponse.json({ error: 'Failed to generate image' }, { status: 500 });
