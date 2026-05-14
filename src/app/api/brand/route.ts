@@ -153,8 +153,13 @@ Create a DALL-E 3 prompt to recreate this image with the branding incorporated. 
     });
   } catch (error: any) {
     console.error('Branding error:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    
+    // Return more specific error info
+    const errorMessage = error?.error?.message || error?.message || 'Failed to generate branded image';
     return NextResponse.json({ 
-      error: error.message || 'Failed to generate branded image' 
+      error: errorMessage,
+      details: error?.error || error?.code || 'Unknown error'
     }, { status: 500 });
   }
 }
