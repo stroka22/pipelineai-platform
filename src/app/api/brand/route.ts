@@ -153,6 +153,7 @@ Create a DALL-E 3 prompt to recreate this image with the branding incorporated. 
         prompt: imagePrompt,
         n: 1,
         size: '1024x1024',
+        response_format: 'url',
       }),
     });
 
@@ -166,7 +167,13 @@ Create a DALL-E 3 prompt to recreate this image with the branding incorporated. 
       }, { status: 400 });
     }
 
-    const generatedImageUrl = imageResponse.data?.[0]?.url || imageResponse.data?.[0]?.b64_json;
+    // Handle both URL and base64 responses
+    let generatedImageUrl = imageResponse.data?.[0]?.url;
+    
+    // If we got base64 data instead, convert it to a data URL
+    if (!generatedImageUrl && imageResponse.data?.[0]?.b64_json) {
+      generatedImageUrl = `data:image/png;base64,${imageResponse.data[0].b64_json}`;
+    }
 
     if (!generatedImageUrl) {
       return NextResponse.json({ error: 'Failed to generate image' }, { status: 500 });
