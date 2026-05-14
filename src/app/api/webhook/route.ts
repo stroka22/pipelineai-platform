@@ -147,6 +147,18 @@ export async function POST(request: NextRequest) {
                   </p>
                 </div>
                 
+                <!-- Branding Tool Spotlight -->
+                <div style="background-color: #7c3aed; padding: 32px; text-align: center;">
+                  <p style="color: #e9d5ff; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px;">✨ AI-Powered</p>
+                  <h3 style="color: #ffffff; font-size: 20px; font-weight: bold; margin: 0 0 12px;">Want Your Brand on This Content?</h3>
+                  <p style="color: #e9d5ff; font-size: 14px; margin: 0 0 20px; line-height: 1.5;">
+                    Use our Branding Tool to add your business name, phone number, and website to any carousel image.
+                  </p>
+                  <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.getpipelineai.com'}/brand" style="display: inline-block; background-color: #ffffff; color: #7c3aed; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: bold; font-size: 14px;">
+                    Try Branding Tool - $10/image
+                  </a>
+                </div>
+                
                 <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
                   <p style="color: #9ca3af; font-size: 12px; margin: 0;">
                     © ${new Date().getFullYear()} Pipeline AI. All rights reserved.
