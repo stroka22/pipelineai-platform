@@ -288,6 +288,34 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
         </div>
       </section>
 
+      {/* AI Branding Tool */}
+      <section className="py-16 bg-[#0a0a0a]">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="bg-purple-500/10 border border-purple-500/30 rounded-2xl p-8 md:p-10">
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-1 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full text-sm font-semibold mb-3">
+                  <Sparkles className="w-4 h-4" />
+                  AI-Powered
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Add Your Branding to Any Carousel</h3>
+                <p className="text-white/60 mb-4">
+                  Use our Branding Tool to add your business name, phone number, and website to any carousel image. AI matches your brand style automatically.
+                </p>
+                <Link 
+                  href="/brand"
+                  className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-purple-700 transition-all"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Try Branding Tool - $10/image
+                </Link>
+              </div>
+              <div className="text-8xl">🎨</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="py-24 bg-gradient-to-b from-[#0a0a0a] to-[#111111]">
         <div className="max-w-4xl mx-auto px-6 text-center">

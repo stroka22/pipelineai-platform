@@ -244,6 +244,73 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* AI Branding Tool */}
+      <section className="py-20 bg-[#111111]">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 text-purple-400 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                <Sparkles className="w-4 h-4" />
+                AI-Powered
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                Branding Tool
+              </h2>
+              <p className="text-white/60 text-lg mb-6">
+                Make any carousel uniquely yours. Upload a carousel image and our AI adds your business name, phone number, and website - perfectly positioned and styled to match your brand.
+              </p>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-3 text-white/70">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  Upload any carousel image
+                </li>
+                <li className="flex items-center gap-3 text-white/70">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  AI adds your business name, phone & website
+                </li>
+                <li className="flex items-center gap-3 text-white/70">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  Matches your brand colors automatically
+                </li>
+                <li className="flex items-center gap-3 text-white/70">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  Ready in about 30 seconds
+                </li>
+              </ul>
+              <Link 
+                href="/brand"
+                className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-purple-700 transition-all"
+              >
+                <Sparkles className="w-5 h-5" />
+                Try Branding Tool - $10/image
+              </Link>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
+              <div className="text-6xl mb-4">🎨</div>
+              <h3 className="text-xl font-bold text-white mb-2">How It Works</h3>
+              <div className="space-y-4 text-left">
+                <div className="flex items-start gap-3">
+                  <span className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>
+                  <p className="text-white/60 text-sm">Upload a carousel image you want branded</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>
+                  <p className="text-white/60 text-sm">Enter your business name, phone, website & colors</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>
+                  <p className="text-white/60 text-sm">AI generates a branded version with your info</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">4</span>
+                  <p className="text-white/60 text-sm">Download and post to social media</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="py-24 bg-gradient-to-b from-[#0a0a0a] to-[#111111]">
         <div className="max-w-4xl mx-auto px-6 text-center">

@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Download, CheckCircle, XCircle, Loader2, ArrowLeft, Copy, Check } from 'lucide-react';
+import { Download, CheckCircle, XCircle, Loader2, ArrowLeft, Copy, Check, Sparkles } from 'lucide-react';
 
 interface DownloadItem {
   id?: string;
@@ -226,6 +226,22 @@ function DownloadContent() {
             )}
           </div>
         ))}
+
+        {/* Branding Tool Upsell */}
+        <div className="mt-12 bg-purple-500/10 border border-purple-500/30 rounded-2xl p-6 text-center">
+          <Sparkles className="w-10 h-10 text-purple-400 mx-auto mb-3" />
+          <h3 className="text-xl font-bold text-white mb-2">Want Your Brand on This Content?</h3>
+          <p className="text-white/60 text-sm mb-4">
+            Use our AI Branding Tool to add your business name, phone number, and website to any carousel image.
+          </p>
+          <Link
+            href="/brand"
+            className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-purple-700 transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            Try Branding Tool - $10/image
+          </Link>
+        </div>
 
         <div className="text-center mt-8">
           <p className="text-white/40 text-sm mb-4">

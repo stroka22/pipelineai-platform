@@ -90,7 +90,7 @@ export default function Header({ currentNiche }: HeaderProps) {
           </Link>
           <Link href="/brand" className="text-[#C96A2B] hover:text-[#B55D24] transition-colors text-sm font-medium flex items-center gap-1">
             <Sparkles className="w-4 h-4" />
-            Brand Tool
+            Branding Tool
           </Link>
         </nav>
 
@@ -181,7 +181,7 @@ export default function Header({ currentNiche }: HeaderProps) {
               onClick={() => setMobileMenuOpen(false)}
             >
               <Sparkles className="w-5 h-5" />
-              Brand Tool
+              Branding Tool
             </Link>
             <div className="pt-4">
               {currentNiche ? (
