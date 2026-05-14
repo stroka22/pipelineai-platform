@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Eye, Menu, X, ShoppingCart } from 'lucide-react';
+import { ChevronDown, Eye, Menu, X, ShoppingCart, Sparkles } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { supabase, Niche } from '@/lib/supabase';
 
@@ -88,6 +88,10 @@ export default function Header({ currentNiche }: HeaderProps) {
           <Link href="/#how-it-works" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
             How It Works
           </Link>
+          <Link href="/brand" className="text-[#C96A2B] hover:text-[#B55D24] transition-colors text-sm font-medium flex items-center gap-1">
+            <Sparkles className="w-4 h-4" />
+            Brand Tool
+          </Link>
         </nav>
 
         {/* Desktop CTA + Cart */}
@@ -170,6 +174,14 @@ export default function Header({ currentNiche }: HeaderProps) {
               onClick={() => setMobileMenuOpen(false)}
             >
               How It Works
+            </Link>
+            <Link 
+              href="/brand" 
+              className="block px-4 py-3 text-[#C96A2B] hover:bg-[#C96A2B]/10 rounded-lg text-base font-medium flex items-center gap-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Sparkles className="w-5 h-5" />
+              Brand Tool
             </Link>
             <div className="pt-4">
               {currentNiche ? (
