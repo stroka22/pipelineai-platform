@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
               name: 'AI Image Branding',
               description: `Brand carousel image for ${businessName}`,
             },
-            unit_amount: 50, // $0.50 for testing (change back to 1000 for $10)
+            unit_amount: 1000, // $10.00
           },
           quantity: 1,
         },
