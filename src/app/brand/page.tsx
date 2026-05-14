@@ -115,7 +115,7 @@ export default function BrandingPage() {
               Upload a carousel image and we'll add your business name, phone number, and branding using AI.
             </p>
             <div className="mt-4 inline-flex items-center gap-2 bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-2 rounded-full text-sm font-semibold">
-              $10 per branded image
+              $0.50 per branded image (Testing)
             </div>
           </div>
 
@@ -280,7 +280,7 @@ export default function BrandingPage() {
               ) : (
                 <>
                   <Sparkles className="w-5 h-5" />
-                  Brand My Image - $10
+                  Brand My Image - $0.50 (Testing)
                 </>
               )}
             </button>
