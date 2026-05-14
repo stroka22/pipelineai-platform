@@ -139,12 +139,16 @@ Create a DALL-E 3 prompt to recreate this image with the branding incorporated. 
 
     // Step 3: Generate the branded image with DALL-E 3
     // Generate the branded image
+    console.log('Attempting to generate image with prompt:', dallePrompt?.substring(0, 100));
+    
     const imageResponse = await openai.images.generate({
-      model: "gpt-image-1",
+      model: "gpt-image",
       prompt: dallePrompt || `Professional social media carousel image for ${businessName}`,
       n: 1,
       size: "1024x1024",
     });
+    
+    console.log('Image response:', JSON.stringify(imageResponse, null, 2));
 
     const generatedImageUrl = imageResponse.data?.[0]?.url;
 
