@@ -17,6 +17,11 @@ export async function POST(request: NextRequest) {
   const stripe = getStripe();
 
   try {
+    // Check if API key is loaded
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
+    }
+
     const { sessionId, carouselImage, logoImage } = await request.json();
 
     // Verify payment
