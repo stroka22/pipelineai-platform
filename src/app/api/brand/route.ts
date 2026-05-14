@@ -139,7 +139,6 @@ Create a DALL-E 3 prompt to recreate this image with the branding incorporated. 
       n: 1,
       size: '1024x1024',
       quality: 'hd',
-      style: 'vivid',
     });
 
     const generatedImageUrl = imageResponse.data?.[0]?.url;
