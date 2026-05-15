@@ -21,15 +21,26 @@ function GenerateContent() {
   async function generateBrandedImages() {
     try {
       setStatus('generating');
+      console.log('Starting generation...');
 
       // Get the branding data from sessionStorage
       const brandingDataStr = sessionStorage.getItem('brandingData');
+      console.log('brandingDataStr exists:', !!brandingDataStr);
+      
       if (!brandingDataStr) {
-        throw new Error('Branding data not found. Please try again.');
+        throw new Error('Branding data not found. Please go back and submit the form again.');
       }
 
       const brandingData = JSON.parse(brandingDataStr);
-      const carouselImages = brandingData.carouselImages || [brandingData.carouselImage];
+      console.log('brandingData keys:', Object.keys(brandingData));
+      
+      const carouselImages = brandingData.carouselImages || (brandingData.carouselImage ? [brandingData.carouselImage] : []);
+      console.log('carouselImages count:', carouselImages.length);
+      
+      if (carouselImages.length === 0) {
+        throw new Error('No carousel images found. Please go back and upload images.');
+      }
+      
       setTotalImages(carouselImages.length);
 
       const results: string[] = [];
@@ -38,6 +49,8 @@ function GenerateContent() {
         setCurrentIndex(i + 1);
         setProgress(`Creating image ${i + 1} of ${carouselImages.length}...`);
 
+        console.log(`Generating image ${i + 1}...`);
+        
         const response = await fetch('/api/brand', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -52,13 +65,15 @@ function GenerateContent() {
           }),
         });
 
+        console.log(`Response status for image ${i + 1}:`, response.status);
         const data = await response.json();
+        console.log(`Response data for image ${i + 1}:`, data.success, data.error);
 
         if (data.success && data.imageUrl) {
           results.push(data.imageUrl);
           setGeneratedImages([...results]);
         } else {
-          console.error(`Failed to generate image ${i + 1}:`, data.error);
+          console.error(`Failed to generate image ${i + 1}:`, data.error, data.details);
         }
       }
 
