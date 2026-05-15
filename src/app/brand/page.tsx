@@ -227,8 +227,7 @@ export default function BrandingPage() {
               FREE - Limited Time
             </div>
             <p className="mt-4 text-white/40 text-sm max-w-lg mx-auto">
-              Note: AI image generation may produce inconsistent results including text errors or visual glitches. 
-              We're offering this tool free while the technology improves.
+              Note: AI image generation may produce inconsistent results. We're offering this tool free until the technology improves.
             </p>
           </div>
 

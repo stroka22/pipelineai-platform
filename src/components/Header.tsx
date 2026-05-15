@@ -88,9 +88,13 @@ export default function Header({ currentNiche }: HeaderProps) {
           <Link href="/#how-it-works" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
             How It Works
           </Link>
-          <Link href="/brand" className="text-[#C96A2B] hover:text-[#B55D24] transition-colors text-sm font-medium flex items-center gap-1">
+          <Link 
+            href="/brand" 
+            className="bg-[#C96A2B] hover:bg-[#B55D24] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors"
+            title="Upload a carousel image and AI will add your business name, phone, and website"
+          >
             <Sparkles className="w-4 h-4" />
-            Branding Tool
+            Brand Your Image
           </Link>
         </nav>
 
@@ -177,11 +181,11 @@ export default function Header({ currentNiche }: HeaderProps) {
             </Link>
             <Link 
               href="/brand" 
-              className="block px-4 py-3 text-[#C96A2B] hover:bg-[#C96A2B]/10 rounded-lg text-base font-medium flex items-center gap-2"
+              className="block px-4 py-3 bg-[#C96A2B] text-white rounded-lg text-base font-medium flex items-center gap-2"
               onClick={() => setMobileMenuOpen(false)}
             >
               <Sparkles className="w-5 h-5" />
-              Branding Tool
+              Brand Your Image
             </Link>
             <div className="pt-4">
               {currentNiche ? (
