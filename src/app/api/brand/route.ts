@@ -32,8 +32,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Business name required' }, { status: 400 });
     }
 
-    console.log('Processing single image for:', businessName);
-
     // Step 1: Analyze the carousel image with GPT-4 Vision
     const analysisMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       {
@@ -41,15 +39,14 @@ export async function POST(request: NextRequest) {
         content: `You are an expert at analyzing images and creating detailed descriptions for image generation. 
 Your job is to analyze a carousel/social media image and describe it in detail so it can be recreated with branding elements added.
 Focus on: layout, composition, colors, style, typography style, any graphics or icons, background elements.
-Be very specific about positioning (top, bottom, left, right, center).
-Describe the EXACT text content, colors, and visual elements you see.`
+Be very specific about positioning (top, bottom, left, right, center).`
       },
       {
         role: 'user',
         content: [
           {
             type: 'text',
-            text: 'Analyze this carousel image in detail. Describe the layout, style, colors, text content, and composition so it can be recreated with custom branding added.'
+            text: 'Analyze this carousel image in detail. Describe the layout, style, colors, and composition so it can be recreated with custom branding.'
           },
           {
             type: 'image_url',
@@ -82,63 +79,59 @@ Describe the EXACT text content, colors, and visual elements you see.`
       });
     }
 
-    console.log('Step 1: Analyzing image...');
     const analysisResponse = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: analysisMessages,
-      max_tokens: 1500,
+      max_tokens: 1000,
     });
 
     const imageAnalysis = analysisResponse.choices[0].message.content;
-    console.log('Image analysis complete');
 
     // Step 2: Create the branding prompt
     const brandingPromptMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       {
         role: 'system',
-        content: `You are an expert at creating image generation prompts for branded social media images.
+        content: `You are an expert at creating DALL-E 3 prompts for branded social media images.
 Your job is to take an image analysis and branding information, then create a prompt that will generate a similar image WITH the branding incorporated.
 
-CRITICAL RULES:
-- Recreate the SAME style, layout, and visual composition as the original
-- Keep the same color scheme and design aesthetic
-- Add the business name prominently (usually at top or bottom)
-- Include phone number and website somewhere visible if provided
-- The branding should look professional and integrated, not slapped on
-- Use the brand colors if provided, otherwise match the original style
-- DO NOT include placeholder text - use the EXACT business info provided
-- Keep the same mood, tone, and visual style as the original image
+Rules:
+- Keep the same style, layout, and composition as the original
+- Strategically place the business name prominently (usually at top or as a header)
+- Add phone number and website at the bottom if provided
+- Incorporate the brand colors throughout
+- Make it look professional and cohesive
+- The text should be readable and well-positioned
+- DO NOT include any text that says "placeholder" or generic text
 
-Output ONLY the image generation prompt, nothing else.`
+Output ONLY the DALL-E prompt, nothing else.`
       },
       {
         role: 'user',
         content: `Original Image Analysis:
 ${imageAnalysis}
 
-Branding Information to ADD to the image:
+Branding Information:
 - Business Name: ${businessName}
-- Phone: ${phoneNumber || 'Not provided - do not include'}
-- Website: ${websiteUrl || 'Not provided - do not include'}
+- Website: ${websiteUrl || 'None provided'}
+- Phone: ${phoneNumber || 'None provided'}
 - Brand Colors: ${brandColors || 'Use colors from the original image'}
+${logoImage ? '- Logo style should be incorporated' : ''}
 
-Create a detailed image generation prompt to recreate this image with the branding "${businessName}" incorporated naturally into the design.${phoneNumber ? ` Include phone: "${phoneNumber}".` : ''}${websiteUrl ? ` Include website: "${websiteUrl}".` : ''}`
+Create a DALL-E 3 prompt to recreate this image with the branding incorporated. The business name "${businessName}" must appear prominently.${phoneNumber ? ` Include the phone number "${phoneNumber}".` : ''}${websiteUrl ? ` Include the website "${websiteUrl}".` : ''}`
       }
     ];
 
-    console.log('Step 2: Creating branding prompt...');
     const promptResponse = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: brandingPromptMessages,
-      max_tokens: 800,
+      max_tokens: 500,
     });
 
     const dallePrompt = promptResponse.choices[0].message.content;
-    console.log('Branding prompt created');
 
     // Step 3: Generate the branded image
     const imagePrompt = dallePrompt || `Professional social media carousel image for ${businessName}`;
-    console.log('Step 3: Generating branded image...');
+    console.log('Attempting to generate image with prompt:', imagePrompt.substring(0, 100));
     
     const imageApiResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -155,9 +148,9 @@ Create a detailed image generation prompt to recreate this image with the brandi
     });
 
     const imageResponse = await imageApiResponse.json();
+    console.log('Image API response:', JSON.stringify(imageResponse, null, 2));
 
     if (!imageApiResponse.ok) {
-      console.error('Image generation failed:', imageResponse.error);
       return NextResponse.json({ 
         error: imageResponse.error?.message || 'Image generation failed',
         details: imageResponse.error
@@ -167,6 +160,7 @@ Create a detailed image generation prompt to recreate this image with the brandi
     // Handle both URL and base64 responses
     let generatedImageUrl = imageResponse.data?.[0]?.url;
     
+    // If we got base64 data instead, convert it to a data URL
     if (!generatedImageUrl && imageResponse.data?.[0]?.b64_json) {
       generatedImageUrl = `data:image/png;base64,${imageResponse.data[0].b64_json}`;
     }
@@ -175,16 +169,19 @@ Create a detailed image generation prompt to recreate this image with the brandi
       return NextResponse.json({ error: 'Failed to generate image' }, { status: 500 });
     }
 
-    console.log('Image generated successfully');
-
     return NextResponse.json({
       success: true,
       imageUrl: generatedImageUrl,
+      prompt: dallePrompt,
     });
   } catch (error: any) {
     console.error('Branding error:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    
+    const errorMessage = error?.error?.message || error?.message || 'Failed to generate branded image';
     return NextResponse.json({ 
-      error: error.message || 'Failed to generate branded image',
+      error: errorMessage,
+      details: error?.error || error?.code || 'Unknown error'
     }, { status: 500 });
   }
 }

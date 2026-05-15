@@ -196,7 +196,7 @@ export default function BrandingPage() {
               </div>
               <Loader2 className="w-32 h-32 text-[#C96A2B] animate-spin absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-4">Creating Your Branded Images</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">Creating Your Branded Image</h2>
             <p className="text-white/60 mb-4">{progress}</p>
             <p className="text-white/40 text-sm">This usually takes 20-40 seconds...</p>
           </div>
@@ -226,6 +226,10 @@ export default function BrandingPage() {
             <div className="mt-4 inline-flex items-center gap-2 bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-2 rounded-full text-sm font-semibold">
               FREE - Limited Time
             </div>
+            <p className="mt-4 text-white/40 text-sm max-w-lg mx-auto">
+              Note: AI image generation may produce inconsistent results including text errors or visual glitches. 
+              We're offering this tool free while the technology improves.
+            </p>
           </div>
 
           {/* Form */}
