@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Eye, Menu, X, ShoppingCart, Sparkles } from 'lucide-react';
+import { ChevronDown, Eye, Menu, X, ShoppingCart, Sparkles, Info } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { supabase, Niche } from '@/lib/supabase';
 
@@ -88,14 +88,19 @@ export default function Header({ currentNiche }: HeaderProps) {
           <Link href="/#how-it-works" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
             How It Works
           </Link>
-          <Link 
-            href="/brand" 
-            className="bg-[#C96A2B] hover:bg-[#B55D24] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors"
-            title="Upload a carousel image and AI will add your business name, phone, and website"
-          >
-            <Sparkles className="w-4 h-4" />
-            Brand Your Image
-          </Link>
+          <div className="relative group">
+            <Link 
+              href="/brand" 
+              className="bg-[#C96A2B] hover:bg-[#B55D24] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors"
+            >
+              <Sparkles className="w-4 h-4" />
+              Brand Your Image
+              <Info className="w-3.5 h-3.5 opacity-70" />
+            </Link>
+            <div className="absolute top-full mt-2 right-0 w-64 bg-gray-900 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 border border-white/10">
+              Upload a carousel image and AI will add your business name, logo, phone, brand colors, and website
+            </div>
+          </div>
         </nav>
 
         {/* Desktop CTA + Cart */}
