@@ -15,16 +15,14 @@ export default function BrandingPage() {
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [carouselFiles, setCarouselFiles] = useState<File[]>([]);
-  const [carouselPreviews, setCarouselPreviews] = useState<string[]>([]);
+  const [carouselFile, setCarouselFile] = useState<File | null>(null);
+  const [carouselPreview, setCarouselPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [totalImages, setTotalImages] = useState(0);
   const [progress, setProgress] = useState('');
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,17 +34,11 @@ export default function BrandingPage() {
   };
 
   const handleCarouselUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const newFiles = Array.from(files);
-      setCarouselFiles(prev => [...prev, ...newFiles]);
-      setCarouselPreviews(prev => [...prev, ...newFiles.map(f => URL.createObjectURL(f))]);
+    const file = e.target.files?.[0];
+    if (file) {
+      setCarouselFile(file);
+      setCarouselPreview(URL.createObjectURL(file));
     }
-  };
-
-  const removeCarousel = (index: number) => {
-    setCarouselFiles(prev => prev.filter((_, i) => i !== index));
-    setCarouselPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -62,8 +54,8 @@ export default function BrandingPage() {
     e.preventDefault();
     setError(null);
 
-    if (carouselFiles.length === 0) {
-      setError('Please upload at least one carousel image to brand');
+    if (!carouselFile) {
+      setError('Please upload a carousel image to brand');
       return;
     }
 
@@ -74,44 +66,31 @@ export default function BrandingPage() {
 
     setIsGenerating(true);
     setGeneratedImages([]);
-    setTotalImages(carouselFiles.length);
-    setCurrentIndex(0);
-
-    const logoBase64 = logoFile ? await fileToBase64(logoFile) : null;
-    const results: string[] = [];
+    setProgress('Creating your branded image...');
 
     try {
-      for (let i = 0; i < carouselFiles.length; i++) {
-        setCurrentIndex(i + 1);
-        setProgress(`Creating image ${i + 1} of ${carouselFiles.length}...`);
+      const carouselBase64 = await fileToBase64(carouselFile);
+      const logoBase64 = logoFile ? await fileToBase64(logoFile) : null;
 
-        const carouselBase64 = await fileToBase64(carouselFiles[i]);
+      const response = await fetch('/api/brand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          carouselImage: carouselBase64,
+          logoImage: logoBase64,
+          businessName: formData.businessName,
+          websiteUrl: formData.websiteUrl,
+          phoneNumber: formData.phoneNumber,
+          brandColors: formData.brandColors,
+        }),
+      });
 
-        const response = await fetch('/api/brand', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            carouselImage: carouselBase64,
-            logoImage: logoBase64,
-            businessName: formData.businessName,
-            websiteUrl: formData.websiteUrl,
-            phoneNumber: formData.phoneNumber,
-            brandColors: formData.brandColors,
-          }),
-        });
+      const data = await response.json();
 
-        const data = await response.json();
-
-        if (data.success && data.imageUrl) {
-          results.push(data.imageUrl);
-          setGeneratedImages([...results]);
-        } else {
-          console.error(`Failed to generate image ${i + 1}:`, data.error);
-        }
-      }
-
-      if (results.length === 0) {
-        throw new Error('Failed to generate any images. Please try again.');
+      if (data.success && data.imageUrl) {
+        setGeneratedImages([data.imageUrl]);
+      } else {
+        throw new Error(data.error || 'Failed to generate image');
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
@@ -146,72 +125,47 @@ export default function BrandingPage() {
     }
   };
 
-  const handleDownloadAll = async () => {
-    for (let i = 0; i < generatedImages.length; i++) {
-      await handleDownload(generatedImages[i], i);
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-  };
-
   const handleStartOver = () => {
     setGeneratedImages([]);
     setIsGenerating(false);
-    setCarouselFiles([]);
-    setCarouselPreviews([]);
-    setCurrentIndex(0);
-    setTotalImages(0);
+    setCarouselFile(null);
+    setCarouselPreview(null);
     setProgress('');
   };
 
-  // Show results if we have generated images
-  if (generatedImages.length > 0 && currentIndex >= totalImages) {
+  // Show results if we have generated image
+  if (generatedImages.length > 0) {
     return (
       <main className="min-h-screen bg-[#0a0a0a]">
         <Header />
         <div className="pt-24 pb-16">
-          <div className="max-w-5xl mx-auto px-6">
+          <div className="max-w-lg mx-auto px-6">
             <div className="text-center mb-8">
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h1 className="text-3xl font-bold text-white mb-2">
-                Your Branded {generatedImages.length > 1 ? 'Images Are' : 'Image is'} Ready!
+                Your Branded Image is Ready!
               </h1>
-              <p className="text-white/60">Download your AI-branded carousel {generatedImages.length > 1 ? 'images' : 'image'} below</p>
+              <p className="text-white/60">Download your AI-branded carousel image below</p>
             </div>
 
-            {generatedImages.length > 1 && (
-              <div className="text-center mb-8">
-                <button
-                  onClick={handleDownloadAll}
-                  className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold text-lg inline-flex items-center gap-2 hover:bg-[#B55D24] transition-all"
-                >
-                  <Download className="w-5 h-5" />
-                  Download All ({generatedImages.length} images)
-                </button>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-8">
+              <div className="relative aspect-square rounded-xl overflow-hidden mb-4">
+                <Image
+                  src={generatedImages[0]}
+                  alt="Branded image"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
               </div>
-            )}
 
-            <div className={`grid ${generatedImages.length === 1 ? 'max-w-lg mx-auto' : 'md:grid-cols-2 lg:grid-cols-3'} gap-6 mb-8`}>
-              {generatedImages.map((imageUrl, index) => (
-                <div key={index} className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                  <div className="relative aspect-square rounded-xl overflow-hidden mb-4">
-                    <Image
-                      src={imageUrl}
-                      alt={`Branded image ${index + 1}`}
-                      fill
-                      className="object-contain"
-                      unoptimized
-                    />
-                  </div>
-
-                  <button
-                    onClick={() => handleDownload(imageUrl, index)}
-                    className="w-full bg-[#C96A2B] text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-[#B55D24] transition-all"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download {generatedImages.length > 1 ? `#${index + 1}` : 'Image'}
-                  </button>
-                </div>
-              ))}
+              <button
+                onClick={() => handleDownload(generatedImages[0], 0)}
+                className="w-full bg-[#C96A2B] text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-[#B55D24] transition-all"
+              >
+                <Download className="w-4 h-4" />
+                Download Image
+              </button>
             </div>
 
             <div className="text-center">
@@ -220,7 +174,7 @@ export default function BrandingPage() {
                 className="inline-flex items-center gap-2 text-[#C96A2B] hover:underline"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Brand More Images
+                Brand Another Image
               </button>
             </div>
           </div>
@@ -244,21 +198,7 @@ export default function BrandingPage() {
             </div>
             <h2 className="text-2xl font-bold text-white mb-4">Creating Your Branded Images</h2>
             <p className="text-white/60 mb-4">{progress}</p>
-            {totalImages > 1 && (
-              <div className="w-full bg-white/10 rounded-full h-2 mb-4">
-                <div 
-                  className="bg-[#C96A2B] h-2 rounded-full transition-all"
-                  style={{ width: `${(currentIndex / totalImages) * 100}%` }}
-                />
-              </div>
-            )}
-            <p className="text-white/40 text-sm">Each image takes 20-40 seconds...</p>
-            
-            {generatedImages.length > 0 && (
-              <div className="mt-8">
-                <p className="text-green-400 text-sm mb-2">{generatedImages.length} image{generatedImages.length > 1 ? 's' : ''} completed</p>
-              </div>
-            )}
+            <p className="text-white/40 text-sm">This usually takes 20-40 seconds...</p>
           </div>
         </div>
       </main>
@@ -281,7 +221,7 @@ export default function BrandingPage() {
               Brand Your Content
             </h1>
             <p className="text-white/60 text-lg max-w-xl mx-auto">
-              Upload carousel images and we'll add your business name, phone number, and branding using AI.
+              Upload a carousel image and we'll add your business name, phone number, and branding using AI.
             </p>
             <div className="mt-4 inline-flex items-center gap-2 bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-2 rounded-full text-sm font-semibold">
               FREE - Limited Time
@@ -290,56 +230,42 @@ export default function BrandingPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Carousel Images Upload */}
+            {/* Carousel Image Upload */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <ImageIcon className="w-5 h-5 text-[#C96A2B]" />
-                Carousel Images to Brand *
+                Carousel Image to Brand *
               </h2>
               
-              {carouselPreviews.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                  {carouselPreviews.map((preview, index) => (
-                    <div key={index} className="relative">
-                      <Image
-                        src={preview}
-                        alt={`Carousel ${index + 1}`}
-                        width={200}
-                        height={200}
-                        className="rounded-xl w-full h-32 object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeCarousel(index)}
-                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                      <span className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                        #{index + 1}
-                      </span>
-                    </div>
-                  ))}
+              {carouselPreview ? (
+                <div className="relative max-w-md mx-auto">
+                  <Image
+                    src={carouselPreview}
+                    alt="Carousel preview"
+                    width={400}
+                    height={400}
+                    className="rounded-xl w-full object-contain"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setCarouselFile(null); setCarouselPreview(null); }}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-              )}
-              
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-[#C96A2B]/50 transition-colors">
-                <Upload className="w-8 h-8 text-white/40 mb-2" />
-                <span className="text-white/60 text-sm">
-                  {carouselPreviews.length > 0 ? 'Add more images' : 'Click to upload carousel images'}
-                </span>
-                <span className="text-white/40 text-xs mt-1">PNG, JPG up to 10MB each</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleCarouselUpload}
-                  className="hidden"
-                />
-              </label>
-              
-              {carouselPreviews.length > 0 && (
-                <p className="text-white/50 text-sm mt-3">{carouselPreviews.length} image{carouselPreviews.length > 1 ? 's' : ''} selected</p>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-[#C96A2B]/50 transition-colors">
+                  <Upload className="w-10 h-10 text-white/40 mb-2" />
+                  <span className="text-white/60 text-sm">Click to upload carousel image</span>
+                  <span className="text-white/40 text-xs mt-1">PNG, JPG up to 10MB</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCarouselUpload}
+                    className="hidden"
+                  />
+                </label>
               )}
             </div>
 
@@ -452,11 +378,11 @@ export default function BrandingPage() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading || carouselFiles.length === 0}
+              disabled={loading || !carouselFile}
               className="w-full bg-[#C96A2B] text-white py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <Sparkles className="w-5 h-5" />
-              Brand {carouselFiles.length > 1 ? `${carouselFiles.length} Images` : 'Image'} - FREE
+              Brand Image - FREE
             </button>
 
             <p className="text-white/40 text-xs text-center">
