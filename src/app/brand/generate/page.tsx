@@ -173,7 +173,8 @@ function GenerateContent() {
           <div className="text-center max-w-md px-6">
             <XCircle className="w-20 h-20 text-red-500 mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-white mb-4">Something Went Wrong</h2>
-            <p className="text-white/60 mb-8">{error}</p>
+            <p className="text-white/60 mb-4">{error}</p>
+            <p className="text-white/40 text-xs mb-8">v2 - Debug enabled</p>
             <div className="space-y-4">
               <button
                 onClick={() => window.location.reload()}
