@@ -1,189 +1,121 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-function getOpenAI() {
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-}
+import sharp from 'sharp';
 
 export async function POST(request: NextRequest) {
-  const openai = getOpenAI();
-
   try {
-    // Check if API key is loaded
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
-    }
-
     const { 
       carouselImage, 
-      logoImage,
       businessName,
       websiteUrl,
       phoneNumber,
-      primaryColor,
-      secondaryColor,
+      brandColors,
     } = await request.json();
-
-    const brandColors = [primaryColor, secondaryColor].filter(Boolean).join(', ');
 
     if (!carouselImage) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
     }
 
-    // Step 1: Analyze the carousel image with GPT-4 Vision
-    const analysisMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      {
-        role: 'system',
-        content: `You are an expert at analyzing images and creating detailed descriptions for image generation. 
-Your job is to analyze a carousel/social media image and describe it in detail so it can be recreated with branding elements added.
-Focus on: layout, composition, colors, style, typography style, any graphics or icons, background elements.
-Be very specific about positioning (top, bottom, left, right, center).`
-      },
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: 'Analyze this carousel image in detail. Describe the layout, style, colors, and composition so it can be recreated with custom branding.'
-          },
-          {
-            type: 'image_url',
-            image_url: {
-              url: carouselImage,
-              detail: 'high'
-            }
-          }
-        ]
-      }
-    ];
-
-    // If logo is provided, analyze it too
-    if (logoImage) {
-      analysisMessages.push({
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: 'Also analyze this logo for style, colors, and design elements to incorporate:'
-          },
-          {
-            type: 'image_url',
-            image_url: {
-              url: logoImage,
-              detail: 'low'
-            }
-          }
-        ]
-      });
+    if (!businessName) {
+      return NextResponse.json({ error: 'Business name required' }, { status: 400 });
     }
 
-    const analysisResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: analysisMessages,
-      max_tokens: 1000,
-    });
+    // Extract base64 data from data URL
+    const base64Data = carouselImage.replace(/^data:image\/\w+;base64,/, '');
+    const imageBuffer = Buffer.from(base64Data, 'base64');
 
-    const imageAnalysis = analysisResponse.choices[0].message.content;
+    // Get image dimensions
+    const metadata = await sharp(imageBuffer).metadata();
+    const width = metadata.width || 1080;
+    const height = metadata.height || 1080;
 
-    // Step 2: Create the branding prompt
-    const brandingPromptMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      {
-        role: 'system',
-        content: `You are an expert at creating DALL-E 3 prompts for branded social media images.
-Your job is to take an image analysis and branding information, then create a prompt that will generate a similar image WITH the branding incorporated.
-
-Rules:
-- Keep the same style, layout, and composition as the original
-- Strategically place the business name prominently (usually at top or as a header)
-- Add phone number and website at the bottom if provided
-- Incorporate the brand colors throughout
-- Make it look professional and cohesive
-- The text should be readable and well-positioned
-- DO NOT include any text that says "placeholder" or generic text
-
-Output ONLY the DALL-E prompt, nothing else.`
-      },
-      {
-        role: 'user',
-        content: `Original Image Analysis:
-${imageAnalysis}
-
-Branding Information:
-- Business Name: ${businessName}
-- Website: ${websiteUrl || 'None provided'}
-- Phone: ${phoneNumber || 'None provided'}
-- Brand Colors: ${brandColors || 'Use colors from the original image'}
-${logoImage ? '- Logo style should be incorporated' : ''}
-
-Create a DALL-E 3 prompt to recreate this image with the branding incorporated. The business name "${businessName}" must appear prominently.${phoneNumber ? ` Include the phone number "${phoneNumber}".` : ''}${websiteUrl ? ` Include the website "${websiteUrl}".` : ''}`
-      }
-    ];
-
-    const promptResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: brandingPromptMessages,
-      max_tokens: 500,
-    });
-
-    const dallePrompt = promptResponse.choices[0].message.content;
-
-    // Step 3: Generate the branded image with DALL-E 3
-    // Generate the branded image using REST API directly
-    const imagePrompt = dallePrompt || `Professional social media carousel image for ${businessName}`;
-    console.log('Attempting to generate image with prompt:', imagePrompt.substring(0, 100));
+    // Parse brand colors or use defaults
+    const primaryColor = brandColors?.split(',')[0]?.trim() || '#C96A2B';
     
-    const imageApiResponse = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-image-2',
-        prompt: imagePrompt,
-        n: 1,
-        size: '1024x1024',
-      }),
-    });
+    // Create text overlay SVG
+    const fontSize = Math.floor(width * 0.05); // 5% of width
+    const smallFontSize = Math.floor(width * 0.03); // 3% of width
+    const padding = Math.floor(width * 0.04); // 4% padding
+    const bannerHeight = Math.floor(height * 0.15); // 15% of height for banner
 
-    const imageResponse = await imageApiResponse.json();
-    console.log('Image API response:', JSON.stringify(imageResponse, null, 2));
-
-    if (!imageApiResponse.ok) {
-      return NextResponse.json({ 
-        error: imageResponse.error?.message || 'Image generation failed',
-        details: imageResponse.error
-      }, { status: 400 });
+    // Build contact line
+    const contactParts = [];
+    if (phoneNumber) contactParts.push(phoneNumber);
+    if (websiteUrl) {
+      // Clean up website URL for display
+      const cleanUrl = websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      contactParts.push(cleanUrl);
     }
+    const contactLine = contactParts.join('  •  ');
 
-    // Handle both URL and base64 responses
-    let generatedImageUrl = imageResponse.data?.[0]?.url;
-    
-    // If we got base64 data instead, convert it to a data URL
-    if (!generatedImageUrl && imageResponse.data?.[0]?.b64_json) {
-      generatedImageUrl = `data:image/png;base64,${imageResponse.data[0].b64_json}`;
-    }
+    const svgOverlay = `
+      <svg width="${width}" height="${height}">
+        <defs>
+          <linearGradient id="bannerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:rgba(0,0,0,0.85)"/>
+            <stop offset="100%" style="stop-color:rgba(0,0,0,0.95)"/>
+          </linearGradient>
+        </defs>
+        
+        <!-- Bottom banner -->
+        <rect x="0" y="${height - bannerHeight}" width="${width}" height="${bannerHeight}" fill="url(#bannerGradient)"/>
+        
+        <!-- Business name -->
+        <text 
+          x="${width / 2}" 
+          y="${height - bannerHeight + fontSize + padding}" 
+          font-family="Arial, Helvetica, sans-serif" 
+          font-size="${fontSize}" 
+          font-weight="bold" 
+          fill="white" 
+          text-anchor="middle"
+        >${escapeXml(businessName)}</text>
+        
+        <!-- Contact info -->
+        ${contactLine ? `
+        <text 
+          x="${width / 2}" 
+          y="${height - padding - smallFontSize * 0.3}" 
+          font-family="Arial, Helvetica, sans-serif" 
+          font-size="${smallFontSize}" 
+          fill="rgba(255,255,255,0.8)" 
+          text-anchor="middle"
+        >${escapeXml(contactLine)}</text>
+        ` : ''}
+      </svg>
+    `;
 
-    if (!generatedImageUrl) {
-      return NextResponse.json({ error: 'Failed to generate image' }, { status: 500 });
-    }
+    // Composite the overlay onto the original image
+    const outputBuffer = await sharp(imageBuffer)
+      .composite([
+        {
+          input: Buffer.from(svgOverlay),
+          top: 0,
+          left: 0,
+        },
+      ])
+      .png()
+      .toBuffer();
+
+    // Convert to base64 data URL
+    const outputBase64 = `data:image/png;base64,${outputBuffer.toString('base64')}`;
 
     return NextResponse.json({
       success: true,
-      imageUrl: generatedImageUrl,
-      prompt: dallePrompt,
+      imageUrl: outputBase64,
     });
   } catch (error: any) {
     console.error('Branding error:', error);
-    console.error('Error details:', JSON.stringify(error, null, 2));
-    
-    // Return more specific error info
-    const errorMessage = error?.error?.message || error?.message || 'Failed to generate branded image';
     return NextResponse.json({ 
-      error: errorMessage,
-      details: error?.error || error?.code || 'Unknown error'
+      error: error.message || 'Failed to brand image',
     }, { status: 500 });
   }
+}
+
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
