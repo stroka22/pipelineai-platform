@@ -59,19 +59,31 @@ export default function BrandingPage() {
 
     try {
       // Convert files to base64
+      console.log('Converting files to base64...');
       const carouselImages = await Promise.all(carouselFiles.map(f => fileToBase64(f)));
       const logoBase64 = logoFile ? await fileToBase64(logoFile) : null;
+      
+      console.log('carouselImages count:', carouselImages.length);
+      console.log('First image length:', carouselImages[0]?.length);
 
       // Store form data in sessionStorage and go directly to generate (free)
-      sessionStorage.setItem('brandingData', JSON.stringify({
+      const dataToStore = {
         ...formData,
         carouselImages,
         logoImage: logoBase64,
-      }));
+      };
+      
+      console.log('Storing data with keys:', Object.keys(dataToStore));
+      sessionStorage.setItem('brandingData', JSON.stringify(dataToStore));
+      
+      // Verify it was stored
+      const verify = sessionStorage.getItem('brandingData');
+      console.log('Data stored successfully:', !!verify);
       
       window.location.href = '/brand/generate';
-    } catch (err) {
-      setError('Something went wrong. Please try again.');
+    } catch (err: any) {
+      console.error('Submit error:', err);
+      setError('Something went wrong. Please try again. ' + (err.message || ''));
     } finally {
       setLoading(false);
     }

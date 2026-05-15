@@ -14,9 +14,14 @@ function GenerateContent() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [totalImages, setTotalImages] = useState(0);
 
+  console.log('GenerateContent mounted, status:', status);
+
   useEffect(() => {
+    console.log('useEffect running');
     generateBrandedImages();
   }, []);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 
   async function generateBrandedImages() {
     try {
@@ -84,6 +89,7 @@ function GenerateContent() {
       setStatus('success');
       sessionStorage.removeItem('brandingData');
     } catch (err: any) {
+      console.error('Generation error:', err);
       setError(err.message || 'Something went wrong');
       setStatus('error');
     }
