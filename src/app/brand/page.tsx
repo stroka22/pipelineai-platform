@@ -14,8 +14,8 @@ export default function BrandingPage() {
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [carouselFile, setCarouselFile] = useState<File | null>(null);
-  const [carouselPreview, setCarouselPreview] = useState<string | null>(null);
+  const [carouselFiles, setCarouselFiles] = useState<File[]>([]);
+  const [carouselPreviews, setCarouselPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,19 +28,25 @@ export default function BrandingPage() {
   };
 
   const handleCarouselUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setCarouselFile(file);
-      setCarouselPreview(URL.createObjectURL(file));
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newFiles = Array.from(files);
+      setCarouselFiles(prev => [...prev, ...newFiles]);
+      setCarouselPreviews(prev => [...prev, ...newFiles.map(f => URL.createObjectURL(f))]);
     }
+  };
+
+  const removeCarousel = (index: number) => {
+    setCarouselFiles(prev => prev.filter((_, i) => i !== index));
+    setCarouselPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!carouselFile) {
-      setError('Please upload a carousel image to brand');
+    if (carouselFiles.length === 0) {
+      setError('Please upload at least one carousel image to brand');
       return;
     }
 
@@ -53,33 +59,17 @@ export default function BrandingPage() {
 
     try {
       // Convert files to base64
-      const carouselBase64 = await fileToBase64(carouselFile);
+      const carouselImages = await Promise.all(carouselFiles.map(f => fileToBase64(f)));
       const logoBase64 = logoFile ? await fileToBase64(logoFile) : null;
 
-      // Create checkout session
-      const response = await fetch('/api/checkout/brand', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          carouselImage: carouselBase64,
-          logoImage: logoBase64,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.url) {
-        // Store form data in sessionStorage for after payment
-        sessionStorage.setItem('brandingData', JSON.stringify({
-          ...formData,
-          carouselImage: carouselBase64,
-          logoImage: logoBase64,
-        }));
-        window.location.href = data.url;
-      } else {
-        setError(data.error || 'Failed to start checkout');
-      }
+      // Store form data in sessionStorage and go directly to generate (free)
+      sessionStorage.setItem('brandingData', JSON.stringify({
+        ...formData,
+        carouselImages,
+        logoImage: logoBase64,
+      }));
+      
+      window.location.href = '/brand/generate';
     } catch (err) {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -112,51 +102,65 @@ export default function BrandingPage() {
               Brand Your Content
             </h1>
             <p className="text-white/60 text-lg max-w-xl mx-auto">
-              Upload a carousel image and we'll add your business name, phone number, and branding using AI.
+              Upload carousel images and we'll add your business name, phone number, and branding using AI.
             </p>
             <div className="mt-4 inline-flex items-center gap-2 bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-2 rounded-full text-sm font-semibold">
-              $10 per branded image
+              FREE - Limited Time
             </div>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Carousel Image Upload */}
+            {/* Carousel Images Upload */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <ImageIcon className="w-5 h-5 text-[#C96A2B]" />
-                Carousel Image to Brand *
+                Carousel Images to Brand *
               </h2>
               
-              {carouselPreview ? (
-                <div className="relative">
-                  <Image
-                    src={carouselPreview}
-                    alt="Carousel preview"
-                    width={400}
-                    height={400}
-                    className="rounded-xl mx-auto max-h-[300px] object-contain"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => { setCarouselFile(null); setCarouselPreview(null); }}
-                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+              {carouselPreviews.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                  {carouselPreviews.map((preview, index) => (
+                    <div key={index} className="relative">
+                      <Image
+                        src={preview}
+                        alt={`Carousel ${index + 1}`}
+                        width={200}
+                        height={200}
+                        className="rounded-xl w-full h-32 object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeCarousel(index)}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <span className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                        #{index + 1}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-[#C96A2B]/50 transition-colors">
-                  <Upload className="w-10 h-10 text-white/40 mb-2" />
-                  <span className="text-white/60 text-sm">Click to upload carousel image</span>
-                  <span className="text-white/40 text-xs mt-1">PNG, JPG up to 10MB</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleCarouselUpload}
-                    className="hidden"
-                  />
-                </label>
+              )}
+              
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-[#C96A2B]/50 transition-colors">
+                <Upload className="w-8 h-8 text-white/40 mb-2" />
+                <span className="text-white/60 text-sm">
+                  {carouselPreviews.length > 0 ? 'Add more images' : 'Click to upload carousel images'}
+                </span>
+                <span className="text-white/40 text-xs mt-1">PNG, JPG up to 10MB each</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleCarouselUpload}
+                  className="hidden"
+                />
+              </label>
+              
+              {carouselPreviews.length > 0 && (
+                <p className="text-white/50 text-sm mt-3">{carouselPreviews.length} image{carouselPreviews.length > 1 ? 's' : ''} selected</p>
               )}
             </div>
 
@@ -269,7 +273,7 @@ export default function BrandingPage() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading || !carouselFile}
+              disabled={loading || carouselFiles.length === 0}
               className="w-full bg-[#C96A2B] text-white py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
@@ -280,7 +284,7 @@ export default function BrandingPage() {
               ) : (
                 <>
                   <Sparkles className="w-5 h-5" />
-                  Brand My Image - $10
+                  Brand {carouselFiles.length > 1 ? `${carouselFiles.length} Images` : 'Image'} - FREE
                 </>
               )}
             </button>

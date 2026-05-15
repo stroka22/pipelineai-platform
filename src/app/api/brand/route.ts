@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import Stripe from 'stripe';
 
 function getOpenAI() {
   return new OpenAI({
@@ -8,13 +7,8 @@ function getOpenAI() {
   });
 }
 
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!);
-}
-
 export async function POST(request: NextRequest) {
   const openai = getOpenAI();
-  const stripe = getStripe();
 
   try {
     // Check if API key is loaded
@@ -22,19 +16,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
     }
 
-    const { sessionId, carouselImage, logoImage } = await request.json();
+    const { 
+      carouselImage, 
+      logoImage,
+      businessName,
+      websiteUrl,
+      phoneNumber,
+      primaryColor,
+      secondaryColor,
+    } = await request.json();
 
-    // Verify payment
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-    
-    if (session.payment_status !== 'paid') {
-      return NextResponse.json({ error: 'Payment not completed' }, { status: 400 });
-    }
-
-    const businessName = session.metadata?.business_name || '';
-    const websiteUrl = session.metadata?.website_url || '';
-    const phoneNumber = session.metadata?.phone_number || '';
-    const brandColors = session.metadata?.brand_colors || '';
+    const brandColors = [primaryColor, secondaryColor].filter(Boolean).join(', ');
 
     if (!carouselImage) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
