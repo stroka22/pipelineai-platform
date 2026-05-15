@@ -307,7 +307,7 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
                   className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-purple-700 transition-all"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Try Branding Tool - $10/image
+                  Try Branding Tool - FREE
                 </Link>
               </div>
               <div className="text-8xl">🎨</div>

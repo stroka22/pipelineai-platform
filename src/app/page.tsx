@@ -282,7 +282,7 @@ export default function HomePage() {
                 className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-purple-700 transition-all"
               >
                 <Sparkles className="w-5 h-5" />
-                Try Branding Tool - $10/image
+                Try Branding Tool - FREE
               </Link>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center">

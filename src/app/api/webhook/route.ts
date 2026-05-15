@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
                     Use our Branding Tool to add your business name, phone number, and website to any carousel image.
                   </p>
                   <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.getpipelineai.com'}/brand" style="display: inline-block; background-color: #ffffff; color: #7c3aed; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: bold; font-size: 14px;">
-                    Try Branding Tool - $10/image
+                    Try Branding Tool - FREE
                   </a>
                 </div>
                 
