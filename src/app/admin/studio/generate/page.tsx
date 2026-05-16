@@ -16,7 +16,10 @@ import {
   Building2,
   ChevronDown,
   Copy,
-  Check
+  Check,
+  Upload,
+  X,
+  Eye
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -60,6 +63,7 @@ export default function GenerateImagePage() {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [promptUsed, setPromptUsed] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  const [progress, setProgress] = useState('');
   
   // Brand profiles
   const [brands, setBrands] = useState<any[]>([]);
@@ -71,6 +75,11 @@ export default function GenerateImagePage() {
   
   // Open prompt mode
   const [openPrompt, setOpenPrompt] = useState('');
+  
+  // Reference image
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [referenceFile, setReferenceFile] = useState<File | null>(null);
+  const [analyzingReference, setAnalyzingReference] = useState(false);
   
   // Form mode
   const [formData, setFormData] = useState({
@@ -133,6 +142,21 @@ export default function GenerateImagePage() {
     setSelectedTemplate(templateId);
   }
 
+  function handleReferenceUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReferenceFile(file);
+      const reader = new FileReader();
+      reader.onload = () => setReferenceImage(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function clearReference() {
+    setReferenceImage(null);
+    setReferenceFile(null);
+  }
+
   function buildPromptFromForm(): string {
     const parts = [];
     
@@ -175,12 +199,38 @@ export default function GenerateImagePage() {
     setLoading(true);
     setGeneratedImage(null);
     
-    const prompt = mode === 'prompt' ? openPrompt : buildPromptFromForm();
-    setPromptUsed(prompt);
+    let prompt = mode === 'prompt' ? openPrompt : buildPromptFromForm();
     
     const aspectRatio = ASPECT_RATIOS.find(ar => ar.id === formData.aspectRatio);
     
     try {
+      // If reference image provided, analyze it first
+      if (referenceImage) {
+        setProgress('Analyzing reference image...');
+        
+        const analysisResponse = await fetch('/api/studio/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: referenceImage }),
+        });
+        
+        const analysisData = await analysisResponse.json();
+        
+        if (analysisData.success && analysisData.analysis) {
+          prompt = `REFERENCE IMAGE STYLE TO MATCH:
+${analysisData.analysis}
+
+USER REQUEST:
+${prompt}
+
+Create an image that matches the style, composition, and aesthetic of the reference image while incorporating the user's request.`;
+        }
+        
+        setProgress('Generating image...');
+      }
+      
+      setPromptUsed(prompt);
+      
       const response = await fetch('/api/studio/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -202,6 +252,7 @@ export default function GenerateImagePage() {
       alert('Failed to generate image');
     } finally {
       setLoading(false);
+      setProgress('');
     }
   }
 
@@ -308,6 +359,52 @@ export default function GenerateImagePage() {
                 <Sparkles className="w-4 h-4 inline mr-2" />
                 Open Prompt
               </button>
+            </div>
+
+            {/* Reference Image */}
+            <div className="bg-[#111111] border border-white/10 rounded-xl p-4">
+              <label className="block text-sm font-medium text-white/70 mb-2">
+                <Eye className="w-4 h-4 inline mr-1" />
+                Reference Image (optional)
+              </label>
+              <p className="text-white/40 text-xs mb-3">
+                Upload an image to match its style, colors, and composition
+              </p>
+              
+              {referenceImage ? (
+                <div className="flex items-start gap-4">
+                  <div className="relative">
+                    <img
+                      src={referenceImage}
+                      alt="Reference"
+                      className="w-24 h-24 object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={clearReference}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="flex-1 text-white/50 text-sm">
+                    <p className="text-green-400 mb-1">✓ Reference loaded</p>
+                    <p>AI will analyze this image and match its style when generating.</p>
+                  </div>
+                </div>
+              ) : (
+                <label className="flex items-center justify-center w-full h-20 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-[#C96A2B]/50 transition-colors">
+                  <div className="text-center">
+                    <Upload className="w-6 h-6 text-white/40 mx-auto mb-1" />
+                    <span className="text-white/60 text-sm">Click to upload reference</span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleReferenceUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
 
             {/* Brand & Template Selection */}
@@ -571,7 +668,7 @@ export default function GenerateImagePage() {
                 {loading ? (
                   <div className="text-center">
                     <Loader2 className="w-12 h-12 text-[#C96A2B] animate-spin mx-auto mb-4" />
-                    <p className="text-white/60">Creating your image...</p>
+                    <p className="text-white/60">{progress || 'Creating your image...'}</p>
                     <p className="text-white/40 text-sm">This takes 20-40 seconds</p>
                   </div>
                 ) : generatedImage ? (

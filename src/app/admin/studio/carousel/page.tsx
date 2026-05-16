@@ -18,7 +18,10 @@ import {
   Building2,
   GripVertical,
   Wand2,
-  MessageSquare
+  MessageSquare,
+  Upload,
+  X,
+  Eye
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -66,6 +69,10 @@ export default function CarouselCreatorPage() {
   const [openPrompt, setOpenPrompt] = useState('');
   const [promptSlideCount, setPromptSlideCount] = useState(5);
   
+  // Reference image
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [referenceAnalysis, setReferenceAnalysis] = useState<string | null>(null);
+  
   // Brands
   const [brands, setBrands] = useState<any[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<string>('');
@@ -101,6 +108,20 @@ export default function CarouselCreatorPage() {
     setBrands(data || []);
   }
 
+  function handleReferenceUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => setReferenceImage(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function clearReference() {
+    setReferenceImage(null);
+    setReferenceAnalysis(null);
+  }
+
   function applyBrand(brandId: string) {
     const brand = brands.find(b => b.id === brandId);
     if (brand) {
@@ -115,7 +136,7 @@ export default function CarouselCreatorPage() {
     setSelectedBrand(brandId);
   }
 
-  function initializeSlides() {
+  async function initializeSlides() {
     const count = mode === 'prompt' ? promptSlideCount : carouselConfig.slideCount;
     const newSlides: Slide[] = [];
     for (let i = 0; i < count; i++) {
@@ -129,6 +150,26 @@ export default function CarouselCreatorPage() {
       });
     }
     setSlides(newSlides);
+    
+    // Analyze reference image if provided
+    if (referenceImage && !referenceAnalysis) {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/studio/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: referenceImage }),
+        });
+        const data = await response.json();
+        if (data.success && data.analysis) {
+          setReferenceAnalysis(data.analysis);
+        }
+      } catch (error) {
+        console.error('Failed to analyze reference:', error);
+      }
+      setLoading(false);
+    }
+    
     setStep('generate');
   }
 
@@ -148,7 +189,7 @@ export default function CarouselCreatorPage() {
                              i === slides.length - 1 ? 'closing CTA slide with strong call-to-action' :
                              `slide ${i + 1} of ${slides.length} (middle content slide)`;
         
-        const prompt = `${openPrompt}
+        let prompt = `${openPrompt}
 
 This is ${slidePosition} in a ${slides.length}-slide carousel.
 
@@ -160,6 +201,16 @@ Requirements:
 - Make it premium and professional
 ${i === 0 ? '- This is the HOOK - make it attention-grabbing and make people want to swipe' : ''}
 ${i === slides.length - 1 ? '- This is the CLOSING - include a compelling call-to-action' : ''}`;
+
+        // Add reference style if available
+        if (referenceAnalysis) {
+          prompt = `REFERENCE STYLE TO MATCH:
+${referenceAnalysis}
+
+${prompt}
+
+Match the visual style, colors, and aesthetic of the reference image while creating this carousel slide.`;
+        }
 
         const response = await fetch('/api/studio/generate', {
           method: 'POST',
@@ -211,7 +262,7 @@ ${i === slides.length - 1 ? '- This is the CLOSING - include a compelling call-t
                              i === slides.length - 1 ? 'closing CTA slide' :
                              `slide ${i + 1} of ${slides.length}`;
         
-        const prompt = `Create a premium ${carouselConfig.style} style carousel slide for a ${carouselConfig.niche.toLowerCase()} business.
+        let prompt = `Create a premium ${carouselConfig.style} style carousel slide for a ${carouselConfig.niche.toLowerCase()} business.
 
 This is ${slidePosition} in a ${carouselConfig.slideCount}-slide ${category?.name} carousel.
 ${carouselConfig.businessName ? `Business: "${carouselConfig.businessName}"` : ''}
@@ -224,6 +275,16 @@ Color scheme: primary ${carouselConfig.primaryColor}, secondary ${carouselConfig
 The slide should be visually distinct from other slides while maintaining brand consistency.
 Include readable text that fits the slide position in the carousel narrative.
 Optimize for Instagram/social media square format.`;
+
+        // Add reference style if available
+        if (referenceAnalysis) {
+          prompt = `REFERENCE STYLE TO MATCH:
+${referenceAnalysis}
+
+${prompt}
+
+Match the visual style, colors, and aesthetic of the reference image while creating this carousel slide.`;
+        }
 
         const response = await fetch('/api/studio/generate', {
           method: 'POST',
@@ -467,6 +528,52 @@ Create a DIFFERENT visual composition than the previous version while maintainin
                 <MessageSquare className="w-4 h-4" />
                 Open Prompt
               </button>
+            </div>
+
+            {/* Reference Image - shown for both modes */}
+            <div className="bg-[#111111] border border-white/10 rounded-xl p-4">
+              <label className="block text-sm font-medium text-white/70 mb-2">
+                <Eye className="w-4 h-4 inline mr-1" />
+                Reference Image (optional)
+              </label>
+              <p className="text-white/40 text-xs mb-3">
+                Upload an image to match its style across all carousel slides
+              </p>
+              
+              {referenceImage ? (
+                <div className="flex items-start gap-4">
+                  <div className="relative">
+                    <img
+                      src={referenceImage}
+                      alt="Reference"
+                      className="w-24 h-24 object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={clearReference}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="flex-1 text-white/50 text-sm">
+                    <p className="text-green-400 mb-1">✓ Reference loaded</p>
+                    <p>AI will analyze this and match its style for all slides.</p>
+                  </div>
+                </div>
+              ) : (
+                <label className="flex items-center justify-center w-full h-20 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-purple-500/50 transition-colors">
+                  <div className="text-center">
+                    <Upload className="w-6 h-6 text-white/40 mx-auto mb-1" />
+                    <span className="text-white/60 text-sm">Click to upload reference</span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleReferenceUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
 
             {mode === 'prompt' ? (
