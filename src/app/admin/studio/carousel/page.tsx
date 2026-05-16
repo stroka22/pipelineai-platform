@@ -16,7 +16,9 @@ import {
   ChevronRight,
   Trash2,
   Building2,
-  GripVertical
+  GripVertical,
+  Wand2,
+  MessageSquare
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -55,9 +57,14 @@ interface Slide {
 }
 
 export default function CarouselCreatorPage() {
+  const [mode, setMode] = useState<'form' | 'prompt'>('form');
   const [step, setStep] = useState<'setup' | 'generate' | 'review'>('setup');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  
+  // Open prompt mode
+  const [openPrompt, setOpenPrompt] = useState('');
+  const [promptSlideCount, setPromptSlideCount] = useState(5);
   
   // Brands
   const [brands, setBrands] = useState<any[]>([]);
@@ -109,8 +116,9 @@ export default function CarouselCreatorPage() {
   }
 
   function initializeSlides() {
+    const count = mode === 'prompt' ? promptSlideCount : carouselConfig.slideCount;
     const newSlides: Slide[] = [];
-    for (let i = 0; i < carouselConfig.slideCount; i++) {
+    for (let i = 0; i < count; i++) {
       newSlides.push({
         id: `slide-${i}`,
         slideNumber: i + 1,
@@ -122,6 +130,65 @@ export default function CarouselCreatorPage() {
     }
     setSlides(newSlides);
     setStep('generate');
+  }
+
+  async function generateAllSlidesFromPrompt() {
+    setLoading(true);
+    
+    for (let i = 0; i < slides.length; i++) {
+      setGeneratingSlideIndex(i);
+      setActiveSlideIndex(i);
+      
+      setSlides(prev => prev.map((s, idx) => 
+        idx === i ? { ...s, status: 'generating' } : s
+      ));
+      
+      try {
+        const slidePosition = i === 0 ? 'opening hook slide that grabs attention' : 
+                             i === slides.length - 1 ? 'closing CTA slide with strong call-to-action' :
+                             `slide ${i + 1} of ${slides.length} (middle content slide)`;
+        
+        const prompt = `${openPrompt}
+
+This is ${slidePosition} in a ${slides.length}-slide carousel.
+
+Requirements:
+- Create a visually distinct slide that fits this position in the carousel narrative
+- Maintain visual consistency with the overall carousel theme
+- Optimize for Instagram/social media square format (1:1)
+- Include readable, well-positioned text
+- Make it premium and professional
+${i === 0 ? '- This is the HOOK - make it attention-grabbing and make people want to swipe' : ''}
+${i === slides.length - 1 ? '- This is the CLOSING - include a compelling call-to-action' : ''}`;
+
+        const response = await fetch('/api/studio/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, size: '1024x1024' }),
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.imageUrl) {
+          setSlides(prev => prev.map((s, idx) => 
+            idx === i ? { ...s, imageUrl: data.imageUrl, status: 'complete' } : s
+          ));
+        } else {
+          setSlides(prev => prev.map((s, idx) => 
+            idx === i ? { ...s, status: 'error' } : s
+          ));
+        }
+      } catch (error) {
+        console.error(`Error generating slide ${i + 1}:`, error);
+        setSlides(prev => prev.map((s, idx) => 
+          idx === i ? { ...s, status: 'error' } : s
+        ));
+      }
+    }
+    
+    setGeneratingSlideIndex(null);
+    setLoading(false);
+    setStep('review');
   }
 
   async function generateAllSlides() {
@@ -380,6 +447,80 @@ Create a DIFFERENT visual composition than the previous version while maintainin
               <p className="text-white/60">Configure your carousel settings</p>
             </div>
 
+            {/* Mode Toggle */}
+            <div className="bg-[#111111] border border-white/10 rounded-xl p-1 inline-flex w-full">
+              <button
+                onClick={() => setMode('form')}
+                className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  mode === 'form' ? 'bg-purple-500 text-white' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                <Wand2 className="w-4 h-4" />
+                Structured Form
+              </button>
+              <button
+                onClick={() => setMode('prompt')}
+                className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  mode === 'prompt' ? 'bg-purple-500 text-white' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                <MessageSquare className="w-4 h-4" />
+                Open Prompt
+              </button>
+            </div>
+
+            {mode === 'prompt' ? (
+              /* Open Prompt Mode */
+              <div className="space-y-6">
+                <div className="bg-[#111111] border border-white/10 rounded-xl p-4">
+                  <label className="block text-sm font-medium text-white/70 mb-2">
+                    Describe Your Carousel
+                  </label>
+                  <textarea
+                    value={openPrompt}
+                    onChange={(e) => setOpenPrompt(e.target.value)}
+                    placeholder="Describe the carousel you want to create in detail. Include the topic, style, audience, key messages, and any specific requirements...
+
+Example: Create a 5-slide carousel for a roofing company about '5 Signs Your Roof Needs Replacement'. Use a cinematic, professional style with dark blue and orange colors. Each slide should have bold headlines and short supporting text. Target homeowners aged 35-55."
+                    rows={8}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 resize-none"
+                  />
+                  <p className="text-white/40 text-xs mt-2">
+                    Be specific about style, colors, topic, audience, and key messages for best results.
+                  </p>
+                </div>
+
+                <div className="bg-[#111111] border border-white/10 rounded-xl p-4">
+                  <label className="block text-sm font-medium text-white/70 mb-3">Number of Slides</label>
+                  <div className="flex gap-2">
+                    {SLIDE_COUNTS.map(count => (
+                      <button
+                        key={count}
+                        onClick={() => setPromptSlideCount(count)}
+                        className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
+                          promptSlideCount === count 
+                            ? 'bg-purple-500 text-white' 
+                            : 'bg-white/5 text-white/60 hover:bg-white/10'
+                        }`}
+                      >
+                        {count} Slides
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={initializeSlides}
+                  disabled={!openPrompt.trim()}
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Generate {promptSlideCount}-Slide Carousel
+                </button>
+              </div>
+            ) : (
+              /* Structured Form Mode */
+              <>
             {/* Brand Selection */}
             <div className="bg-[#111111] border border-white/10 rounded-xl p-4">
               <label className="block text-sm font-medium text-white/70 mb-2">
@@ -540,6 +681,8 @@ Create a DIFFERENT visual composition than the previous version while maintainin
               <Sparkles className="w-5 h-5" />
               Generate {carouselConfig.slideCount}-Slide Carousel
             </button>
+              </>
+            )}
           </div>
         )}
 
@@ -640,7 +783,7 @@ Create a DIFFERENT visual composition than the previous version while maintainin
             {/* Generate All Button */}
             {step === 'generate' && !loading && slides.every(s => s.status === 'pending') && (
               <button
-                onClick={generateAllSlides}
+                onClick={mode === 'prompt' ? generateAllSlidesFromPrompt : generateAllSlides}
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-5 h-5" />
