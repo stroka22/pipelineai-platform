@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, VaultItem, Lead, Purchase } from '@/lib/supabase';
-import { Package, ShoppingCart, Users, DollarSign, TrendingUp, Clock, FolderLock, Eye, Globe } from 'lucide-react';
+import { Package, ShoppingCart, Users, DollarSign, TrendingUp, Clock, FolderLock, Eye, Globe, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 interface PageViewStats {
@@ -179,9 +179,18 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[#081F33]">Dashboard</h1>
-        <p className="text-[#4B5563]">Welcome to Pipeline AI Admin</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[#081F33]">Dashboard</h1>
+          <p className="text-[#4B5563]">Welcome to Pipeline AI Admin</p>
+        </div>
+        <Link
+          href="/admin/studio"
+          className="bg-gradient-to-r from-[#C96A2B] to-[#E8863A] text-white px-5 py-3 rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg"
+        >
+          <Sparkles className="w-5 h-5" />
+          AI Studio
+        </Link>
       </div>
 
       {/* Stats Grid */}
