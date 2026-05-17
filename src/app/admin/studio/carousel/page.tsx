@@ -510,6 +510,9 @@ Create a DIFFERENT visual composition than the previous version while maintainin
     setAddingToVault(true);
     
     try {
+      // Upload all slides and collect URLs
+      const uploadedUrls: string[] = [];
+      
       for (let i = 0; i < completedSlides.length; i++) {
         const slide = completedSlides[i];
         let fileUrl = slide.imageUrl!;
@@ -539,25 +542,27 @@ Create a DIFFERENT visual composition than the previous version while maintainin
           fileUrl = publicUrl.publicUrl;
         }
         
-        // Create vault item
-        const slideName = `${carouselConfig.title || 'Carousel'} - Slide ${slide.slideNumber}`;
-        const { error: insertError } = await supabase
-          .from('vault_items')
-          .insert({
-            name: slideName,
-            preview_url: fileUrl,
-            file_url: fileUrl,
-            price: parseFloat(vaultForm.price),
-            caption: vaultForm.caption,
-            category: vaultForm.category || null,
-            niche: vaultForm.niche || null,
-            is_active: true,
-          });
-        
-        if (insertError) throw insertError;
+        uploadedUrls.push(fileUrl);
       }
       
-      alert(`Added ${completedSlides.length} slides to vault!`);
+      // Create single carousel vault item with all images
+      const { error: insertError } = await supabase
+        .from('vault_items')
+        .insert({
+          title: carouselConfig.title || `${completedSlides.length}-Slide Carousel`,
+          images: uploadedUrls,
+          price: parseFloat(vaultForm.price),
+          caption: vaultForm.caption,
+          category: vaultForm.category || null,
+          niche: vaultForm.niche || null,
+          content_type: 'carousel',
+          slide_count: uploadedUrls.length,
+          is_active: true,
+        });
+      
+      if (insertError) throw insertError;
+      
+      alert(`Added ${completedSlides.length}-slide carousel to vault!`);
       setShowVaultModal(false);
     } catch (error: any) {
       console.error('Error adding to vault:', error);

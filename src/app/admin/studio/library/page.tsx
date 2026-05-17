@@ -189,9 +189,7 @@ export default function ContentLibraryPage() {
           .from('vault_items')
           .insert({
             title: vaultForm.title || `${selectedImages.length}-Slide Carousel`,
-            preview_url: uploadedUrls[0], // First image as preview
-            file_url: uploadedUrls[0],
-            images: JSON.stringify(uploadedUrls), // All images as JSON array
+            images: uploadedUrls,
             price: parseFloat(vaultForm.price),
             caption: vaultForm.caption,
             category: vaultForm.category || null,
@@ -204,18 +202,19 @@ export default function ContentLibraryPage() {
         if (insertError) throw insertError;
         alert(`Added ${selectedImages.length}-slide carousel to vault!`);
       } else {
-        // Add as separate items
+        // Add as separate items (single images)
         for (let i = 0; i < uploadedUrls.length; i++) {
           const { error: insertError } = await supabase
             .from('vault_items')
             .insert({
               title: selectedImages[i].title || `Image ${i + 1}`,
-              preview_url: uploadedUrls[i],
-              file_url: uploadedUrls[i],
+              images: [uploadedUrls[i]],
               price: parseFloat(vaultForm.price),
               caption: vaultForm.caption,
               category: vaultForm.category || null,
               niche: vaultForm.niche || null,
+              content_type: 'single',
+              slide_count: 1,
               is_active: true,
             });
           
@@ -309,13 +308,14 @@ export default function ContentLibraryPage() {
       const { error: insertError } = await supabase
         .from('vault_items')
         .insert({
-          name: selectedImage.title || 'Untitled',
-          preview_url: fileUrl,
-          file_url: fileUrl,
+          title: selectedImage.title || 'Untitled',
+          images: [fileUrl],
           price: parseFloat(vaultForm.price),
           caption: vaultForm.caption,
           category: vaultForm.category || null,
           niche: vaultForm.niche || null,
+          content_type: 'single',
+          slide_count: 1,
           is_active: true,
         });
       
