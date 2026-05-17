@@ -190,6 +190,7 @@ export default function ContentLibraryPage() {
           .insert({
             title: vaultForm.title || `${selectedImages.length}-Slide Carousel`,
             images: uploadedUrls,
+            folder_path: '',
             price: parseFloat(vaultForm.price),
             caption: vaultForm.caption,
             category: vaultForm.category || null,
@@ -209,6 +210,7 @@ export default function ContentLibraryPage() {
             .insert({
               title: selectedImages[i].title || `Image ${i + 1}`,
               images: [uploadedUrls[i]],
+              folder_path: '',
               price: parseFloat(vaultForm.price),
               caption: vaultForm.caption,
               category: vaultForm.category || null,
@@ -310,6 +312,7 @@ export default function ContentLibraryPage() {
         .insert({
           title: selectedImage.title || 'Untitled',
           images: [fileUrl],
+          folder_path: '',
           price: parseFloat(vaultForm.price),
           caption: vaultForm.caption,
           category: vaultForm.category || null,

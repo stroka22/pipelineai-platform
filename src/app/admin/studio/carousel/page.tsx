@@ -551,6 +551,7 @@ Create a DIFFERENT visual composition than the previous version while maintainin
         .insert({
           title: carouselConfig.title || `${completedSlides.length}-Slide Carousel`,
           images: uploadedUrls,
+          folder_path: '',
           price: parseFloat(vaultForm.price),
           caption: vaultForm.caption,
           category: vaultForm.category || null,
