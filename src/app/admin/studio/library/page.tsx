@@ -16,7 +16,9 @@ import {
   Loader2,
   Image as ImageIcon,
   X,
-  ChevronDown
+  ChevronDown,
+  ShoppingBag,
+  DollarSign
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -36,10 +38,32 @@ export default function ContentLibraryPage() {
   const [filterType, setFilterType] = useState('');
   const [filterStyle, setFilterStyle] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Add to Vault modal
+  const [showVaultModal, setShowVaultModal] = useState(false);
+  const [vaultForm, setVaultForm] = useState({
+    price: '5.00',
+    caption: '',
+    category: '',
+    niche: '',
+  });
+  const [niches, setNiches] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [addingToVault, setAddingToVault] = useState(false);
 
   useEffect(() => {
     loadImages();
+    loadNichesAndCategories();
   }, [filterNiche, filterType, filterStyle]);
+
+  async function loadNichesAndCategories() {
+    const [nichesRes, catsRes] = await Promise.all([
+      supabase.from('niches').select('*').order('name'),
+      supabase.from('categories').select('*').order('name'),
+    ]);
+    if (nichesRes.data) setNiches(nichesRes.data);
+    if (catsRes.data) setCategories(catsRes.data);
+  }
 
   async function loadImages() {
     setLoading(true);
@@ -91,6 +115,78 @@ export default function ContentLibraryPage() {
     
     setImages(images.filter(img => img.id !== id));
     setSelectedImage(null);
+  }
+
+  function openVaultModal() {
+    if (!selectedImage) return;
+    setVaultForm({
+      price: '5.00',
+      caption: selectedImage.title || '',
+      category: '',
+      niche: selectedImage.niche || '',
+    });
+    setShowVaultModal(true);
+  }
+
+  async function addToVault() {
+    if (!selectedImage) return;
+    
+    setAddingToVault(true);
+    
+    try {
+      // Convert image URL to blob and upload to Supabase storage
+      let fileUrl = selectedImage.image_url;
+      
+      if (selectedImage.image_url.startsWith('data:')) {
+        // Upload base64 to storage
+        const base64Data = selectedImage.image_url.split(',')[1];
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'image/png' });
+        
+        const fileName = `vault-${Date.now()}.png`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('vault')
+          .upload(fileName, blob);
+        
+        if (uploadError) throw uploadError;
+        
+        const { data: publicUrl } = supabase.storage
+          .from('vault')
+          .getPublicUrl(fileName);
+        
+        fileUrl = publicUrl.publicUrl;
+      }
+      
+      // Create vault item
+      const { error: insertError } = await supabase
+        .from('vault_items')
+        .insert({
+          name: selectedImage.title || 'Untitled',
+          preview_url: fileUrl,
+          file_url: fileUrl,
+          price: parseFloat(vaultForm.price),
+          caption: vaultForm.caption,
+          category: vaultForm.category || null,
+          niche: vaultForm.niche || null,
+          is_active: true,
+        });
+      
+      if (insertError) throw insertError;
+      
+      alert('Added to vault successfully!');
+      setShowVaultModal(false);
+      setSelectedImage(null);
+    } catch (error: any) {
+      console.error('Error adding to vault:', error);
+      alert('Failed to add to vault: ' + error.message);
+    } finally {
+      setAddingToVault(false);
+    }
   }
 
   async function downloadImage(imageUrl: string, title: string) {
@@ -396,6 +492,13 @@ export default function ContentLibraryPage() {
               
               <div className="space-y-2">
                 <button
+                  onClick={openVaultModal}
+                  className="w-full bg-green-600 text-white py-2 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-green-700"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  Add to Vault (Sell)
+                </button>
+                <button
                   onClick={() => downloadImage(selectedImage.image_url, selectedImage.title)}
                   className="w-full bg-[#C96A2B] text-white py-2 rounded-lg font-medium flex items-center justify-center gap-2"
                 >
@@ -421,6 +524,134 @@ export default function ContentLibraryPage() {
                   Delete
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add to Vault Modal */}
+      {showVaultModal && selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] p-4"
+          onClick={() => setShowVaultModal(false)}
+        >
+          <div 
+            className="bg-[#111111] border border-white/10 rounded-2xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-green-500" />
+                Add to Vault
+              </h3>
+              <button
+                onClick={() => setShowVaultModal(false)}
+                className="text-white/40 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex gap-4 mb-6">
+              <img
+                src={selectedImage.image_url}
+                alt="Preview"
+                className="w-24 h-24 object-cover rounded-lg"
+              />
+              <div className="flex-1">
+                <p className="text-white font-medium">{selectedImage.title || 'Untitled'}</p>
+                <p className="text-white/50 text-sm">{selectedImage.niche}</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-white/60 mb-1">
+                  Price ($) *
+                </label>
+                <div className="relative">
+                  <DollarSign className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={vaultForm.price}
+                    onChange={(e) => setVaultForm({ ...vaultForm, price: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm text-white/60 mb-1">
+                  Niche
+                </label>
+                <select
+                  value={vaultForm.niche}
+                  onChange={(e) => setVaultForm({ ...vaultForm, niche: e.target.value })}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+                >
+                  <option value="">Select niche...</option>
+                  {niches.map(niche => (
+                    <option key={niche.id} value={niche.slug}>{niche.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm text-white/60 mb-1">
+                  Category
+                </label>
+                <select
+                  value={vaultForm.category}
+                  onChange={(e) => setVaultForm({ ...vaultForm, category: e.target.value })}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+                >
+                  <option value="">Select category...</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm text-white/60 mb-1">
+                  Caption (for buyers)
+                </label>
+                <textarea
+                  value={vaultForm.caption}
+                  onChange={(e) => setVaultForm({ ...vaultForm, caption: e.target.value })}
+                  rows={3}
+                  placeholder="Caption buyers can copy for their post..."
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 resize-none"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowVaultModal(false)}
+                className="flex-1 py-2 border border-white/20 text-white rounded-lg hover:bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addToVault}
+                disabled={addingToVault || !vaultForm.price}
+                className="flex-1 py-2 bg-green-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-green-700 disabled:opacity-50"
+              >
+                {addingToVault ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-4 h-4" />
+                    Add to Vault
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
