@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Header from '@/components/Header';
-import { Upload, Globe, Phone, Palette, Loader2, Sparkles, X, Download, CheckCircle, ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import { Upload, Globe, Phone, Palette, Loader2, Sparkles, X, Download, CheckCircle, ArrowLeft, Image as ImageIcon, User } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -15,6 +15,10 @@ export default function BrandingPage() {
   });
   const [carouselFile, setCarouselFile] = useState<File | null>(null);
   const [carouselPreview, setCarouselPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [headshotFile, setHeadshotFile] = useState<File | null>(null);
+  const [headshotPreview, setHeadshotPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -28,6 +32,22 @@ export default function BrandingPage() {
     if (file) {
       setCarouselFile(file);
       setCarouselPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleHeadshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setHeadshotFile(file);
+      setHeadshotPreview(URL.createObjectURL(file));
     }
   };
 
@@ -60,12 +80,16 @@ export default function BrandingPage() {
 
     try {
       const carouselBase64 = await fileToBase64(carouselFile);
+      const logoBase64 = logoFile ? await fileToBase64(logoFile) : null;
+      const headshotBase64 = headshotFile ? await fileToBase64(headshotFile) : null;
 
       const response = await fetch('/api/brand', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           carouselImage: carouselBase64,
+          logoImage: logoBase64,
+          headshotImage: headshotBase64,
           businessName: formData.businessName,
           websiteUrl: formData.websiteUrl,
           phoneNumber: formData.phoneNumber,
@@ -118,6 +142,10 @@ export default function BrandingPage() {
     setIsGenerating(false);
     setCarouselFile(null);
     setCarouselPreview(null);
+    setLogoFile(null);
+    setLogoPreview(null);
+    setHeadshotFile(null);
+    setHeadshotPreview(null);
     setProgress('');
   };
 
@@ -320,6 +348,90 @@ export default function BrandingPage() {
                   placeholder="e.g., Navy blue, orange, white"
                   className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
                 />
+              </div>
+            </div>
+
+            {/* Logo & Headshot Upload */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <h2 className="text-lg font-semibold text-white mb-2">Logo & Professional Photo</h2>
+              <p className="text-white/50 text-sm mb-6">
+                Your exact logo and photo will be placed on the final image (not AI-generated)
+              </p>
+              
+              <div className="grid grid-cols-2 gap-6">
+                {/* Logo */}
+                <div>
+                  <p className="text-white/70 text-sm mb-2 flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4" />
+                    Logo (PNG with transparency)
+                  </p>
+                  {logoPreview ? (
+                    <div className="relative inline-block">
+                      <Image
+                        src={logoPreview}
+                        alt="Logo preview"
+                        width={120}
+                        height={120}
+                        className="rounded-xl object-contain bg-white/10 p-2"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => { setLogoFile(null); setLogoPreview(null); }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-[#C96A2B]/50 transition-colors">
+                      <Upload className="w-6 h-6 text-white/40 mb-1" />
+                      <span className="text-white/60 text-xs text-center">Upload logo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {/* Headshot */}
+                <div>
+                  <p className="text-white/70 text-sm mb-2 flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Professional Photo
+                  </p>
+                  {headshotPreview ? (
+                    <div className="relative inline-block">
+                      <Image
+                        src={headshotPreview}
+                        alt="Headshot preview"
+                        width={120}
+                        height={120}
+                        className="rounded-xl object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => { setHeadshotFile(null); setHeadshotPreview(null); }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-[#C96A2B]/50 transition-colors">
+                      <User className="w-6 h-6 text-white/40 mb-1" />
+                      <span className="text-white/60 text-xs text-center">Upload headshot</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleHeadshotUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
             </div>
 

@@ -1,10 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import sharp from 'sharp';
+import path from 'path';
 
 function getOpenAI() {
   return new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
+}
+
+// Convert base64 data URL to buffer
+function base64ToBuffer(dataUrl: string): Buffer {
+  const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+  return Buffer.from(base64Data, 'base64');
+}
+
+// Download image from URL to buffer
+async function urlToBuffer(url: string): Promise<Buffer> {
+  const response = await fetch(url);
+  const arrayBuffer = await response.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
+// Create circular mask for headshot
+async function createCircularImage(imageBuffer: Buffer, size: number): Promise<Buffer> {
+  const roundedCorners = Buffer.from(
+    `<svg><circle cx="${size/2}" cy="${size/2}" r="${size/2}" fill="white"/></svg>`
+  );
+  
+  const resized = await sharp(imageBuffer)
+    .resize(size, size, { fit: 'cover' })
+    .toBuffer();
+  
+  return sharp(resized)
+    .composite([{
+      input: roundedCorners,
+      blend: 'dest-in'
+    }])
+    .png()
+    .toBuffer();
+}
+
+// Create text as SVG for Sharp compositing
+function createTextSvg(
+  text: string, 
+  fontSize: number, 
+  color: string, 
+  maxWidth: number,
+  fontWeight: string = 'bold',
+  align: string = 'center'
+): Buffer {
+  const escapedText = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+  
+  const textAnchor = align === 'center' ? 'middle' : align === 'right' ? 'end' : 'start';
+  const x = align === 'center' ? maxWidth / 2 : align === 'right' ? maxWidth - 10 : 10;
+  
+  const svg = `
+    <svg width="${maxWidth}" height="${fontSize + 20}">
+      <text 
+        x="${x}" 
+        y="${fontSize}" 
+        font-family="Arial, Helvetica, sans-serif" 
+        font-size="${fontSize}" 
+        font-weight="${fontWeight}"
+        fill="${color}"
+        text-anchor="${textAnchor}"
+      >${escapedText}</text>
+    </svg>
+  `;
+  
+  return Buffer.from(svg);
 }
 
 export async function POST(request: NextRequest) {
@@ -34,127 +103,61 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 1: Analyze the carousel image with GPT-4 Vision
-    const analysisMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      {
-        role: 'system',
-        content: `You are an expert at analyzing images and creating detailed descriptions for image generation. 
-Your job is to analyze a carousel/social media image and describe it in detail so it can be recreated with branding elements added.
-Focus on: layout, composition, colors, style, typography style, any graphics or icons, background elements.
-Be very specific about positioning (top, bottom, left, right, center).`
-      },
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: 'Analyze this carousel image in detail. Describe the layout, style, colors, and composition so it can be recreated with custom branding.'
-          },
-          {
-            type: 'image_url',
-            image_url: {
-              url: carouselImage,
-              detail: 'high'
-            }
-          }
-        ]
-      }
-    ];
-
-    // If logo is provided, analyze it too
-    if (logoImage) {
-      analysisMessages.push({
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: 'Also analyze this logo for style, colors, and design elements to incorporate:'
-          },
-          {
-            type: 'image_url',
-            image_url: {
-              url: logoImage,
-              detail: 'low'
-            }
-          }
-        ]
-      });
-    }
-
-    // If headshot is provided, analyze it too
-    if (headshotImage) {
-      analysisMessages.push({
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: 'Also analyze this professional headshot photo. Describe the person\'s appearance, attire, and professional presentation so they can be included in the generated image:'
-          },
-          {
-            type: 'image_url',
-            image_url: {
-              url: headshotImage,
-              detail: 'high'
-            }
-          }
-        ]
-      });
-    }
-
     const analysisResponse = await openai.chat.completions.create({
       model: 'gpt-4o',
-      messages: analysisMessages,
-      max_tokens: 1000,
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert at analyzing images for recreation. Analyze the image and describe:
+- Overall style and mood (corporate, playful, luxury, etc.)
+- Color palette (specific colors)
+- Background elements and patterns
+- Layout structure
+- Any graphical elements (shapes, icons, gradients)
+Do NOT describe any text - we will add text separately. Focus only on visual/graphical elements.`
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Analyze this image for visual style and elements. Ignore any text - describe only the graphical/visual elements.'
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: carouselImage,
+                detail: 'high'
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 800,
     });
 
     const imageAnalysis = analysisResponse.choices[0].message.content;
 
-    // Step 2: Create the branding prompt
-    const brandingPromptMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      {
-        role: 'system',
-        content: `You are an expert at creating DALL-E 3 prompts for branded social media images.
-Your job is to take an image analysis and branding information, then create a prompt that will generate a similar image WITH the branding incorporated.
+    // Step 2: Generate background image (NO TEXT)
+    const backgroundPrompt = `Create a professional social media graphic background with these characteristics:
 
-Rules:
-- Keep the same style, layout, and composition as the original
-- Strategically place the business name prominently (usually at top or as a header)
-- Add phone number and website at the bottom if provided
-- Incorporate the brand colors throughout
-- Make it look professional and cohesive
-- The text should be readable and well-positioned
-- DO NOT include any text that says "placeholder" or generic text
-
-Output ONLY the DALL-E prompt, nothing else.`
-      },
-      {
-        role: 'user',
-        content: `Original Image Analysis:
 ${imageAnalysis}
 
-Branding Information:
-- Business Name: ${businessName}
-- Website: ${websiteUrl || 'None provided'}
-- Phone: ${phoneNumber || 'None provided'}
-- Brand Colors: ${brandColors || 'Use colors from the original image'}
-${logoImage ? '- Logo style should be incorporated' : ''}
-${headshotImage ? '- Include a professional person matching the headshot description in the image' : ''}
+${brandColors ? `Use these brand colors: ${brandColors}` : ''}
 
-Create a DALL-E 3 prompt to recreate this image with the branding incorporated. The business name "${businessName}" must appear prominently.${phoneNumber ? ` Include the phone number "${phoneNumber}".` : ''}${websiteUrl ? ` Include the website "${websiteUrl}".` : ''}${headshotImage ? ' Include a professional person based on the headshot analysis.' : ''}`
-      }
-    ];
+CRITICAL REQUIREMENTS:
+- Do NOT include ANY text, words, letters, or numbers in the image
+- Leave clean space at the top for a business name to be added later
+- Leave clean space at the bottom for contact info to be added later
+${headshotImage ? '- Leave space on the right side for a professional headshot to be added' : ''}
+${logoImage ? '- Leave space in a corner for a logo to be added' : ''}
+- Create a visually appealing background/template only
+- Make it 1024x1024 pixels, suitable for Instagram
 
-    const promptResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: brandingPromptMessages,
-      max_tokens: 500,
-    });
+This is a BACKGROUND TEMPLATE - text and branding elements will be composited on top afterwards.`;
 
-    const dallePrompt = promptResponse.choices[0].message.content;
+    console.log('Generating background with prompt:', backgroundPrompt.substring(0, 200));
 
-    // Step 3: Generate the branded image
-    const imagePrompt = dallePrompt || `Professional social media carousel image for ${businessName}`;
-    console.log('Attempting to generate image with prompt:', imagePrompt.substring(0, 100));
-    
     const imageApiResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -163,14 +166,13 @@ Create a DALL-E 3 prompt to recreate this image with the branding incorporated. 
       },
       body: JSON.stringify({
         model: 'gpt-image-2',
-        prompt: imagePrompt,
+        prompt: backgroundPrompt,
         n: 1,
         size: '1024x1024',
       }),
     });
 
     const imageResponse = await imageApiResponse.json();
-    console.log('Image API response:', JSON.stringify(imageResponse, null, 2));
 
     if (!imageApiResponse.ok) {
       return NextResponse.json({ 
@@ -179,26 +181,156 @@ Create a DALL-E 3 prompt to recreate this image with the branding incorporated. 
       }, { status: 400 });
     }
 
-    // Handle both URL and base64 responses
-    let generatedImageUrl = imageResponse.data?.[0]?.url;
-    
-    // If we got base64 data instead, convert it to a data URL
-    if (!generatedImageUrl && imageResponse.data?.[0]?.b64_json) {
-      generatedImageUrl = `data:image/png;base64,${imageResponse.data[0].b64_json}`;
+    // Get the generated background
+    let backgroundBuffer: Buffer;
+    if (imageResponse.data?.[0]?.b64_json) {
+      backgroundBuffer = Buffer.from(imageResponse.data[0].b64_json, 'base64');
+    } else if (imageResponse.data?.[0]?.url) {
+      backgroundBuffer = await urlToBuffer(imageResponse.data[0].url);
+    } else {
+      return NextResponse.json({ error: 'Failed to generate background' }, { status: 500 });
     }
 
-    if (!generatedImageUrl) {
-      return NextResponse.json({ error: 'Failed to generate image' }, { status: 500 });
+    // Step 3: Composite all elements with Sharp
+    const compositeOperations: sharp.OverlayOptions[] = [];
+    const imageSize = 1024;
+
+    // Add business name at top
+    const businessNameSvg = createTextSvg(
+      businessName.toUpperCase(),
+      56,
+      '#FFFFFF',
+      imageSize - 40,
+      'bold',
+      'center'
+    );
+    compositeOperations.push({
+      input: businessNameSvg,
+      top: 60,
+      left: 20,
+    });
+
+    // Add logo if provided (top-left corner)
+    if (logoImage) {
+      try {
+        const logoBuffer = base64ToBuffer(logoImage);
+        const resizedLogo = await sharp(logoBuffer)
+          .resize(120, 120, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+          .png()
+          .toBuffer();
+        
+        compositeOperations.push({
+          input: resizedLogo,
+          top: 40,
+          left: 40,
+        });
+
+        // Shift business name if logo present
+        compositeOperations[0] = {
+          input: businessNameSvg,
+          top: 70,
+          left: 180,
+        };
+      } catch (e) {
+        console.error('Failed to process logo:', e);
+      }
     }
+
+    // Add headshot if provided (right side, circular)
+    if (headshotImage) {
+      try {
+        const headshotBuffer = base64ToBuffer(headshotImage);
+        const circularHeadshot = await createCircularImage(headshotBuffer, 280);
+        
+        // Add white border around headshot
+        const withBorder = await sharp({
+          create: {
+            width: 290,
+            height: 290,
+            channels: 4,
+            background: { r: 255, g: 255, b: 255, alpha: 1 }
+          }
+        })
+          .composite([{
+            input: circularHeadshot,
+            top: 5,
+            left: 5,
+          }])
+          .png()
+          .toBuffer();
+        
+        // Create circular border
+        const borderMask = Buffer.from(
+          `<svg><circle cx="145" cy="145" r="145" fill="white"/></svg>`
+        );
+        
+        const finalHeadshot = await sharp(withBorder)
+          .composite([{ input: borderMask, blend: 'dest-in' }])
+          .png()
+          .toBuffer();
+        
+        compositeOperations.push({
+          input: finalHeadshot,
+          top: 350,
+          left: 700,
+        });
+      } catch (e) {
+        console.error('Failed to process headshot:', e);
+      }
+    }
+
+    // Add contact info at bottom
+    const contactLines: string[] = [];
+    if (phoneNumber) contactLines.push(phoneNumber);
+    if (websiteUrl) contactLines.push(websiteUrl.replace(/^https?:\/\//, ''));
+    
+    if (contactLines.length > 0) {
+      const contactText = contactLines.join('  •  ');
+      const contactSvg = createTextSvg(
+        contactText,
+        32,
+        '#FFFFFF',
+        imageSize - 40,
+        'normal',
+        'center'
+      );
+      
+      // Add semi-transparent background bar for contact info
+      const contactBg = Buffer.from(
+        `<svg width="${imageSize}" height="70">
+          <rect width="${imageSize}" height="70" fill="rgba(0,0,0,0.5)"/>
+        </svg>`
+      );
+      
+      compositeOperations.push({
+        input: contactBg,
+        top: imageSize - 70,
+        left: 0,
+      });
+      
+      compositeOperations.push({
+        input: contactSvg,
+        top: imageSize - 55,
+        left: 20,
+      });
+    }
+
+    // Compose final image
+    const finalImage = await sharp(backgroundBuffer)
+      .composite(compositeOperations)
+      .png()
+      .toBuffer();
+
+    // Convert to base64 data URL
+    const finalBase64 = `data:image/png;base64,${finalImage.toString('base64')}`;
 
     return NextResponse.json({
       success: true,
-      imageUrl: generatedImageUrl,
-      prompt: dallePrompt,
+      imageUrl: finalBase64,
+      prompt: backgroundPrompt,
     });
   } catch (error: any) {
     console.error('Branding error:', error);
-    console.error('Error details:', JSON.stringify(error, null, 2));
     
     const errorMessage = error?.error?.message || error?.message || 'Failed to generate branded image';
     return NextResponse.json({ 
