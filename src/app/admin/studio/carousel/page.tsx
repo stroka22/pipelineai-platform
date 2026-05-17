@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { 
   ArrowLeft,
@@ -26,10 +26,6 @@ import {
   DollarSign
 } from 'lucide-react';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 const CAROUSEL_CATEGORIES = [
   { id: 'myths_reality', name: 'Myths vs Reality', description: 'Debunk common misconceptions' },
