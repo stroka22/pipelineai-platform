@@ -18,7 +18,9 @@ import {
   X,
   ChevronDown,
   ShoppingBag,
-  DollarSign
+  DollarSign,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -31,6 +33,10 @@ export default function ContentLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedImage, setSelectedImage] = useState<any | null>(null);
+  
+  // Multi-select mode
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,6 +99,108 @@ export default function ContentLibraryPage() {
       img.niche?.toLowerCase().includes(search)
     );
   });
+
+  function toggleSelectMode() {
+    setSelectMode(!selectMode);
+    setSelectedIds(new Set());
+  }
+
+  function toggleImageSelection(id: string) {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  }
+
+  function selectAll() {
+    setSelectedIds(new Set(filteredImages.map(img => img.id)));
+  }
+
+  function deselectAll() {
+    setSelectedIds(new Set());
+  }
+
+  function openBulkVaultModal() {
+    if (selectedIds.size === 0) {
+      alert('Select images first');
+      return;
+    }
+    setVaultForm({
+      price: '5.00',
+      caption: '',
+      category: '',
+      niche: '',
+    });
+    setShowVaultModal(true);
+  }
+
+  async function addSelectedToVault() {
+    if (selectedIds.size === 0) return;
+    
+    setAddingToVault(true);
+    const selectedImages = images.filter(img => selectedIds.has(img.id));
+    
+    try {
+      for (let i = 0; i < selectedImages.length; i++) {
+        const img = selectedImages[i];
+        let fileUrl = img.image_url;
+        
+        // Upload to storage if base64
+        if (img.image_url.startsWith('data:')) {
+          const base64Data = img.image_url.split(',')[1];
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let j = 0; j < byteCharacters.length; j++) {
+            byteNumbers[j] = byteCharacters.charCodeAt(j);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: 'image/png' });
+          
+          const fileName = `vault-${Date.now()}-${i}.png`;
+          const { error: uploadError } = await supabase.storage
+            .from('vault')
+            .upload(fileName, blob);
+          
+          if (uploadError) throw uploadError;
+          
+          const { data: publicUrl } = supabase.storage
+            .from('vault')
+            .getPublicUrl(fileName);
+          
+          fileUrl = publicUrl.publicUrl;
+        }
+        
+        // Create vault item
+        const { error: insertError } = await supabase
+          .from('vault_items')
+          .insert({
+            name: img.title || `Image ${i + 1}`,
+            preview_url: fileUrl,
+            file_url: fileUrl,
+            price: parseFloat(vaultForm.price),
+            caption: vaultForm.caption,
+            category: vaultForm.category || null,
+            niche: vaultForm.niche || null,
+            is_active: true,
+          });
+        
+        if (insertError) throw insertError;
+      }
+      
+      alert(`Added ${selectedImages.length} images to vault!`);
+      setShowVaultModal(false);
+      setSelectMode(false);
+      setSelectedIds(new Set());
+    } catch (error: any) {
+      console.error('Error adding to vault:', error);
+      alert('Failed to add to vault: ' + error.message);
+    } finally {
+      setAddingToVault(false);
+    }
+  }
 
   async function toggleFavorite(id: string, current: boolean) {
     await supabase
@@ -242,6 +350,51 @@ export default function ContentLibraryPage() {
             </div>
             
             <div className="flex items-center gap-2">
+              {/* Multi-select controls */}
+              {selectMode ? (
+                <>
+                  <span className="text-white/60 text-sm">
+                    {selectedIds.size} selected
+                  </span>
+                  <button
+                    onClick={selectAll}
+                    className="px-3 py-1.5 text-sm text-white/60 hover:text-white"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    onClick={deselectAll}
+                    className="px-3 py-1.5 text-sm text-white/60 hover:text-white"
+                  >
+                    Deselect
+                  </button>
+                  <button
+                    onClick={openBulkVaultModal}
+                    disabled={selectedIds.size === 0}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    Add to Vault ({selectedIds.size})
+                  </button>
+                  <button
+                    onClick={toggleSelectMode}
+                    className="px-3 py-1.5 text-sm border border-white/20 text-white rounded-lg hover:bg-white/5"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={toggleSelectMode}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm border border-white/20 text-white rounded-lg hover:bg-white/5"
+                >
+                  <CheckSquare className="w-4 h-4" />
+                  Select Multiple
+                </button>
+              )}
+              
+              <div className="w-px h-6 bg-white/10 mx-2" />
+              
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'}`}
@@ -375,8 +528,12 @@ export default function ContentLibraryPage() {
             {filteredImages.map((image) => (
               <div
                 key={image.id}
-                onClick={() => setSelectedImage(image)}
-                className="group relative aspect-square bg-white/5 rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#C96A2B] transition-all"
+                onClick={() => selectMode ? toggleImageSelection(image.id) : setSelectedImage(image)}
+                className={`group relative aspect-square bg-white/5 rounded-xl overflow-hidden cursor-pointer transition-all ${
+                  selectedIds.has(image.id) 
+                    ? 'ring-2 ring-green-500' 
+                    : 'hover:ring-2 hover:ring-[#C96A2B]'
+                }`}
               >
                 <img
                   src={image.image_url}
@@ -393,6 +550,16 @@ export default function ContentLibraryPage() {
                     </p>
                   </div>
                 </div>
+                {/* Checkbox for select mode */}
+                {selectMode && (
+                  <div className="absolute top-2 left-2">
+                    {selectedIds.has(image.id) ? (
+                      <CheckSquare className="w-6 h-6 text-green-500 fill-green-500/20" />
+                    ) : (
+                      <Square className="w-6 h-6 text-white/60" />
+                    )}
+                  </div>
+                )}
                 {image.is_favorite && (
                   <Star className="absolute top-2 right-2 w-4 h-4 text-yellow-500 fill-yellow-500" />
                 )}
@@ -404,9 +571,23 @@ export default function ContentLibraryPage() {
             {filteredImages.map((image) => (
               <div
                 key={image.id}
-                onClick={() => setSelectedImage(image)}
-                className="flex items-center gap-4 bg-[#111111] border border-white/10 rounded-xl p-3 cursor-pointer hover:border-white/20"
+                onClick={() => selectMode ? toggleImageSelection(image.id) : setSelectedImage(image)}
+                className={`flex items-center gap-4 bg-[#111111] border rounded-xl p-3 cursor-pointer ${
+                  selectedIds.has(image.id)
+                    ? 'border-green-500 bg-green-500/5'
+                    : 'border-white/10 hover:border-white/20'
+                }`}
               >
+                {/* Checkbox for select mode */}
+                {selectMode && (
+                  <div className="flex-shrink-0">
+                    {selectedIds.has(image.id) ? (
+                      <CheckSquare className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <Square className="w-5 h-5 text-white/40" />
+                    )}
+                  </div>
+                )}
                 <img
                   src={image.image_url}
                   alt={image.title || 'Generated image'}
@@ -529,8 +710,8 @@ export default function ContentLibraryPage() {
         </div>
       )}
 
-      {/* Add to Vault Modal */}
-      {showVaultModal && selectedImage && (
+      {/* Add to Vault Modal - handles both single and bulk */}
+      {showVaultModal && (selectedImage || selectedIds.size > 0) && (
         <div 
           className="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] p-4"
           onClick={() => setShowVaultModal(false)}
@@ -542,7 +723,7 @@ export default function ContentLibraryPage() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-white font-semibold text-lg flex items-center gap-2">
                 <ShoppingBag className="w-5 h-5 text-green-500" />
-                Add to Vault
+                {selectMode ? `Add ${selectedIds.size} Images to Vault` : 'Add to Vault'}
               </h3>
               <button
                 onClick={() => setShowVaultModal(false)}
@@ -552,17 +733,41 @@ export default function ContentLibraryPage() {
               </button>
             </div>
             
-            <div className="flex gap-4 mb-6">
-              <img
-                src={selectedImage.image_url}
-                alt="Preview"
-                className="w-24 h-24 object-cover rounded-lg"
-              />
-              <div className="flex-1">
-                <p className="text-white font-medium">{selectedImage.title || 'Untitled'}</p>
-                <p className="text-white/50 text-sm">{selectedImage.niche}</p>
+            {/* Preview - single image or grid of selected */}
+            {selectMode ? (
+              <div className="mb-6">
+                <div className="grid grid-cols-5 gap-2 max-h-32 overflow-y-auto">
+                  {images.filter(img => selectedIds.has(img.id)).slice(0, 10).map(img => (
+                    <img
+                      key={img.id}
+                      src={img.image_url}
+                      alt="Preview"
+                      className="w-full aspect-square object-cover rounded-lg"
+                    />
+                  ))}
+                  {selectedIds.size > 10 && (
+                    <div className="w-full aspect-square bg-white/10 rounded-lg flex items-center justify-center text-white/60 text-sm">
+                      +{selectedIds.size - 10}
+                    </div>
+                  )}
+                </div>
+                <p className="text-white/50 text-sm mt-2">
+                  Each image will be added as a separate vault item
+                </p>
               </div>
-            </div>
+            ) : selectedImage && (
+              <div className="flex gap-4 mb-6">
+                <img
+                  src={selectedImage.image_url}
+                  alt="Preview"
+                  className="w-24 h-24 object-cover rounded-lg"
+                />
+                <div className="flex-1">
+                  <p className="text-white font-medium">{selectedImage.title || 'Untitled'}</p>
+                  <p className="text-white/50 text-sm">{selectedImage.niche}</p>
+                </div>
+              </div>
+            )}
             
             <div className="space-y-4">
               <div>
@@ -636,7 +841,7 @@ export default function ContentLibraryPage() {
                 Cancel
               </button>
               <button
-                onClick={addToVault}
+                onClick={selectMode ? addSelectedToVault : addToVault}
                 disabled={addingToVault || !vaultForm.price}
                 className="flex-1 py-2 bg-green-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-green-700 disabled:opacity-50"
               >
@@ -648,7 +853,7 @@ export default function ContentLibraryPage() {
                 ) : (
                   <>
                     <ShoppingBag className="w-4 h-4" />
-                    Add to Vault
+                    {selectMode ? `Add ${selectedIds.size} to Vault` : 'Add to Vault'}
                   </>
                 )}
               </button>
