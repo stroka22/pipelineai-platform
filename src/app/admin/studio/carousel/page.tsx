@@ -21,7 +21,9 @@ import {
   MessageSquare,
   Upload,
   X,
-  Eye
+  Eye,
+  ShoppingBag,
+  DollarSign
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -94,10 +96,32 @@ export default function CarouselCreatorPage() {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [generatingSlideIndex, setGeneratingSlideIndex] = useState<number | null>(null);
+  
+  // Add to Vault
+  const [showVaultModal, setShowVaultModal] = useState(false);
+  const [vaultForm, setVaultForm] = useState({
+    price: '5.00',
+    caption: '',
+    category: '',
+    niche: '',
+  });
+  const [niches, setNiches] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [addingToVault, setAddingToVault] = useState(false);
 
   useEffect(() => {
     loadBrands();
+    loadNichesAndCategories();
   }, []);
+
+  async function loadNichesAndCategories() {
+    const [nichesRes, catsRes] = await Promise.all([
+      supabase.from('niches').select('*').order('name'),
+      supabase.from('categories').select('*').order('name'),
+    ]);
+    if (nichesRes.data) setNiches(nichesRes.data);
+    if (catsRes.data) setCategories(catsRes.data);
+  }
 
   async function loadBrands() {
     const { data } = await supabase
@@ -461,6 +485,88 @@ Create a DIFFERENT visual composition than the previous version while maintainin
     }
   }
 
+  function openVaultModal() {
+    const completedSlides = slides.filter(s => s.status === 'complete' && s.imageUrl);
+    if (completedSlides.length === 0) {
+      alert('No completed slides to add to vault');
+      return;
+    }
+    
+    // Pre-fill from carousel config
+    const nicheSlug = niches.find(n => n.name === carouselConfig.niche)?.slug || '';
+    setVaultForm({
+      price: '5.00',
+      caption: carouselConfig.topic || carouselConfig.title || '',
+      category: '',
+      niche: nicheSlug,
+    });
+    setShowVaultModal(true);
+  }
+
+  async function addAllToVault() {
+    const completedSlides = slides.filter(s => s.status === 'complete' && s.imageUrl);
+    if (completedSlides.length === 0) return;
+    
+    setAddingToVault(true);
+    
+    try {
+      for (let i = 0; i < completedSlides.length; i++) {
+        const slide = completedSlides[i];
+        let fileUrl = slide.imageUrl!;
+        
+        // Upload to storage if base64
+        if (slide.imageUrl!.startsWith('data:')) {
+          const base64Data = slide.imageUrl!.split(',')[1];
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let j = 0; j < byteCharacters.length; j++) {
+            byteNumbers[j] = byteCharacters.charCodeAt(j);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: 'image/png' });
+          
+          const fileName = `vault-carousel-${Date.now()}-${i + 1}.png`;
+          const { error: uploadError } = await supabase.storage
+            .from('vault')
+            .upload(fileName, blob);
+          
+          if (uploadError) throw uploadError;
+          
+          const { data: publicUrl } = supabase.storage
+            .from('vault')
+            .getPublicUrl(fileName);
+          
+          fileUrl = publicUrl.publicUrl;
+        }
+        
+        // Create vault item
+        const slideName = `${carouselConfig.title || 'Carousel'} - Slide ${slide.slideNumber}`;
+        const { error: insertError } = await supabase
+          .from('vault_items')
+          .insert({
+            name: slideName,
+            preview_url: fileUrl,
+            file_url: fileUrl,
+            price: parseFloat(vaultForm.price),
+            caption: vaultForm.caption,
+            category: vaultForm.category || null,
+            niche: vaultForm.niche || null,
+            is_active: true,
+          });
+        
+        if (insertError) throw insertError;
+      }
+      
+      alert(`Added ${completedSlides.length} slides to vault!`);
+      setShowVaultModal(false);
+    } catch (error: any) {
+      console.error('Error adding to vault:', error);
+      alert('Failed to add to vault: ' + error.message);
+    } finally {
+      setAddingToVault(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Header */}
@@ -479,6 +585,13 @@ Create a DIFFERENT visual composition than the previous version while maintainin
             
             {step === 'review' && (
               <div className="flex items-center gap-2">
+                <button
+                  onClick={openVaultModal}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  Add All to Vault
+                </button>
                 <button
                   onClick={downloadAllSlides}
                   className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20"
@@ -914,6 +1027,131 @@ Example: Create a 5-slide carousel for a roofing company about '5 Signs Your Roo
           </div>
         )}
       </main>
+
+      {/* Add All to Vault Modal */}
+      {showVaultModal && (
+        <div 
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowVaultModal(false)}
+        >
+          <div 
+            className="bg-[#111111] border border-white/10 rounded-2xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-green-500" />
+                Add All Slides to Vault
+              </h3>
+              <button
+                onClick={() => setShowVaultModal(false)}
+                className="text-white/40 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="bg-white/5 rounded-lg p-4 mb-6">
+              <p className="text-white font-medium">
+                {slides.filter(s => s.status === 'complete' && s.imageUrl).length} slides ready
+              </p>
+              <p className="text-white/50 text-sm">
+                Each slide will be added as a separate vault item with the same settings below.
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-white/60 mb-1">
+                  Price per slide ($) *
+                </label>
+                <div className="relative">
+                  <DollarSign className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={vaultForm.price}
+                    onChange={(e) => setVaultForm({ ...vaultForm, price: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm text-white/60 mb-1">
+                  Niche
+                </label>
+                <select
+                  value={vaultForm.niche}
+                  onChange={(e) => setVaultForm({ ...vaultForm, niche: e.target.value })}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+                >
+                  <option value="">Select niche...</option>
+                  {niches.map(niche => (
+                    <option key={niche.id} value={niche.slug}>{niche.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm text-white/60 mb-1">
+                  Category
+                </label>
+                <select
+                  value={vaultForm.category}
+                  onChange={(e) => setVaultForm({ ...vaultForm, category: e.target.value })}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+                >
+                  <option value="">Select category...</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm text-white/60 mb-1">
+                  Caption (for all slides)
+                </label>
+                <textarea
+                  value={vaultForm.caption}
+                  onChange={(e) => setVaultForm({ ...vaultForm, caption: e.target.value })}
+                  rows={3}
+                  placeholder="Caption buyers can copy for their post..."
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 resize-none"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowVaultModal(false)}
+                className="flex-1 py-2 border border-white/20 text-white rounded-lg hover:bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addAllToVault}
+                disabled={addingToVault || !vaultForm.price}
+                className="flex-1 py-2 bg-green-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-green-700 disabled:opacity-50"
+              >
+                {addingToVault ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-4 h-4" />
+                    Add All to Vault
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
