@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
     const { 
       carouselImage, 
       logoImage,
+      headshotImage,
       businessName,
       websiteUrl,
       phoneNumber,
@@ -79,6 +80,26 @@ Be very specific about positioning (top, bottom, left, right, center).`
       });
     }
 
+    // If headshot is provided, analyze it too
+    if (headshotImage) {
+      analysisMessages.push({
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: 'Also analyze this professional headshot photo. Describe the person\'s appearance, attire, and professional presentation so they can be included in the generated image:'
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: headshotImage,
+              detail: 'high'
+            }
+          }
+        ]
+      });
+    }
+
     const analysisResponse = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: analysisMessages,
@@ -116,8 +137,9 @@ Branding Information:
 - Phone: ${phoneNumber || 'None provided'}
 - Brand Colors: ${brandColors || 'Use colors from the original image'}
 ${logoImage ? '- Logo style should be incorporated' : ''}
+${headshotImage ? '- Include a professional person matching the headshot description in the image' : ''}
 
-Create a DALL-E 3 prompt to recreate this image with the branding incorporated. The business name "${businessName}" must appear prominently.${phoneNumber ? ` Include the phone number "${phoneNumber}".` : ''}${websiteUrl ? ` Include the website "${websiteUrl}".` : ''}`
+Create a DALL-E 3 prompt to recreate this image with the branding incorporated. The business name "${businessName}" must appear prominently.${phoneNumber ? ` Include the phone number "${phoneNumber}".` : ''}${websiteUrl ? ` Include the website "${websiteUrl}".` : ''}${headshotImage ? ' Include a professional person based on the headshot analysis.' : ''}`
       }
     ];
 
