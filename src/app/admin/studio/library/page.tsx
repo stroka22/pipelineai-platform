@@ -168,13 +168,13 @@ export default function ContentLibraryPage() {
           
           const fileName = `vault-${Date.now()}-${i}.png`;
           const { error: uploadError } = await supabase.storage
-            .from('vault')
+            .from('Vault')
             .upload(fileName, blob);
           
           if (uploadError) throw uploadError;
           
           const { data: publicUrl } = supabase.storage
-            .from('vault')
+            .from('Vault')
             .getPublicUrl(fileName);
           
           fileUrl = publicUrl.publicUrl;
@@ -293,13 +293,13 @@ export default function ContentLibraryPage() {
         
         const fileName = `vault-${Date.now()}.png`;
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('vault')
+          .from('Vault')
           .upload(fileName, blob);
         
         if (uploadError) throw uploadError;
         
         const { data: publicUrl } = supabase.storage
-          .from('vault')
+          .from('Vault')
           .getPublicUrl(fileName);
         
         fileUrl = publicUrl.publicUrl;

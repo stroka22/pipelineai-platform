@@ -527,13 +527,13 @@ Create a DIFFERENT visual composition than the previous version while maintainin
           
           const fileName = `vault-carousel-${Date.now()}-${i + 1}.png`;
           const { error: uploadError } = await supabase.storage
-            .from('vault')
+            .from('Vault')
             .upload(fileName, blob);
           
           if (uploadError) throw uploadError;
           
           const { data: publicUrl } = supabase.storage
-            .from('vault')
+            .from('Vault')
             .getPublicUrl(fileName);
           
           fileUrl = publicUrl.publicUrl;
