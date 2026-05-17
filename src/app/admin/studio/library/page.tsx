@@ -145,7 +145,10 @@ export default function ContentLibraryPage() {
     if (selectedIds.size === 0) return;
     
     setAddingToVault(true);
-    const selectedImages = images.filter(img => selectedIds.has(img.id));
+    // Sort by created_at ascending so oldest (slide 1) comes first
+    const selectedImages = images
+      .filter(img => selectedIds.has(img.id))
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     
     try {
       // Upload all images and collect URLs
