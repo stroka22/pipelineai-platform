@@ -1015,13 +1015,23 @@ Example: Create a 5-slide carousel for a roofing company about '5 Signs Your Roo
                   />
                 ) : (
                   <div className="text-center text-white/40">
-                    <Layers className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p>Slide will appear here</p>
+                    {slides[activeSlideIndex]?.status === 'error' ? (
+                      <>
+                        <X className="w-16 h-16 mx-auto mb-4 text-red-500/50" />
+                        <p className="text-red-400">Generation failed</p>
+                        <p className="text-sm mt-1">Click "Generate Slide" below to retry</p>
+                      </>
+                    ) : (
+                      <>
+                        <Layers className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                        <p>Slide will appear here</p>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
               
-              {step === 'review' && slides[activeSlideIndex]?.imageUrl && (
+              {step === 'review' && (
                 <div className="flex justify-center gap-2 mt-4">
                   <button
                     onClick={() => regenerateSlide(activeSlideIndex)}
@@ -1033,7 +1043,7 @@ Example: Create a 5-slide carousel for a roofing company about '5 Signs Your Roo
                     ) : (
                       <RefreshCw className="w-4 h-4" />
                     )}
-                    Regenerate Slide
+                    {slides[activeSlideIndex]?.imageUrl ? 'Regenerate Slide' : 'Generate Slide'}
                   </button>
                 </div>
               )}
