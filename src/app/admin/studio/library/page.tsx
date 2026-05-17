@@ -875,7 +875,7 @@ export default function ContentLibraryPage() {
                 </label>
                 <select
                   value={vaultForm.niche}
-                  onChange={(e) => setVaultForm({ ...vaultForm, niche: e.target.value })}
+                  onChange={(e) => setVaultForm({ ...vaultForm, niche: e.target.value, category: '' })}
                   className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
                 >
                   <option value="">Select niche...</option>
@@ -893,11 +893,14 @@ export default function ContentLibraryPage() {
                   value={vaultForm.category}
                   onChange={(e) => setVaultForm({ ...vaultForm, category: e.target.value })}
                   className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+                  disabled={!vaultForm.niche}
                 >
-                  <option value="">Select category...</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
-                  ))}
+                  <option value="">{vaultForm.niche ? 'Select category...' : 'Select niche first'}</option>
+                  {categories
+                    .filter(cat => cat.niche_slug === vaultForm.niche)
+                    .map(cat => (
+                      <option key={cat.id} value={cat.slug || cat.name}>{cat.name}</option>
+                    ))}
                 </select>
               </div>
               
