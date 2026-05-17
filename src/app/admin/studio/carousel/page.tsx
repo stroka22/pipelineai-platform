@@ -245,6 +245,17 @@ Match the visual style, colors, and aesthetic of the reference image while creat
         const data = await response.json();
         
         if (data.success && data.imageUrl) {
+          // Auto-save to library
+          const carouselTitle = carouselConfig.title || `${carouselConfig.niche} Carousel`;
+          await supabase.from('generated_images').insert({
+            title: `${carouselTitle} - Slide ${i + 1}`,
+            image_url: data.imageUrl,
+            prompt_used: prompt,
+            niche: carouselConfig.niche,
+            style: carouselConfig.style,
+            content_type: 'carousel',
+          });
+          
           setSlides(prev => prev.map((s, idx) => 
             idx === i ? { ...s, imageUrl: data.imageUrl, status: 'complete' } : s
           ));
@@ -319,6 +330,17 @@ Match the visual style, colors, and aesthetic of the reference image while creat
         const data = await response.json();
         
         if (data.success && data.imageUrl) {
+          // Auto-save to library
+          const carouselTitle = carouselConfig.title || `${carouselConfig.niche} Carousel`;
+          await supabase.from('generated_images').insert({
+            title: `${carouselTitle} - Slide ${i + 1}`,
+            image_url: data.imageUrl,
+            prompt_used: prompt,
+            niche: carouselConfig.niche,
+            style: carouselConfig.style,
+            content_type: 'carousel',
+          });
+          
           setSlides(prev => prev.map((s, idx) => 
             idx === i ? { ...s, imageUrl: data.imageUrl, status: 'complete' } : s
           ));
@@ -373,6 +395,17 @@ Create a DIFFERENT visual composition than the previous version while maintainin
       const data = await response.json();
       
       if (data.success && data.imageUrl) {
+        // Auto-save to library
+        const carouselTitle = carouselConfig.title || `${carouselConfig.niche} Carousel`;
+        await supabase.from('generated_images').insert({
+          title: `${carouselTitle} - Slide ${index + 1} (regenerated)`,
+          image_url: data.imageUrl,
+          prompt_used: prompt,
+          niche: carouselConfig.niche,
+          style: carouselConfig.style,
+          content_type: 'carousel',
+        });
+        
         setSlides(prev => prev.map((s, idx) => 
           idx === index ? { ...s, imageUrl: data.imageUrl, status: 'complete' } : s
         ));
