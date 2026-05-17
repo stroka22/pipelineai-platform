@@ -52,6 +52,8 @@ export default function ContentLibraryPage() {
     caption: '',
     category: '',
     niche: '',
+    title: '',
+    addAsCarousel: true, // Default to carousel for multi-select
   });
   const [niches, setNiches] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -133,6 +135,8 @@ export default function ContentLibraryPage() {
       caption: '',
       category: '',
       niche: '',
+      title: '',
+      addAsCarousel: selectedIds.size > 1, // Default to carousel if multiple selected
     });
     setShowVaultModal(true);
   }
@@ -144,6 +148,9 @@ export default function ContentLibraryPage() {
     const selectedImages = images.filter(img => selectedIds.has(img.id));
     
     try {
+      // Upload all images and collect URLs
+      const uploadedUrls: string[] = [];
+      
       for (let i = 0; i < selectedImages.length; i++) {
         const img = selectedImages[i];
         let fileUrl = img.image_url;
@@ -173,24 +180,50 @@ export default function ContentLibraryPage() {
           fileUrl = publicUrl.publicUrl;
         }
         
-        // Create vault item
+        uploadedUrls.push(fileUrl);
+      }
+      
+      if (vaultForm.addAsCarousel) {
+        // Add as single carousel product
         const { error: insertError } = await supabase
           .from('vault_items')
           .insert({
-            name: img.title || `Image ${i + 1}`,
-            preview_url: fileUrl,
-            file_url: fileUrl,
+            title: vaultForm.title || `${selectedImages.length}-Slide Carousel`,
+            preview_url: uploadedUrls[0], // First image as preview
+            file_url: uploadedUrls[0],
+            images: JSON.stringify(uploadedUrls), // All images as JSON array
             price: parseFloat(vaultForm.price),
             caption: vaultForm.caption,
             category: vaultForm.category || null,
             niche: vaultForm.niche || null,
+            content_type: 'carousel',
+            slide_count: uploadedUrls.length,
             is_active: true,
           });
         
         if (insertError) throw insertError;
+        alert(`Added ${selectedImages.length}-slide carousel to vault!`);
+      } else {
+        // Add as separate items
+        for (let i = 0; i < uploadedUrls.length; i++) {
+          const { error: insertError } = await supabase
+            .from('vault_items')
+            .insert({
+              title: selectedImages[i].title || `Image ${i + 1}`,
+              preview_url: uploadedUrls[i],
+              file_url: uploadedUrls[i],
+              price: parseFloat(vaultForm.price),
+              caption: vaultForm.caption,
+              category: vaultForm.category || null,
+              niche: vaultForm.niche || null,
+              is_active: true,
+            });
+          
+          if (insertError) throw insertError;
+        }
+        alert(`Added ${selectedImages.length} images to vault!`);
       }
       
-      alert(`Added ${selectedImages.length} images to vault!`);
       setShowVaultModal(false);
       setSelectMode(false);
       setSelectedIds(new Set());
@@ -232,6 +265,8 @@ export default function ContentLibraryPage() {
       caption: selectedImage.title || '',
       category: '',
       niche: selectedImage.niche || '',
+      title: selectedImage.title || '',
+      addAsCarousel: false,
     });
     setShowVaultModal(true);
   }
@@ -751,9 +786,40 @@ export default function ContentLibraryPage() {
                     </div>
                   )}
                 </div>
-                <p className="text-white/50 text-sm mt-2">
-                  Each image will be added as a separate vault item
-                </p>
+                
+                {/* Add as Carousel or Separate toggle */}
+                <div className="mt-4 p-3 bg-white/5 rounded-lg">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setVaultForm({ ...vaultForm, addAsCarousel: true })}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        vaultForm.addAsCarousel 
+                          ? 'bg-green-600 text-white' 
+                          : 'bg-white/10 text-white/60 hover:text-white'
+                      }`}
+                    >
+                      Single Carousel Product
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVaultForm({ ...vaultForm, addAsCarousel: false })}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        !vaultForm.addAsCarousel 
+                          ? 'bg-green-600 text-white' 
+                          : 'bg-white/10 text-white/60 hover:text-white'
+                      }`}
+                    >
+                      Separate Items
+                    </button>
+                  </div>
+                  <p className="text-white/40 text-xs mt-2">
+                    {vaultForm.addAsCarousel 
+                      ? `All ${selectedIds.size} slides sold as one carousel product`
+                      : `Each slide sold separately (${selectedIds.size} products)`
+                    }
+                  </p>
+                </div>
               </div>
             ) : selectedImage && (
               <div className="flex gap-4 mb-6">
@@ -770,6 +836,22 @@ export default function ContentLibraryPage() {
             )}
             
             <div className="space-y-4">
+              {/* Title field for carousel mode */}
+              {selectMode && vaultForm.addAsCarousel && (
+                <div>
+                  <label className="block text-sm text-white/60 mb-1">
+                    Carousel Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={vaultForm.title}
+                    onChange={(e) => setVaultForm({ ...vaultForm, title: e.target.value })}
+                    placeholder="e.g., 5 Roofing Myths Exposed"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40"
+                  />
+                </div>
+              )}
+              
               <div>
                 <label className="block text-sm text-white/60 mb-1">
                   Price ($) *
