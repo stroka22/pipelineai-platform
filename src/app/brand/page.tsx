@@ -177,7 +177,7 @@ export default function BrandingPage() {
 
               <button
                 onClick={() => handleDownload(generatedImages[0], 0)}
-                className="w-full bg-[#C96A2B] text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-[#B55D24] transition-all"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/20"
               >
                 <Download className="w-4 h-4" />
                 Download Image
@@ -187,7 +187,7 @@ export default function BrandingPage() {
             <div className="text-center">
               <button
                 onClick={handleStartOver}
-                className="inline-flex items-center gap-2 text-[#C96A2B] hover:underline"
+                className="inline-flex items-center gap-2 text-blue-400 hover:underline"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Brand Another Image
@@ -202,15 +202,15 @@ export default function BrandingPage() {
   // Show generating state
   if (isGenerating) {
     return (
-      <main className="min-h-screen bg-[#0a0a0a]">
+      <main className="min-h-screen bg-[#030712]">
         <Header />
         <div className="pt-24 pb-16 flex items-center justify-center min-h-[80vh]">
           <div className="text-center max-w-md px-6">
             <div className="relative mb-8">
-              <div className="w-24 h-24 mx-auto bg-[#C96A2B]/20 rounded-full flex items-center justify-center">
-                <Sparkles className="w-12 h-12 text-[#C96A2B] animate-pulse" />
+              <div className="w-24 h-24 mx-auto bg-purple-500/20 rounded-full flex items-center justify-center">
+                <Sparkles className="w-12 h-12 text-purple-400 animate-pulse" />
               </div>
-              <Loader2 className="w-32 h-32 text-[#C96A2B] animate-spin absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              <Loader2 className="w-32 h-32 text-purple-500 animate-spin absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             </div>
             <h2 className="text-2xl font-bold text-white mb-4">Creating Your Branded Image</h2>
             <p className="text-white/60 mb-4">{progress}</p>
@@ -222,14 +222,14 @@ export default function BrandingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a]">
+    <main className="min-h-screen bg-[#030712]">
       <Header />
 
       <div className="pt-24 pb-16">
         <div className="max-w-3xl mx-auto px-6">
           {/* Header */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-[#C96A2B]/10 border border-[#C96A2B]/30 text-[#C96A2B] px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 text-purple-400 px-4 py-2 rounded-full text-sm font-semibold mb-4">
               <Sparkles className="w-4 h-4" />
               AI-Powered Branding
             </div>
@@ -252,7 +252,7 @@ export default function BrandingPage() {
             {/* Carousel Image Upload */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <ImageIcon className="w-5 h-5 text-[#C96A2B]" />
+                <ImageIcon className="w-5 h-5 text-blue-500" />
                 Carousel Image to Brand *
               </h2>
               
@@ -274,7 +274,7 @@ export default function BrandingPage() {
                   </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-[#C96A2B]/50 transition-colors">
+                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-blue-500/50 transition-colors">
                   <Upload className="w-10 h-10 text-white/40 mb-2" />
                   <span className="text-white/60 text-sm">Click to upload carousel image</span>
                   <span className="text-white/40 text-xs mt-1">PNG, JPG up to 10MB</span>
@@ -301,7 +301,7 @@ export default function BrandingPage() {
                   value={formData.businessName}
                   onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                   placeholder="e.g., Alpha Roofing"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   required
                 />
               </div>
@@ -317,7 +317,7 @@ export default function BrandingPage() {
                     value={formData.websiteUrl}
                     onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
                     placeholder="https://yourwebsite.com"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
 
@@ -331,7 +331,7 @@ export default function BrandingPage() {
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                     placeholder="(555) 123-4567"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
               </div>
@@ -346,7 +346,7 @@ export default function BrandingPage() {
                   value={formData.brandColors}
                   onChange={(e) => setFormData({ ...formData, brandColors: e.target.value })}
                   placeholder="e.g., Navy blue, orange, white"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#C96A2B]"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
             </div>
@@ -383,7 +383,7 @@ export default function BrandingPage() {
                       </button>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-[#C96A2B]/50 transition-colors">
+                    <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-blue-500/50 transition-colors">
                       <Upload className="w-6 h-6 text-white/40 mb-1" />
                       <span className="text-white/60 text-xs text-center">Upload logo</span>
                       <input
@@ -420,7 +420,7 @@ export default function BrandingPage() {
                       </button>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-[#C96A2B]/50 transition-colors">
+                    <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:border-blue-500/50 transition-colors">
                       <User className="w-6 h-6 text-white/40 mb-1" />
                       <span className="text-white/60 text-xs text-center">Upload headshot</span>
                       <input
@@ -446,7 +446,7 @@ export default function BrandingPage() {
             <button
               type="submit"
               disabled={loading || !carouselFile}
-              className="w-full bg-[#C96A2B] text-white py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-purple-600 to-purple-500 text-white py-4 rounded-xl font-semibold text-lg hover:from-purple-500 hover:to-purple-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20"
             >
               <Sparkles className="w-5 h-5" />
               Brand Image - FREE

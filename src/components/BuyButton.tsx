@@ -39,7 +39,7 @@ export default function BuyButton({ vaultItemId, price, className = '' }: BuyBut
     <button
       onClick={handleBuy}
       disabled={loading}
-      className={`inline-flex items-center justify-center gap-2 bg-[#C96A2B] text-white font-semibold hover:bg-[#B55D24] transition-all disabled:opacity-70 ${className}`}
+      className={`inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold hover:from-blue-500 hover:to-blue-400 transition-all disabled:opacity-70 shadow-lg shadow-blue-500/20 ${className}`}
     >
       {loading ? (
         <Loader2 className="w-4 h-4 animate-spin" />

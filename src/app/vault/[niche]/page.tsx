@@ -142,19 +142,19 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#081F33] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[#C96A2B]" />
+      <div className="min-h-screen bg-[#030712] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
       </div>
     );
   }
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-[#081F33] flex items-center justify-center">
+      <div className="min-h-screen bg-[#030712] flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-white mb-4">Vault Not Found</h1>
           <p className="text-white/60 mb-8">This content vault doesn&apos;t exist yet.</p>
-          <Link href="/" className="bg-[#C96A2B] text-white px-6 py-3 rounded-lg font-semibold">
+          <Link href="/" className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-6 py-3 rounded-lg font-semibold">
             Go Home
           </Link>
         </div>
@@ -163,11 +163,12 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
   }
 
   return (
-    <div className="min-h-screen bg-[#081F33]">
-      <header className="bg-[#081F33] border-b border-white/10 sticky top-0 z-40">
+    <div className="min-h-screen bg-[#030712]">
+      <header className="bg-[#030712]/95 backdrop-blur-md border-b border-white/10 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl md:text-2xl font-bold text-white">
-            Pipeline <span className="text-[#C96A2B]">AI</span>
+          <Link href="/" className="text-xl md:text-2xl font-bold text-white flex items-center gap-1">
+            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">PIPELINE</span>
+            <span className="text-white">AI</span>
           </Link>
           
           {/* Desktop Nav */}
@@ -205,7 +206,7 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
             </Link>
             <Link 
               href={`/industries/${nicheSlug}`}
-              className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all flex items-center gap-2"
+              className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:from-blue-500 hover:to-blue-400 transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20"
             >
               <ShoppingBag className="w-4 h-4" />
               Shop {niche?.name || 'Vault'}
@@ -223,7 +224,7 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-[#081F33] border-t border-white/10">
+          <div className="md:hidden bg-[#030712] border-t border-white/10">
             <nav className="px-4 py-4 space-y-1">
               <Link 
                 href="/" 
@@ -253,7 +254,7 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
               <div className="pt-4">
                 <Link 
                   href={`/industries/${nicheSlug}`}
-                  className="block w-full bg-[#C96A2B] text-white px-5 py-3 rounded-lg font-semibold text-center hover:bg-[#B55D24] transition-all"
+                  className="block w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white px-5 py-3 rounded-lg font-semibold text-center transition-all"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Shop {niche?.name || 'Vault'}
@@ -264,14 +265,15 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
         )}
       </header>
 
-      <section className="py-16 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <div className="inline-flex items-center gap-2 bg-[#C96A2B]/20 text-[#C96A2B] px-4 py-2 rounded-full text-sm font-semibold mb-6">
+      <section className="py-16 border-b border-white/10 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-950/20 via-transparent to-transparent" />
+        <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
+          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-full text-sm font-semibold mb-6">
             <Shield className="w-4 h-4" />
             Protected Content Vault
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            {niche?.name} Content <span className="text-[#C96A2B]">Vault</span>
+            {niche?.name} Content <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Vault</span>
           </h1>
           <p className="text-xl text-white/60 max-w-2xl mx-auto">
             {niche?.description || `Preview premium ${niche?.name} growth content. Purchase and download instantly to start posting today.`}
@@ -289,7 +291,7 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                   onClick={() => setSelectedCategory(cat.name)}
                   className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
                     selectedCategory === cat.name
-                      ? 'bg-[#C96A2B] text-white'
+                      ? 'bg-blue-500 text-white'
                       : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
                   }`}
                 >
@@ -314,7 +316,7 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
               {filteredItems.map((item) => (
                 <div 
                   key={item.id}
-                  className="group relative bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-[#C96A2B]/50 transition-all"
+                  className="group relative bg-[#0d1423] rounded-2xl overflow-hidden border border-white/10 hover:border-blue-500/50 transition-all hover:shadow-lg hover:shadow-blue-500/10"
                 >
                   <div 
                     className="relative aspect-square cursor-pointer"
@@ -354,9 +356,9 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                           ))}
                         </div>
                       </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#081F33] via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#030712] via-transparent to-transparent" />
                     </div>
-                    <div className="absolute inset-0 bg-[#C96A2B]/0 group-hover:bg-[#C96A2B]/20 transition-all flex items-center justify-center pointer-events-auto">
+                    <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/20 transition-all flex items-center justify-center pointer-events-auto">
                       <div className="opacity-0 group-hover:opacity-100 transition-all bg-white/20 backdrop-blur-sm px-6 py-3 rounded-full flex items-center gap-2 text-white font-semibold">
                         <Eye className="w-5 h-5" />
                         {item.content_type === 'video' || item.content_type === 'reel' ? 'Watch Preview' : `Preview All ${item.slide_count} Slides`}
@@ -368,7 +370,7 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
                   </div>
                   <div className="p-5">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-semibold text-[#C96A2B] bg-[#C96A2B]/10 px-3 py-1 rounded-full">{item.category}</span>
+                      <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full">{item.category}</span>
                       {item.price && (
                         <span className="text-xl font-bold text-white">${item.price}</span>
                       )}
@@ -408,11 +410,12 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
         </div>
       </section>
 
-      <section className="py-16 border-t border-white/10">
-        <div className="max-w-3xl mx-auto px-6 text-center">
+      <section className="py-16 border-t border-white/10 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-950/10 via-transparent to-transparent" />
+        <div className="max-w-3xl mx-auto px-6 text-center relative z-10">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to Grow Your Social Media Presence?</h2>
-          <p className="text-lg text-white/60 mb-8">Purchase premium content and start posting today. Instant download after payment.</p>
-          <Link href={`/industries/${nicheSlug}`} className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold hover:bg-[#B55D24] transition-all inline-flex items-center gap-2">
+          <p className="text-lg text-white/50 mb-8">Purchase premium content and start posting today. Instant download after payment.</p>
+          <Link href={`/industries/${nicheSlug}`} className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-500 hover:to-blue-400 transition-all inline-flex items-center gap-2 shadow-lg shadow-blue-500/25">
             <ShoppingBag className="w-5 h-5" />
             Shop This Vault
           </Link>
@@ -494,7 +497,7 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
             <div className="absolute flex gap-2" style={{ bottom: '80px', left: '50%', transform: 'translateX(-50%)' }}>
               {previewItem.images.slice(0, 10).map((img, i) => (
                 <button key={i} onClick={(e) => { e.stopPropagation(); setCurrentSlide(i); }}
-                  className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${i === currentSlide ? 'border-[#C96A2B]' : 'border-white/20 opacity-50 hover:opacity-100'}`}>
+                  className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${i === currentSlide ? 'border-blue-500' : 'border-white/20 opacity-50 hover:opacity-100'}`}>
                   {isVideo(img) ? (
                     <div className="w-full h-full bg-black flex items-center justify-center">
                       <Play className="w-4 h-4 text-white" fill="white" />
@@ -538,9 +541,9 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
       {/* Resale Warning Modal */}
       {showWarning && (
         <div className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0a2540] rounded-2xl border border-[#C96A2B]/30 max-w-md w-full p-8 text-center">
-            <div className="w-16 h-16 bg-[#C96A2B]/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <AlertTriangle className="w-8 h-8 text-[#C96A2B]" />
+          <div className="bg-[#0d1423] rounded-2xl border border-blue-500/30 max-w-md w-full p-8 text-center">
+            <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="w-8 h-8 text-blue-400" />
             </div>
             
             <h2 className="text-2xl font-bold text-white mb-4">Content License Agreement</h2>
@@ -563,7 +566,7 @@ export default function VaultPage({ params }: { params: Promise<{ niche: string 
             
             <button
               onClick={acceptWarning}
-              className="w-full bg-[#C96A2B] text-white py-4 rounded-xl font-bold text-lg hover:bg-[#B55D24] transition-all"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-500 hover:to-blue-400 transition-all"
             >
               I Understand & Agree
             </button>

@@ -55,34 +55,36 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
   }, [nicheSlug]);
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a]">
+    <main className="min-h-screen bg-[#030712]">
       <Header currentNiche={nicheSlug} />
 
       {/* Hero Section */}
       <section className="pt-32 pb-16 md:pt-44 md:pb-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#C96A2B]/10 via-transparent to-transparent" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#C96A2B]/5 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-950/20 via-transparent to-transparent" />
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px]" />
+        <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
         
         <div className="max-w-6xl mx-auto px-6 relative z-10">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-[#C96A2B] px-4 py-2 rounded-full text-sm font-semibold mb-6">
+            <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-full text-sm font-semibold mb-6">
               <Sparkles className="w-4 h-4" />
               {niche} Growth Vault
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight">
               Premium {niche} Content That{' '}
-              <span className="text-[#C96A2B]">{tagline}</span>
+              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">{tagline}</span>
             </h1>
             
-            <p className="text-xl text-white/60 mb-8 max-w-xl">
+            <p className="text-xl text-white/50 mb-8 max-w-xl">
               {description}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Link 
                 href="#content"
-                className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all inline-flex items-center justify-center gap-2 group"
+                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-500 hover:to-blue-400 transition-all inline-flex items-center justify-center gap-2 group shadow-lg shadow-blue-500/25"
               >
                 Browse Content
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -98,15 +100,15 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
             
             <div className="flex flex-wrap items-center gap-6 text-white/40 text-sm">
               <span className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500" />
+                <Check className="w-4 h-4 text-blue-400" />
                 Instant Download
               </span>
               <span className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500" />
+                <Check className="w-4 h-4 text-blue-400" />
                 Download Link Emailed
               </span>
               <span className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500" />
+                <Check className="w-4 h-4 text-blue-400" />
                 {vaultItems.length} Items Available
               </span>
             </div>
@@ -116,13 +118,13 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
 
       {/* Category Buttons */}
       {categories.length > 0 && (
-        <section className="py-12 bg-[#0a0a0a] border-t border-white/5">
+        <section className="py-12 bg-[#030712] border-t border-white/5">
           <div className="max-w-6xl mx-auto px-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-white">Browse by Category</h2>
               <Link 
                 href={`/vault/${nicheSlug}`}
-                className="text-[#C96A2B] text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all"
+                className="text-blue-400 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all"
               >
                 View All
                 <ChevronRight className="w-4 h-4" />
@@ -133,10 +135,10 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
                 <Link
                   key={cat.id}
                   href={`/vault/${nicheSlug}?category=${encodeURIComponent(cat.name)}`}
-                  className="flex items-center gap-3 bg-white/5 border border-white/10 hover:border-[#C96A2B]/50 rounded-xl px-5 py-3 transition-all group"
+                  className="flex items-center gap-3 bg-white/5 border border-white/10 hover:border-blue-500/50 rounded-xl px-5 py-3 transition-all group"
                 >
                   <span className="text-2xl">{cat.icon || '📁'}</span>
-                  <span className="text-white font-semibold text-sm group-hover:text-[#C96A2B] transition-colors">
+                  <span className="text-white font-semibold text-sm group-hover:text-blue-400 transition-colors">
                     {cat.name}
                   </span>
                 </Link>
@@ -147,7 +149,7 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
       )}
 
       {/* Content Grid */}
-      <section id="content" className="py-20 bg-[#111111]">
+      <section id="content" className="py-20 bg-[#0a0f1a]">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
@@ -160,16 +162,16 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
           
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C96A2B]"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             </div>
           ) : vaultItems.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {vaultItems.map((item) => (
                 <div 
                   key={item.id}
-                  className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden group hover:border-[#C96A2B]/50 transition-all"
+                  className="bg-[#0d1423] border border-white/10 rounded-2xl overflow-hidden group hover:border-blue-500/50 transition-all hover:shadow-lg hover:shadow-blue-500/10"
                 >
-                  <div className="aspect-square bg-gradient-to-br from-[#C96A2B]/20 to-[#081F33] relative overflow-hidden">
+                  <div className="aspect-square bg-gradient-to-br from-blue-500/10 to-purple-500/10 relative overflow-hidden">
                     {item.images[0] && (
                       <Image 
                         src={item.images[0]} 
@@ -201,7 +203,7 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
                       </div>
                     </div>
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-all" />
-                    <div className="absolute top-4 left-4 bg-[#C96A2B] text-white text-xs font-bold px-3 py-1 rounded-full">
+                    <div className="absolute top-4 left-4 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
                       {item.content_type === 'image' ? 'Single Image' : `${item.slide_count} Slides`}
                     </div>
                     {item.price && (
@@ -211,7 +213,7 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
                     )}
                   </div>
                   <div className="p-6">
-                    <span className="text-xs font-semibold text-[#C96A2B] uppercase">{item.category}</span>
+                    <span className="text-xs font-semibold text-blue-400 uppercase">{item.category}</span>
                     <h3 className="text-white font-bold text-lg mt-1 mb-4">{item.title}</h3>
                     <div className="flex gap-3">
                       <Link
@@ -248,7 +250,7 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
               <p className="text-white/50 mb-6">No content available yet. Check back soon!</p>
               <Link
                 href={`/vault/${nicheSlug}`}
-                className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#B55D24] transition-all"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-500 hover:to-blue-400 transition-all"
               >
                 <Eye className="w-5 h-5" />
                 Preview Vault
@@ -259,7 +261,7 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-[#0a0a0a]">
+      <section className="py-20 bg-[#030712]">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
@@ -298,8 +300,8 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
               },
             ].map((item) => (
               <div key={item.step} className="text-center">
-                <div className="w-14 h-14 bg-[#C96A2B]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <item.icon className="w-7 h-7 text-[#C96A2B]" />
+                <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <item.icon className="w-7 h-7 text-blue-400" />
                 </div>
                 <div className="text-3xl font-extrabold text-white/10 mb-2">{item.step}</div>
                 <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
@@ -311,9 +313,9 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
       </section>
 
       {/* AI Branding Tool */}
-      <section className="py-16 bg-[#0a0a0a]">
+      <section className="py-16 bg-[#030712]">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="bg-purple-500/10 border border-purple-500/30 rounded-2xl p-8 md:p-10">
+          <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-2xl p-8 md:p-10">
             <div className="flex flex-col md:flex-row items-center gap-8">
               <div className="flex-1 text-center md:text-left">
                 <div className="inline-flex items-center gap-2 bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full text-sm font-semibold mb-3">
@@ -321,12 +323,12 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
                   AI-Powered
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-3">Add Your Branding to Any Carousel</h3>
-                <p className="text-white/60 mb-4">
+                <p className="text-white/50 mb-4">
                   Use our Branding Tool to add your business name, phone number, and website to any carousel image. AI matches your brand style automatically.
                 </p>
                 <Link 
                   href="/brand"
-                  className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-purple-700 transition-all"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-purple-500 hover:to-purple-400 transition-all shadow-lg shadow-purple-500/20"
                 >
                   <Sparkles className="w-4 h-4" />
                   Try Branding Tool - FREE
@@ -339,11 +341,14 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
       </section>
 
       {/* Final CTA */}
-      <section className="py-24 bg-gradient-to-b from-[#0a0a0a] to-[#111111]">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+      <section className="py-24 bg-[#0a0f1a] relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-950/10 via-transparent to-transparent" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[100px]" />
+        
+        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Build Authority. Increase Engagement.{' '}
-            <span className="text-[#C96A2B]">Grow Faster.</span>
+            Ready to Build Your{' '}
+            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Content Advantage?</span>
           </h2>
           <p className="text-xl text-white/50 mb-10 max-w-2xl mx-auto">
             Stop wasting time creating content. Get premium, ready-to-post {niche.toLowerCase()} 
@@ -352,7 +357,7 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
           
           <Link 
             href="#content"
-            className="bg-[#C96A2B] text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-[#B55D24] transition-all inline-flex items-center justify-center gap-2 group"
+            className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-500 hover:to-blue-400 transition-all inline-flex items-center justify-center gap-2 group shadow-lg shadow-blue-500/25"
           >
             Browse Content
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -361,14 +366,15 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#0a0a0a] text-white/40 py-12 border-t border-white/5">
+      <footer className="bg-[#030712] text-white/40 py-12 border-t border-white/5">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <Link href="/" className="text-2xl font-bold text-white">
-              Pipeline <span className="text-[#C96A2B]">AI</span>
+            <Link href="/" className="text-2xl font-bold text-white flex items-center gap-1">
+              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">PIPELINE</span>
+              <span className="text-white">AI</span>
             </Link>
             <p className="text-sm text-center md:text-left">
-              Premium Social Media Growth Content for Local Businesses
+              Smarter Content. Stronger Brands.
             </p>
             <p className="text-xs">
               © {new Date().getFullYear()} Pipeline AI. All rights reserved.

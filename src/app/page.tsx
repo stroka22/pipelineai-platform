@@ -68,9 +68,17 @@ const XIcon = () => (
   </svg>
 );
 
+interface VaultItem {
+  id: string;
+  name: string;
+  preview_url: string;
+  niche: string;
+}
+
 export default function HomePage() {
   const [niches, setNiches] = useState<Niche[]>([]);
   const [nicheCounts, setNicheCounts] = useState<Record<string, number>>({});
+  const [previewItems, setPreviewItems] = useState<VaultItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -85,7 +93,7 @@ export default function HomePage() {
 
       const { data: vaultItems } = await supabase
         .from('vault_items')
-        .select('niche')
+        .select('id, name, preview_url, niche')
         .eq('is_active', true);
       
       if (vaultItems) {
@@ -94,6 +102,10 @@ export default function HomePage() {
           counts[item.niche] = (counts[item.niche] || 0) + 1;
         });
         setNicheCounts(counts);
+        
+        // Get 8 random items for preview
+        const shuffled = [...vaultItems].sort(() => 0.5 - Math.random());
+        setPreviewItems(shuffled.slice(0, 8));
       }
       
       setLoading(false);
@@ -106,6 +118,7 @@ export default function HomePage() {
       name: 'Facebook',
       icon: FacebookIcon,
       tagline: 'Community & Trust',
+      strategy: 'Storytelling + value posts that spark conversations and build relationships',
       color: 'from-blue-500 to-blue-600',
       borderColor: 'border-blue-500/30',
       glowColor: 'shadow-blue-500/20',
@@ -114,6 +127,7 @@ export default function HomePage() {
       name: 'Instagram',
       icon: InstagramIcon,
       tagline: 'Visual Authority',
+      strategy: 'Carousels + Reels that educate, inspire, and build brand recognition',
       color: 'from-pink-500 via-purple-500 to-orange-500',
       borderColor: 'border-pink-500/30',
       glowColor: 'shadow-pink-500/20',
@@ -122,6 +136,7 @@ export default function HomePage() {
       name: 'TikTok',
       icon: TikTokIcon,
       tagline: 'Discovery & Attention',
+      strategy: 'Short-form videos that hook in 2 seconds and deliver fast value',
       color: 'from-cyan-400 to-pink-500',
       borderColor: 'border-cyan-500/30',
       glowColor: 'shadow-cyan-500/20',
@@ -130,6 +145,7 @@ export default function HomePage() {
       name: 'LinkedIn',
       icon: LinkedInIcon,
       tagline: 'Expertise & Positioning',
+      strategy: 'Insights + educational posts that position you as the authority',
       color: 'from-blue-600 to-blue-700',
       borderColor: 'border-blue-600/30',
       glowColor: 'shadow-blue-600/20',
@@ -138,6 +154,7 @@ export default function HomePage() {
       name: 'YouTube Shorts',
       icon: YouTubeIcon,
       tagline: 'Retention & Education',
+      strategy: 'Quick tips and tutorials that keep viewers watching and coming back',
       color: 'from-red-500 to-red-600',
       borderColor: 'border-red-500/30',
       glowColor: 'shadow-red-500/20',
@@ -146,6 +163,7 @@ export default function HomePage() {
       name: 'X',
       icon: XIcon,
       tagline: 'Conversations & Fast Takes',
+      strategy: 'Sharp insights, bold opinions, and threads that spark discussion',
       color: 'from-gray-700 to-gray-900',
       borderColor: 'border-gray-500/30',
       glowColor: 'shadow-gray-500/20',
@@ -245,16 +263,35 @@ export default function HomePage() {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div 
-                key={i}
-                className="aspect-square bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl border border-white/10 flex items-center justify-center group hover:border-blue-500/30 transition-all overflow-hidden"
-              >
-                <div className="text-white/20 group-hover:text-blue-400/40 transition-colors">
-                  <Sparkles className="w-8 h-8" />
+            {previewItems.length > 0 ? (
+              previewItems.map((item) => (
+                <Link 
+                  key={item.id}
+                  href={`/industries/${item.niche}`}
+                  className="aspect-square rounded-xl border border-white/10 group hover:border-blue-500/40 transition-all overflow-hidden relative"
+                >
+                  <Image
+                    src={item.preview_url}
+                    alt={item.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform">
+                    <p className="text-white text-xs font-medium truncate">{item.name}</p>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              [1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div 
+                  key={i}
+                  className="aspect-square bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl border border-white/10 flex items-center justify-center animate-pulse"
+                >
+                  <Sparkles className="w-8 h-8 text-white/20" />
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
           <p className="text-center text-white/30 text-sm mt-6">
             Content previews from the Pipeline AI library
@@ -289,8 +326,9 @@ export default function HomePage() {
                   <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${platform.color} flex items-center justify-center mb-4 text-white`}>
                     <platform.icon />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">{platform.name}</h3>
-                  <p className="text-white/50">{platform.tagline}</p>
+                  <h3 className="text-xl font-bold text-white mb-1">{platform.name}</h3>
+                  <p className="text-sm font-medium text-blue-400 mb-2">{platform.tagline}</p>
+                  <p className="text-white/40 text-sm">{platform.strategy}</p>
                 </div>
               </div>
             ))}
@@ -318,28 +356,38 @@ export default function HomePage() {
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               {niches.map((niche) => {
                 const IconComponent = nicheIcons[niche.slug] || Briefcase;
+                const itemCount = nicheCounts[niche.slug] || 0;
                 return (
                   <Link
                     key={niche.slug}
                     href={`/industries/${niche.slug}`}
-                    className="group relative bg-[#0d1423] rounded-xl p-6 border border-white/10 hover:border-blue-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10"
+                    className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.02]"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.03] to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="relative z-10">
-                      <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center mb-4 group-hover:bg-blue-500/20 transition-colors">
-                        <IconComponent className="w-6 h-6 text-blue-400" />
+                    {/* Glowing border effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-cyan-500/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity blur-sm" />
+                    
+                    {/* Card content */}
+                    <div className="relative bg-[#0a0f1a] border border-white/10 group-hover:border-blue-500/50 rounded-2xl p-6 h-full transition-all">
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
+                      
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center mb-4 group-hover:from-blue-500/30 group-hover:to-purple-500/30 transition-all">
+                        <IconComponent className="w-7 h-7 text-blue-400" />
                       </div>
-                      <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-blue-400 transition-colors">
+                      
+                      <h3 className="text-lg font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
                         {niche.name}
                       </h3>
-                      <p className="text-sm text-white/40">
-                        {nicheCounts[niche.slug] || 0} items available
-                      </p>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-white/40 font-medium">
+                          {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                        </span>
+                        <ArrowRight className="w-4 h-4 text-white/20 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+                      </div>
                     </div>
-                    <ArrowRight className="absolute top-6 right-6 w-5 h-5 text-white/20 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
                   </Link>
                 );
               })}
@@ -396,26 +444,56 @@ export default function HomePage() {
             
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-2xl blur-xl" />
-              <div className="relative bg-[#0d1423] border border-white/10 rounded-2xl p-8">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full w-3/4 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full" />
-                  </div>
-                  <span className="text-white/50 text-sm">Processing...</span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="aspect-square bg-white/5 rounded-xl border border-white/10 flex items-center justify-center">
-                    <span className="text-white/30 text-xs text-center px-2">Original Image</span>
-                  </div>
-                  <div className="aspect-square bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-xl border border-purple-500/30 flex items-center justify-center">
-                    <span className="text-purple-400 text-xs text-center px-2">Branded Result</span>
+              <div className="relative bg-[#0d1423] border border-white/10 rounded-2xl p-6 md:p-8">
+                {/* Before/After Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">Before</span>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                    <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider">AI Branded</span>
                   </div>
                 </div>
                 
-                <div className="mt-6 space-y-3">
-                  <div className="h-3 bg-white/5 rounded w-full" />
-                  <div className="h-3 bg-white/5 rounded w-2/3" />
+                {/* Before/After Images */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  {/* Before */}
+                  <div className="relative aspect-square rounded-xl border border-white/10 overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                      <div className="w-16 h-16 rounded-lg bg-white/10 mb-3 flex items-center justify-center">
+                        <span className="text-2xl">📷</span>
+                      </div>
+                      <span className="text-white/50 text-xs text-center font-medium">Generic Template</span>
+                      <span className="text-white/30 text-[10px] text-center mt-1">No branding</span>
+                    </div>
+                  </div>
+                  
+                  {/* After */}
+                  <div className="relative aspect-square rounded-xl border-2 border-purple-500/50 overflow-hidden bg-gradient-to-br from-purple-900/40 to-blue-900/40">
+                    <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
+                      <span className="text-white text-[10px] font-bold tracking-wide">YOUR BUSINESS NAME</span>
+                    </div>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4 pt-10">
+                      <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-500/30 to-blue-500/30 border border-white/20 mb-3 flex items-center justify-center">
+                        <span className="text-2xl">✨</span>
+                      </div>
+                      <span className="text-white text-xs text-center font-medium">Branded Content</span>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/40 backdrop-blur-sm">
+                      <div className="flex items-center justify-between text-[9px] text-white/70">
+                        <span>📞 (555) 123-4567</span>
+                        <span>🌐 yoursite.com</span>
+                      </div>
+                    </div>
+                    {/* Glow effect */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 via-transparent to-blue-500/10 pointer-events-none" />
+                  </div>
+                </div>
+                
+                {/* Arrow indicator */}
+                <div className="flex items-center justify-center gap-2 text-white/40 text-sm">
+                  <span>Upload</span>
+                  <ArrowRight className="w-4 h-4" />
+                  <span className="text-purple-400 font-medium">AI transforms in ~30 seconds</span>
                 </div>
               </div>
             </div>
