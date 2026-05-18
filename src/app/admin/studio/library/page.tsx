@@ -73,7 +73,7 @@ export default function ContentLibraryPage() {
     
     let query = supabase
       .from('generated_images')
-      .select('id, title, image_url, thumbnail_url, niche, style, content_type, is_favorite, created_at')
+      .select('id, title, thumbnail_url, niche, style, content_type, is_favorite, created_at')
       .eq('is_archived', false)
       .order('created_at', { ascending: false })
       .limit(100);
@@ -101,6 +101,19 @@ export default function ContentLibraryPage() {
   function toggleSelectMode() {
     setSelectMode(!selectMode);
     setSelectedIds(new Set());
+  }
+
+  async function loadAndSelectImage(id: string) {
+    // Load full image data including image_url
+    const { data, error } = await supabase
+      .from('generated_images')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (data) {
+      setSelectedImage(data);
+    }
   }
 
   function toggleImageSelection(id: string) {
@@ -565,18 +578,16 @@ export default function ContentLibraryPage() {
             {filteredImages.map((image) => (
               <div
                 key={image.id}
-                onClick={() => selectMode ? toggleImageSelection(image.id) : setSelectedImage(image)}
+                onClick={() => selectMode ? toggleImageSelection(image.id) : loadAndSelectImage(image.id)}
                 className={`group relative aspect-square bg-white/5 rounded-xl overflow-hidden cursor-pointer transition-all ${
                   selectedIds.has(image.id) 
                     ? 'ring-2 ring-green-500' 
                     : 'hover:ring-2 hover:ring-[#C96A2B]'
                 }`}
               >
-                <img
-                  src={image.image_url}
-                  alt={image.title || 'Generated image'}
-                  className="w-full h-full object-cover"
-                />
+                <div className="w-full h-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+                  <ImageIcon className="w-12 h-12 text-white/30" />
+                </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="absolute bottom-0 left-0 right-0 p-3">
                     <p className="text-white text-sm font-medium truncate">
@@ -608,7 +619,7 @@ export default function ContentLibraryPage() {
             {filteredImages.map((image) => (
               <div
                 key={image.id}
-                onClick={() => selectMode ? toggleImageSelection(image.id) : setSelectedImage(image)}
+                onClick={() => selectMode ? toggleImageSelection(image.id) : loadAndSelectImage(image.id)}
                 className={`flex items-center gap-4 bg-[#111111] border rounded-xl p-3 cursor-pointer ${
                   selectedIds.has(image.id)
                     ? 'border-green-500 bg-green-500/5'
@@ -625,11 +636,9 @@ export default function ContentLibraryPage() {
                     )}
                   </div>
                 )}
-                <img
-                  src={image.image_url}
-                  alt={image.title || 'Generated image'}
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
+                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center flex-shrink-0">
+                  <ImageIcon className="w-6 h-6 text-white/30" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-medium truncate">{image.title || 'Untitled'}</p>
                   <p className="text-white/50 text-sm">
