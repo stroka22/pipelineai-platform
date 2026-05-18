@@ -75,7 +75,8 @@ export default function ContentLibraryPage() {
       .from('generated_images')
       .select('*')
       .eq('is_archived', false)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(200);
     
     if (filterNiche) query = query.eq('niche', filterNiche);
     if (filterType) query = query.eq('content_type', filterType);
