@@ -13,7 +13,8 @@ import {
   Plus,
   ArrowRight,
   Zap,
-  TrendingUp
+  TrendingUp,
+  Clock
 } from 'lucide-react';
 
 
@@ -90,6 +91,13 @@ export default function StudioDashboard() {
       icon: FileText,
       href: '/admin/studio/templates',
       color: 'from-green-500 to-emerald-500',
+    },
+    {
+      title: 'Queue',
+      description: 'Background carousel generation',
+      icon: Clock,
+      href: '/admin/studio/queue',
+      color: 'from-yellow-500 to-orange-500',
     },
   ];
 

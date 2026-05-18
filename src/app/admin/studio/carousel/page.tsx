@@ -24,7 +24,8 @@ import {
   X,
   Eye,
   ShoppingBag,
-  DollarSign
+  DollarSign,
+  Clock
 } from 'lucide-react';
 
 
@@ -105,6 +106,9 @@ export default function CarouselCreatorPage() {
   const [niches, setNiches] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [addingToVault, setAddingToVault] = useState(false);
+  
+  // Queue
+  const [addingToQueue, setAddingToQueue] = useState(false);
 
   useEffect(() => {
     loadBrands();
@@ -482,6 +486,43 @@ Create a DIFFERENT visual composition than the previous version while maintainin
       alert('Failed to save carousel');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function addToQueue() {
+    setAddingToQueue(true);
+    
+    try {
+      const response = await fetch('/api/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: carouselConfig.title,
+          niche: carouselConfig.niche,
+          category: carouselConfig.category,
+          style: carouselConfig.style,
+          slideCount: mode === 'prompt' ? promptSlideCount : carouselConfig.slideCount,
+          topic: carouselConfig.topic,
+          businessName: carouselConfig.businessName,
+          primaryColor: carouselConfig.primaryColor,
+          secondaryColor: carouselConfig.secondaryColor,
+          referenceAnalysis: referenceAnalysis,
+          openPrompt: mode === 'prompt' ? openPrompt : null,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('Added to queue! Your carousel will be generated automatically. Check the Queue page for status.');
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      console.error('Queue error:', error);
+      alert('Failed to add to queue: ' + error.message);
+    } finally {
+      setAddingToQueue(false);
     }
   }
 
@@ -1050,13 +1091,32 @@ Example: Create a 5-slide carousel for a roofing company about '5 Signs Your Roo
 
             {/* Generate All Button */}
             {step === 'generate' && !loading && slides.every(s => s.status === 'pending') && (
-              <button
-                onClick={mode === 'prompt' ? generateAllSlidesFromPrompt : generateAllSlides}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-5 h-5" />
-                Generate All {slides.length} Slides
-              </button>
+              <div className="space-y-3">
+                <button
+                  onClick={mode === 'prompt' ? generateAllSlidesFromPrompt : generateAllSlides}
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Generate Now ({slides.length} Slides)
+                </button>
+                <button
+                  onClick={addToQueue}
+                  disabled={addingToQueue}
+                  className="w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 border border-white/20"
+                >
+                  {addingToQueue ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="w-5 h-5" />
+                      Add to Queue (Generate Later)
+                    </>
+                  )}
+                </button>
+              </div>
             )}
             
             {loading && (
