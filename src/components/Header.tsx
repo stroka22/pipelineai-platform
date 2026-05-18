@@ -41,10 +41,11 @@ export default function Header({ currentNiche }: HeaderProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[#030712]/95 backdrop-blur-md border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
-        <Link href="/" className="text-xl md:text-2xl font-bold text-white">
-          Pipeline <span className="text-[#C96A2B]">AI</span>
+        <Link href="/" className="text-xl md:text-2xl font-bold text-white flex items-center gap-1">
+          <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">PIPELINE</span>
+          <span className="text-white">AI</span>
         </Link>
         
         {/* Desktop Nav */}
@@ -91,15 +92,11 @@ export default function Header({ currentNiche }: HeaderProps) {
           <div className="relative group">
             <Link 
               href="/brand" 
-              className="bg-[#C96A2B] hover:bg-[#B55D24] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors"
+              className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all shadow-lg shadow-purple-500/20"
             >
               <Sparkles className="w-4 h-4" />
-              Brand Your Image
-              <Info className="w-3.5 h-3.5 opacity-70" />
+              Branding Tool
             </Link>
-            <div className="absolute top-full mt-2 right-0 w-64 bg-gray-900 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 border border-white/10">
-              Upload a carousel image and AI will add your business name, logo, phone, brand colors, and website
-            </div>
           </div>
         </nav>
 
@@ -108,7 +105,7 @@ export default function Header({ currentNiche }: HeaderProps) {
           <Link href="/cart" className="relative text-white/70 hover:text-white transition-colors p-2">
             <ShoppingCart className="w-5 h-5" />
             {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[#C96A2B] text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 {itemCount}
               </span>
             )}
@@ -116,7 +113,7 @@ export default function Header({ currentNiche }: HeaderProps) {
           {currentNiche ? (
             <Link 
               href={`/vault/${currentNiche}`}
-              className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all flex items-center gap-2"
+              className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:from-blue-500 hover:to-blue-400 transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20"
             >
               <Eye className="w-4 h-4" />
               Preview Vault
@@ -124,7 +121,7 @@ export default function Header({ currentNiche }: HeaderProps) {
           ) : (
             <Link 
               href="/#vaults"
-              className="bg-[#C96A2B] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#B55D24] transition-all"
+              className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/20"
             >
               Browse Vaults
             </Link>
@@ -142,7 +139,7 @@ export default function Header({ currentNiche }: HeaderProps) {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#0a0a0a] border-t border-white/5">
+        <div className="md:hidden bg-[#030712] border-t border-white/5">
           <nav className="px-4 py-4 space-y-1">
             <Link 
               href="/" 
@@ -186,17 +183,17 @@ export default function Header({ currentNiche }: HeaderProps) {
             </Link>
             <Link 
               href="/brand" 
-              className="block px-4 py-3 bg-[#C96A2B] text-white rounded-lg text-base font-medium flex items-center gap-2"
+              className="block px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-lg text-base font-medium flex items-center gap-2"
               onClick={() => setMobileMenuOpen(false)}
             >
               <Sparkles className="w-5 h-5" />
-              Brand Your Image
+              Branding Tool
             </Link>
             <div className="pt-4">
               {currentNiche ? (
                 <Link 
                   href={`/vault/${currentNiche}`}
-                  className="block w-full bg-[#C96A2B] text-white px-5 py-3 rounded-lg font-semibold text-center hover:bg-[#B55D24] transition-all"
+                  className="block w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white px-5 py-3 rounded-lg font-semibold text-center transition-all"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Preview Vault
@@ -204,7 +201,7 @@ export default function Header({ currentNiche }: HeaderProps) {
               ) : (
                 <Link 
                   href="/#vaults"
-                  className="block w-full bg-[#C96A2B] text-white px-5 py-3 rounded-lg font-semibold text-center hover:bg-[#B55D24] transition-all"
+                  className="block w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white px-5 py-3 rounded-lg font-semibold text-center transition-all"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Browse Vaults
