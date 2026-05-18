@@ -22,41 +22,54 @@ export default function MigratePage() {
     setRunning(true);
     setLogs([]);
     
-    // Get all images that have base64 data (not URLs)
-    const { data: images, error } = await supabase
+    // First, get just the IDs and titles (no image data)
+    const { data: imageIds, error } = await supabase
       .from('generated_images')
-      .select('id, title, image_url')
+      .select('id, title')
       .not('image_url', 'like', 'https://%')
       .limit(500);
 
-    if (error || !images) {
-      setLogs(prev => [...prev, `Error fetching images: ${error?.message}`]);
+    if (error || !imageIds) {
+      setLogs(prev => [...prev, `Error fetching image list: ${error?.message}`]);
       setRunning(false);
       return;
     }
 
-    const base64Images = images.filter(img => 
-      img.image_url?.startsWith('data:') || 
-      (img.image_url && !img.image_url.startsWith('http'))
-    );
-
-    setLogs(prev => [...prev, `Found ${base64Images.length} images to migrate`]);
+    setLogs(prev => [...prev, `Found ${imageIds.length} images to migrate`]);
     
     setStatus({
-      total: base64Images.length,
+      total: imageIds.length,
       processed: 0,
       success: 0,
       failed: 0,
       current: ''
     });
 
-    for (let i = 0; i < base64Images.length; i++) {
-      const img = base64Images[i];
-      setStatus(prev => prev ? { ...prev, current: img.title || img.id, processed: i } : null);
+    for (let i = 0; i < imageIds.length; i++) {
+      const imgRef = imageIds[i];
+      setStatus(prev => prev ? { ...prev, current: imgRef.title || imgRef.id, processed: i } : null);
 
       try {
+        // Fetch the full image data for this single image
+        const { data: imgData, error: fetchError } = await supabase
+          .from('generated_images')
+          .select('image_url')
+          .eq('id', imgRef.id)
+          .single();
+
+        if (fetchError || !imgData?.image_url) {
+          throw new Error(fetchError?.message || 'No image data');
+        }
+
+        // Skip if already a URL
+        if (imgData.image_url.startsWith('https://')) {
+          setLogs(prev => [...prev, `⊘ Skipped (already URL): ${imgRef.title || imgRef.id}`]);
+          setStatus(prev => prev ? { ...prev, success: prev.success + 1 } : null);
+          continue;
+        }
+
         // Convert base64 to blob
-        let base64Data = img.image_url;
+        let base64Data = imgData.image_url;
         if (base64Data.startsWith('data:')) {
           base64Data = base64Data.split(',')[1];
         }
@@ -70,7 +83,7 @@ export default function MigratePage() {
         const blob = new Blob([byteArray], { type: 'image/png' });
 
         // Upload to storage
-        const fileName = `migrated/${img.id}.png`;
+        const fileName = `migrated/${imgRef.id}.png`;
         const { error: uploadError } = await supabase.storage
           .from('generated-images')
           .upload(fileName, blob, {
@@ -91,21 +104,21 @@ export default function MigratePage() {
         const { error: updateError } = await supabase
           .from('generated_images')
           .update({ image_url: publicUrlData.publicUrl })
-          .eq('id', img.id);
+          .eq('id', imgRef.id);
 
         if (updateError) {
           throw new Error(updateError.message);
         }
 
         setStatus(prev => prev ? { ...prev, success: prev.success + 1 } : null);
-        setLogs(prev => [...prev, `✓ Migrated: ${img.title || img.id}`]);
+        setLogs(prev => [...prev, `✓ Migrated: ${imgRef.title || imgRef.id}`]);
       } catch (err: any) {
         setStatus(prev => prev ? { ...prev, failed: prev.failed + 1 } : null);
-        setLogs(prev => [...prev, `✗ Failed: ${img.title || img.id} - ${err.message}`]);
+        setLogs(prev => [...prev, `✗ Failed: ${imgRef.title || imgRef.id} - ${err.message}`]);
       }
     }
 
-    setStatus(prev => prev ? { ...prev, processed: base64Images.length, current: 'Complete!' } : null);
+    setStatus(prev => prev ? { ...prev, processed: imageIds.length, current: 'Complete!' } : null);
     setRunning(false);
     setLogs(prev => [...prev, '--- Migration complete ---']);
   }
