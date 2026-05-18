@@ -176,8 +176,30 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
                         alt={item.title}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        draggable={false}
                       />
                     )}
+                    {/* Tiled watermark pattern */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+                      <div className="absolute inset-0 flex flex-col justify-around py-2">
+                        {[0, 1, 2, 3].map((row) => (
+                          <div key={row} className="flex justify-around">
+                            {[0, 1, 2].map((col) => (
+                              <div 
+                                key={col} 
+                                className="text-white font-black rotate-[-30deg] whitespace-nowrap text-sm"
+                                style={{ 
+                                  textShadow: '1px 1px 3px rgba(0,0,0,0.8)',
+                                  opacity: 0.4
+                                }}
+                              >
+                                PREVIEW
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-all" />
                     <div className="absolute top-4 left-4 bg-[#C96A2B] text-white text-xs font-bold px-3 py-1 rounded-full">
                       {item.content_type === 'image' ? 'Single Image' : `${item.slide_count} Slides`}
