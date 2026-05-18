@@ -73,7 +73,7 @@ export default function ContentLibraryPage() {
     
     let query = supabase
       .from('generated_images')
-      .select('id, title, thumbnail_url, niche, style, content_type, is_favorite, created_at')
+      .select('id, title, image_url, thumbnail_url, niche, style, content_type, is_favorite, created_at')
       .eq('is_archived', false)
       .order('created_at', { ascending: false })
       .limit(100);
@@ -585,9 +585,11 @@ export default function ContentLibraryPage() {
                     : 'hover:ring-2 hover:ring-[#C96A2B]'
                 }`}
               >
-                <div className="w-full h-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-                  <ImageIcon className="w-12 h-12 text-white/30" />
-                </div>
+                <img
+                  src={image.image_url}
+                  alt={image.title || 'Generated image'}
+                  className="w-full h-full object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="absolute bottom-0 left-0 right-0 p-3">
                     <p className="text-white text-sm font-medium truncate">
@@ -636,9 +638,11 @@ export default function ContentLibraryPage() {
                     )}
                   </div>
                 )}
-                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center flex-shrink-0">
-                  <ImageIcon className="w-6 h-6 text-white/30" />
-                </div>
+                <img
+                  src={image.image_url}
+                  alt={image.title || 'Generated image'}
+                  className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                />
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-medium truncate">{image.title || 'Untitled'}</p>
                   <p className="text-white/50 text-sm">
