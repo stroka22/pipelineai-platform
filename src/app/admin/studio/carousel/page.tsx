@@ -44,7 +44,8 @@ const CAROUSEL_CATEGORIES = [
 
 const SLIDE_COUNTS = [5, 7, 10];
 
-const NICHES = [
+// Fallback list if database niches not loaded
+const DEFAULT_NICHES = [
   'Roofing', 'HVAC', 'Plumbing', 'Pest Control', 'Med Spa', 'Dental', 'Chiropractic',
   'Real Estate', 'Mortgage', 'Insurance', 'Law Firm', 'Auto Repair', 'Landscaping',
   'Gym/Fitness', 'Salon', 'Restaurant', 'Church', 'Financial Planning', 'General'
@@ -865,16 +866,17 @@ Example: Create a 5-slide carousel for a roofing company about '5 Signs Your Roo
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-white/70 mb-1">Niche</label>
+                  <label className="block text-sm text-white/70 mb-1">Niche (Library Category)</label>
                   <select
                     value={carouselConfig.niche}
                     onChange={(e) => setCarouselConfig({...carouselConfig, niche: e.target.value})}
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
                   >
-                    {NICHES.map(niche => (
+                    {(niches.length > 0 ? niches.map(n => n.name) : DEFAULT_NICHES).map(niche => (
                       <option key={niche} value={niche}>{niche}</option>
                     ))}
                   </select>
+                  <p className="text-white/40 text-xs mt-1">Images will be categorized under this niche in the Library</p>
                 </div>
               </div>
               

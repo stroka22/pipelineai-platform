@@ -20,7 +20,9 @@ import {
   ShoppingBag,
   DollarSign,
   CheckSquare,
-  Square
+  Square,
+  Tag,
+  LayoutGrid
 } from 'lucide-react';
 
 export default function ContentLibraryPage() {
@@ -28,10 +30,12 @@ export default function ContentLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedImage, setSelectedImage] = useState<any | null>(null);
+  const [showCategoriesView, setShowCategoriesView] = useState(true);
   
   // Multi-select mode
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showCategorizeMenu, setShowCategorizeMenu] = useState(false);
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -286,6 +290,22 @@ export default function ContentLibraryPage() {
     setSelectMode(false);
   }
 
+  async function categorizeSelected(newNiche: string) {
+    if (selectedIds.size === 0) return;
+    
+    const ids = Array.from(selectedIds);
+    await supabase
+      .from('generated_images')
+      .update({ niche: newNiche })
+      .in('id', ids);
+    
+    setImages(images.map(img => 
+      selectedIds.has(img.id) ? { ...img, niche: newNiche } : img
+    ));
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  }
+
   function openVaultModal() {
     if (!selectedImage) return;
     setVaultForm({
@@ -441,6 +461,33 @@ export default function ContentLibraryPage() {
                     <ShoppingBag className="w-4 h-4" />
                     Add to Vault ({selectedIds.size})
                   </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowCategorizeMenu(!showCategorizeMenu)}
+                      disabled={selectedIds.size === 0}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      <Tag className="w-4 h-4" />
+                      Categorize ({selectedIds.size})
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                    {showCategorizeMenu && (
+                      <div className="absolute top-full mt-1 left-0 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl z-50 min-w-[180px] py-1">
+                        {niches.map(niche => (
+                          <button
+                            key={niche.id}
+                            onClick={() => {
+                              categorizeSelected(niche.slug);
+                              setShowCategorizeMenu(false);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white"
+                          >
+                            {niche.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <button
                     onClick={deleteSelected}
                     disabled={selectedIds.size === 0}
@@ -486,7 +533,82 @@ export default function ContentLibraryPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-6">
-        {/* Search & Filters */}
+        {/* Categories Landing View */}
+        {showCategoriesView && !filterNiche && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Browse by Category</h2>
+              <button
+                onClick={() => setShowCategoriesView(false)}
+                className="text-white/60 hover:text-white text-sm flex items-center gap-2"
+              >
+                <LayoutGrid className="w-4 h-4" />
+                View All Images
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {uniqueNiches.map(niche => {
+                const nicheImages = images.filter(img => img.niche === niche);
+                const previewImages = nicheImages.slice(0, 4);
+                return (
+                  <button
+                    key={niche}
+                    onClick={() => {
+                      setFilterNiche(niche);
+                      setShowCategoriesView(false);
+                    }}
+                    className="group bg-[#111111] border border-white/10 rounded-xl overflow-hidden hover:border-[#C96A2B]/50 transition-all"
+                  >
+                    <div className="aspect-video relative grid grid-cols-2 gap-0.5 p-0.5">
+                      {previewImages.map((img, i) => (
+                        <div key={i} className="aspect-square bg-white/5 overflow-hidden">
+                          <img 
+                            src={img.image_url} 
+                            alt="" 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                      {previewImages.length < 4 && [...Array(4 - previewImages.length)].map((_, i) => (
+                        <div key={`empty-${i}`} className="aspect-square bg-white/5" />
+                      ))}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-white font-semibold group-hover:text-[#C96A2B] transition-colors">
+                        {niche}
+                      </h3>
+                      <p className="text-white/50 text-sm">{nicheImages.length} images</p>
+                    </div>
+                  </button>
+                );
+              })}
+              {/* Uncategorized */}
+              {images.filter(img => !img.niche).length > 0 && (
+                <button
+                  onClick={() => {
+                    setFilterNiche('__uncategorized__');
+                    setShowCategoriesView(false);
+                  }}
+                  className="group bg-[#111111] border border-white/10 rounded-xl overflow-hidden hover:border-[#C96A2B]/50 transition-all"
+                >
+                  <div className="aspect-video relative flex items-center justify-center bg-white/5">
+                    <FolderOpen className="w-12 h-12 text-white/20" />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-white font-semibold group-hover:text-[#C96A2B] transition-colors">
+                      Uncategorized
+                    </h3>
+                    <p className="text-white/50 text-sm">{images.filter(img => !img.niche).length} images</p>
+                  </div>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Search & Filters - shown when not in categories view or when filtered */}
+        {(!showCategoriesView || filterNiche) && (
         <div className="flex flex-wrap gap-4 mb-6">
           <div className="flex-1 min-w-[200px] relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
@@ -516,37 +638,50 @@ export default function ContentLibraryPage() {
             )}
           </button>
         </div>
+        )}
 
-        {/* Niche Tabs */}
-        {uniqueNiches.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
+        {/* Niche Tabs with Back Button - shown when filtered */}
+        {(!showCategoriesView || filterNiche) && (
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          {filterNiche && (
             <button
-              onClick={() => setFilterNiche('')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filterNiche === ''
-                  ? 'bg-[#C96A2B] text-white'
-                  : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
-              }`}
+              onClick={() => {
+                setFilterNiche('');
+                setShowCategoriesView(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white/5 text-white/60 hover:text-white hover:bg-white/10 mr-2"
             >
-              All ({images.length})
+              <ArrowLeft className="w-4 h-4" />
+              Categories
             </button>
-            {uniqueNiches.map(niche => {
-              const count = images.filter(img => img.niche === niche).length;
-              return (
-                <button
-                  key={niche}
-                  onClick={() => setFilterNiche(niche === filterNiche ? '' : niche)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filterNiche === niche
-                      ? 'bg-[#C96A2B] text-white'
-                      : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  {niche} ({count})
-                </button>
-              );
-            })}
-          </div>
+          )}
+          <button
+            onClick={() => setFilterNiche('')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              filterNiche === ''
+                ? 'bg-[#C96A2B] text-white'
+                : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            All ({images.length})
+          </button>
+          {uniqueNiches.map(niche => {
+            const count = images.filter(img => img.niche === niche).length;
+            return (
+              <button
+                key={niche}
+                onClick={() => setFilterNiche(niche === filterNiche ? '' : niche)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  filterNiche === niche
+                    ? 'bg-[#C96A2B] text-white'
+                    : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {niche} ({count})
+              </button>
+            );
+          })}
+        </div>
         )}
 
         {/* Filter Dropdowns */}
