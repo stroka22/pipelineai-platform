@@ -68,17 +68,17 @@ const XIcon = () => (
   </svg>
 );
 
-interface VaultItem {
+interface PreviewItem {
   id: string;
-  name: string;
-  preview_url: string;
+  title: string;
+  images: string[];
   niche: string;
 }
 
 export default function HomePage() {
   const [niches, setNiches] = useState<Niche[]>([]);
   const [nicheCounts, setNicheCounts] = useState<Record<string, number>>({});
-  const [previewItems, setPreviewItems] = useState<VaultItem[]>([]);
+  const [previewItems, setPreviewItems] = useState<PreviewItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function HomePage() {
 
       const { data: vaultItems } = await supabase
         .from('vault_items')
-        .select('id, name, preview_url, niche')
+        .select('id, title, images, niche')
         .eq('is_active', true);
       
       if (vaultItems) {
@@ -103,8 +103,9 @@ export default function HomePage() {
         });
         setNicheCounts(counts);
         
-        // Get 8 random items for preview
-        const shuffled = [...vaultItems].sort(() => 0.5 - Math.random());
+        // Get 8 random items that have images for preview
+        const withImages = vaultItems.filter(item => item.images && item.images.length > 0);
+        const shuffled = [...withImages].sort(() => 0.5 - Math.random());
         setPreviewItems(shuffled.slice(0, 8));
       }
       
@@ -271,14 +272,14 @@ export default function HomePage() {
                   className="aspect-square rounded-xl border border-white/10 group hover:border-blue-500/40 transition-all overflow-hidden relative"
                 >
                   <Image
-                    src={item.preview_url}
-                    alt={item.name}
+                    src={item.images[0]}
+                    alt={item.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform">
-                    <p className="text-white text-xs font-medium truncate">{item.name}</p>
+                    <p className="text-white text-xs font-medium truncate">{item.title}</p>
                   </div>
                 </Link>
               ))
