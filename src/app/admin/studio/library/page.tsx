@@ -517,22 +517,41 @@ export default function ContentLibraryPage() {
           </button>
         </div>
 
+        {/* Niche Tabs */}
+        {uniqueNiches.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            <button
+              onClick={() => setFilterNiche('')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                filterNiche === ''
+                  ? 'bg-[#C96A2B] text-white'
+                  : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              All ({images.length})
+            </button>
+            {uniqueNiches.map(niche => {
+              const count = images.filter(img => img.niche === niche).length;
+              return (
+                <button
+                  key={niche}
+                  onClick={() => setFilterNiche(niche === filterNiche ? '' : niche)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    filterNiche === niche
+                      ? 'bg-[#C96A2B] text-white'
+                      : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  {niche} ({count})
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Filter Dropdowns */}
         {showFilters && (
           <div className="flex flex-wrap gap-4 mb-6 p-4 bg-[#111111] border border-white/10 rounded-xl">
-            <div>
-              <label className="block text-sm text-white/60 mb-1">Niche</label>
-              <select
-                value={filterNiche}
-                onChange={(e) => setFilterNiche(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
-              >
-                <option value="">All Niches</option>
-                {uniqueNiches.map(niche => (
-                  <option key={niche} value={niche}>{niche}</option>
-                ))}
-              </select>
-            </div>
             <div>
               <label className="block text-sm text-white/60 mb-1">Content Type</label>
               <select
