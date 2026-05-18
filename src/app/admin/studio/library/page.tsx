@@ -533,11 +533,11 @@ export default function ContentLibraryPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-6">
-        {/* Categories Landing View */}
+        {/* Categories Landing View - Simple List */}
         {showCategoriesView && !filterNiche && (
-          <div className="mb-8">
+          <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Browse by Category</h2>
+              <h2 className="text-2xl font-bold text-white">Categories</h2>
               <button
                 onClick={() => setShowCategoriesView(false)}
                 className="text-white/60 hover:text-white text-sm flex items-center gap-2"
@@ -546,10 +546,9 @@ export default function ContentLibraryPage() {
                 View All Images
               </button>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="space-y-2">
               {uniqueNiches.map(niche => {
-                const nicheImages = images.filter(img => img.niche === niche);
-                const previewImages = nicheImages.slice(0, 4);
+                const count = images.filter(img => img.niche === niche).length;
                 return (
                   <button
                     key={niche}
@@ -557,29 +556,12 @@ export default function ContentLibraryPage() {
                       setFilterNiche(niche);
                       setShowCategoriesView(false);
                     }}
-                    className="group bg-[#111111] border border-white/10 rounded-xl overflow-hidden hover:border-[#C96A2B]/50 transition-all"
+                    className="w-full flex items-center justify-between bg-[#111111] border border-white/10 rounded-xl p-4 hover:border-[#C96A2B]/50 hover:bg-[#C96A2B]/5 transition-all group"
                   >
-                    <div className="aspect-video relative grid grid-cols-2 gap-0.5 p-0.5">
-                      {previewImages.map((img, i) => (
-                        <div key={i} className="aspect-square bg-white/5 overflow-hidden">
-                          <img 
-                            src={img.image_url} 
-                            alt="" 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                      {previewImages.length < 4 && [...Array(4 - previewImages.length)].map((_, i) => (
-                        <div key={`empty-${i}`} className="aspect-square bg-white/5" />
-                      ))}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-white font-semibold group-hover:text-[#C96A2B] transition-colors">
-                        {niche}
-                      </h3>
-                      <p className="text-white/50 text-sm">{nicheImages.length} images</p>
-                    </div>
+                    <span className="text-white font-medium group-hover:text-[#C96A2B] transition-colors">
+                      {niche}
+                    </span>
+                    <span className="text-white/50 text-sm">{count} images</span>
                   </button>
                 );
               })}
@@ -590,17 +572,12 @@ export default function ContentLibraryPage() {
                     setFilterNiche('__uncategorized__');
                     setShowCategoriesView(false);
                   }}
-                  className="group bg-[#111111] border border-white/10 rounded-xl overflow-hidden hover:border-[#C96A2B]/50 transition-all"
+                  className="w-full flex items-center justify-between bg-[#111111] border border-white/10 rounded-xl p-4 hover:border-[#C96A2B]/50 hover:bg-[#C96A2B]/5 transition-all group"
                 >
-                  <div className="aspect-video relative flex items-center justify-center bg-white/5">
-                    <FolderOpen className="w-12 h-12 text-white/20" />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-white font-semibold group-hover:text-[#C96A2B] transition-colors">
-                      Uncategorized
-                    </h3>
-                    <p className="text-white/50 text-sm">{images.filter(img => !img.niche).length} images</p>
-                  </div>
+                  <span className="text-white/60 font-medium group-hover:text-[#C96A2B] transition-colors">
+                    Uncategorized
+                  </span>
+                  <span className="text-white/50 text-sm">{images.filter(img => !img.niche).length} images</span>
                 </button>
               )}
             </div>
@@ -728,8 +705,8 @@ export default function ContentLibraryPage() {
           </div>
         )}
 
-        {/* Image Grid/List */}
-        {loading ? (
+        {/* Image Grid/List - only show when not in categories view */}
+        {showCategoriesView && !filterNiche ? null : loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-[#C96A2B] animate-spin" />
           </div>
