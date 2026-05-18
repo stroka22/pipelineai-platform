@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { uploadImageFromUrl } from '@/lib/storage';
 import Link from 'next/link';
 import { 
   ArrowLeft,
@@ -241,19 +242,25 @@ Match the visual style, colors, and aesthetic of the reference image while creat
         const data = await response.json();
         
         if (data.success && data.imageUrl) {
-          // Auto-save to library
-          const carouselTitle = carouselConfig.title || `${carouselConfig.niche} Carousel`;
+          // Upload to storage and save to library (open prompt mode)
+          const carouselTitle = carouselConfig.title || 'Open Prompt Carousel';
+          const { url: storageUrl } = await uploadImageFromUrl(
+            data.imageUrl,
+            'carousels',
+            `open-prompt-${Date.now()}-slide-${i + 1}.png`
+          );
+          
           await supabase.from('generated_images').insert({
             title: `${carouselTitle} - Slide ${i + 1}`,
-            image_url: data.imageUrl,
+            image_url: storageUrl,
             prompt_used: prompt,
-            niche: carouselConfig.niche,
-            style: carouselConfig.style,
+            niche: carouselConfig.niche || 'General',
+            style: carouselConfig.style || 'custom',
             content_type: 'carousel',
           });
           
           setSlides(prev => prev.map((s, idx) => 
-            idx === i ? { ...s, imageUrl: data.imageUrl, status: 'complete' } : s
+            idx === i ? { ...s, imageUrl: storageUrl, status: 'complete' } : s
           ));
         } else {
           setSlides(prev => prev.map((s, idx) => 
@@ -326,11 +333,17 @@ Match the visual style, colors, and aesthetic of the reference image while creat
         const data = await response.json();
         
         if (data.success && data.imageUrl) {
-          // Auto-save to library
+          // Upload to storage and save to library (category mode)
           const carouselTitle = carouselConfig.title || `${carouselConfig.niche} Carousel`;
+          const { url: storageUrl } = await uploadImageFromUrl(
+            data.imageUrl,
+            'carousels',
+            `${carouselConfig.niche.toLowerCase()}-${Date.now()}-slide-${i + 1}.png`
+          );
+          
           await supabase.from('generated_images').insert({
             title: `${carouselTitle} - Slide ${i + 1}`,
-            image_url: data.imageUrl,
+            image_url: storageUrl,
             prompt_used: prompt,
             niche: carouselConfig.niche,
             style: carouselConfig.style,
@@ -338,7 +351,7 @@ Match the visual style, colors, and aesthetic of the reference image while creat
           });
           
           setSlides(prev => prev.map((s, idx) => 
-            idx === i ? { ...s, imageUrl: data.imageUrl, status: 'complete' } : s
+            idx === i ? { ...s, imageUrl: storageUrl, status: 'complete' } : s
           ));
         } else {
           setSlides(prev => prev.map((s, idx) => 
@@ -391,11 +404,17 @@ Create a DIFFERENT visual composition than the previous version while maintainin
       const data = await response.json();
       
       if (data.success && data.imageUrl) {
-        // Auto-save to library
+        // Upload to storage and save to library (regenerated slide)
         const carouselTitle = carouselConfig.title || `${carouselConfig.niche} Carousel`;
+        const { url: storageUrl } = await uploadImageFromUrl(
+          data.imageUrl,
+          'carousels',
+          `${carouselConfig.niche.toLowerCase()}-${Date.now()}-slide-${index + 1}-regen.png`
+        );
+        
         await supabase.from('generated_images').insert({
           title: `${carouselTitle} - Slide ${index + 1} (regenerated)`,
-          image_url: data.imageUrl,
+          image_url: storageUrl,
           prompt_used: prompt,
           niche: carouselConfig.niche,
           style: carouselConfig.style,
@@ -403,7 +422,7 @@ Create a DIFFERENT visual composition than the previous version while maintainin
         });
         
         setSlides(prev => prev.map((s, idx) => 
-          idx === index ? { ...s, imageUrl: data.imageUrl, status: 'complete' } : s
+          idx === index ? { ...s, imageUrl: storageUrl, status: 'complete' } : s
         ));
       } else {
         setSlides(prev => prev.map((s, idx) => 
