@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Allow up to 60 seconds
 
 function getSupabase() {
   return createClient(
@@ -10,7 +11,6 @@ function getSupabase() {
   );
 }
 
-// Verify cron secret to prevent unauthorized access
 function verifyCronSecret(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
   if (!authHeader) return false;
@@ -40,7 +40,6 @@ async function generateImage(prompt: string): Promise<string | null> {
       return null;
     }
 
-    // Handle both URL and base64 responses
     let imageUrl = data.data?.[0]?.url;
     if (!imageUrl && data.data?.[0]?.b64_json) {
       imageUrl = `data:image/png;base64,${data.data[0].b64_json}`;
@@ -54,7 +53,6 @@ async function generateImage(prompt: string): Promise<string | null> {
 }
 
 async function uploadToStorage(imageUrl: string, fileName: string, supabase: ReturnType<typeof getSupabase>): Promise<string> {
-  // If already a Supabase URL, return it
   if (imageUrl.includes('supabase.co/storage')) {
     return imageUrl;
   }
@@ -62,7 +60,6 @@ async function uploadToStorage(imageUrl: string, fileName: string, supabase: Ret
   let imageData: Blob;
 
   if (imageUrl.startsWith('data:')) {
-    // Handle base64
     const base64Content = imageUrl.split(',')[1];
     const byteCharacters = atob(base64Content);
     const byteNumbers = new Array(byteCharacters.length);
@@ -72,7 +69,6 @@ async function uploadToStorage(imageUrl: string, fileName: string, supabase: Ret
     const byteArray = new Uint8Array(byteNumbers);
     imageData = new Blob([byteArray], { type: 'image/png' });
   } else {
-    // Fetch from URL
     const response = await fetch(imageUrl);
     imageData = await response.blob();
   }
@@ -97,7 +93,6 @@ async function uploadToStorage(imageUrl: string, fileName: string, supabase: Ret
   return publicUrlData.publicUrl;
 }
 
-// Carousel categories for prompt building
 const CAROUSEL_CATEGORIES: Record<string, { name: string; description: string }> = {
   'myths': { name: 'Myth Busters', description: 'Debunk common myths in your industry' },
   'tips': { name: 'Pro Tips', description: 'Share expert tips and advice' },
@@ -110,7 +105,6 @@ const CAROUSEL_CATEGORIES: Record<string, { name: string; description: string }>
 };
 
 export async function GET(request: NextRequest) {
-  // Verify this is a legitimate cron request
   if (process.env.NODE_ENV === 'production' && !verifyCronSecret(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -118,56 +112,81 @@ export async function GET(request: NextRequest) {
   const supabase = getSupabase();
 
   try {
-    // Get next pending item from queue
-    const { data: queueItem, error: fetchError } = await supabase
+    // First check for items already processing (continue where we left off)
+    let { data: queueItem } = await supabase
       .from('carousel_queue')
       .select('*')
-      .eq('status', 'pending')
-      .order('priority', { ascending: true })
-      .order('created_at', { ascending: true })
+      .eq('status', 'processing')
+      .order('started_at', { ascending: true })
       .limit(1)
       .single();
 
-    if (fetchError || !queueItem) {
-      return NextResponse.json({ message: 'No items in queue' });
-    }
+    // If no processing items, get next pending
+    if (!queueItem) {
+      const { data: pendingItem } = await supabase
+        .from('carousel_queue')
+        .select('*')
+        .eq('status', 'pending')
+        .order('priority', { ascending: true })
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single();
 
-    // Mark as processing
-    await supabase
-      .from('carousel_queue')
-      .update({ 
-        status: 'processing', 
-        started_at: new Date().toISOString(),
-        progress: 0 
-      })
-      .eq('id', queueItem.id);
+      if (!pendingItem) {
+        return NextResponse.json({ message: 'No items in queue' });
+      }
 
-    console.log(`Processing queue item: ${queueItem.id} - ${queueItem.title || queueItem.niche}`);
+      queueItem = pendingItem;
 
-    const generatedImageIds: string[] = [];
-    const category = CAROUSEL_CATEGORIES[queueItem.category] || { name: queueItem.category, description: '' };
-
-    // Generate each slide
-    for (let i = 0; i < queueItem.slide_count; i++) {
-      // Update progress
+      // Mark as processing
       await supabase
         .from('carousel_queue')
         .update({ 
-          current_slide: i + 1,
-          progress: Math.round(((i) / queueItem.slide_count) * 100)
+          status: 'processing', 
+          started_at: new Date().toISOString(),
+          current_slide: 0,
+          progress: 0 
+        })
+        .eq('id', queueItem.id);
+    }
+
+    // Determine which slide to generate next
+    const currentSlide = queueItem.current_slide || 0;
+    const existingIds = queueItem.generated_image_ids || [];
+
+    // If we've done all slides, mark complete
+    if (currentSlide >= queueItem.slide_count) {
+      await supabase
+        .from('carousel_queue')
+        .update({ 
+          status: 'complete',
+          progress: 100,
+          completed_at: new Date().toISOString()
         })
         .eq('id', queueItem.id);
 
-      // Build prompt
-      const slidePosition = i === 0 ? 'opening hook slide' : 
-                           i === queueItem.slide_count - 1 ? 'closing CTA slide' :
-                           `slide ${i + 1} of ${queueItem.slide_count}`;
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Carousel complete',
+        id: queueItem.id,
+        slides: existingIds.length
+      });
+    }
 
-      let prompt: string;
-      
-      if (queueItem.open_prompt) {
-        // Open prompt mode
-        prompt = `${queueItem.open_prompt}
+    console.log(`Processing queue ${queueItem.id}: slide ${currentSlide + 1} of ${queueItem.slide_count}`);
+
+    const category = CAROUSEL_CATEGORIES[queueItem.category] || { name: queueItem.category, description: '' };
+    const i = currentSlide;
+
+    // Build prompt for this slide
+    const slidePosition = i === 0 ? 'opening hook slide' : 
+                         i === queueItem.slide_count - 1 ? 'closing CTA slide' :
+                         `slide ${i + 1} of ${queueItem.slide_count}`;
+
+    let prompt: string;
+    
+    if (queueItem.open_prompt) {
+      prompt = `${queueItem.open_prompt}
 
 This is ${slidePosition} in a ${queueItem.slide_count}-slide carousel.
 
@@ -179,9 +198,8 @@ Requirements:
 - Make it premium and professional
 ${i === 0 ? '- This is the HOOK - make it attention-grabbing and make people want to swipe' : ''}
 ${i === queueItem.slide_count - 1 ? '- This is the CLOSING - include a compelling call-to-action' : ''}`;
-      } else {
-        // Category mode
-        prompt = `Create a premium ${queueItem.style} style carousel slide for a ${queueItem.niche.toLowerCase()} business.
+    } else {
+      prompt = `Create a premium ${queueItem.style} style carousel slide for a ${queueItem.niche.toLowerCase()} business.
 
 This is ${slidePosition} in a ${queueItem.slide_count}-slide ${category.name} carousel.
 ${queueItem.business_name ? `Business: "${queueItem.business_name}"` : ''}
@@ -194,69 +212,78 @@ Color scheme: primary ${queueItem.primary_color}, secondary ${queueItem.secondar
 The slide should be visually distinct from other slides while maintaining brand consistency.
 Include readable text that fits the slide position in the carousel narrative.
 Optimize for Instagram/social media square format.`;
-      }
-
-      // Add reference style if available
-      if (queueItem.reference_analysis) {
-        prompt = `REFERENCE STYLE TO MATCH:
-${queueItem.reference_analysis}
-
-${prompt}
-
-Match the visual style, colors, and aesthetic of the reference image while creating this carousel slide.`;
-      }
-
-      // Generate the image
-      const imageUrl = await generateImage(prompt);
-      
-      if (!imageUrl) {
-        console.error(`Failed to generate slide ${i + 1}`);
-        continue;
-      }
-
-      // Upload to storage
-      const fileName = `queue-${queueItem.id}-slide-${i + 1}-${Date.now()}.png`;
-      const storageUrl = await uploadToStorage(imageUrl, fileName, supabase);
-
-      // Save to generated_images
-      const carouselTitle = queueItem.title || `${queueItem.niche} ${category.name}`;
-      const { data: savedImage } = await supabase
-        .from('generated_images')
-        .insert({
-          title: `${carouselTitle} - Slide ${i + 1}`,
-          image_url: storageUrl,
-          prompt_used: prompt,
-          niche: queueItem.niche,
-          style: queueItem.style,
-          content_type: 'carousel',
-        })
-        .select()
-        .single();
-
-      if (savedImage) {
-        generatedImageIds.push(savedImage.id);
-      }
-
-      console.log(`Generated slide ${i + 1}/${queueItem.slide_count}`);
     }
 
-    // Mark as complete
+    if (queueItem.reference_analysis) {
+      prompt = `REFERENCE STYLE TO MATCH:\n${queueItem.reference_analysis}\n\n${prompt}\n\nMatch the visual style, colors, and aesthetic of the reference image.`;
+    }
+
+    // Generate the image
+    const imageUrl = await generateImage(prompt);
+    
+    if (!imageUrl) {
+      // Mark as failed
+      await supabase
+        .from('carousel_queue')
+        .update({ 
+          status: 'failed',
+          error_message: `Failed to generate slide ${i + 1}`
+        })
+        .eq('id', queueItem.id);
+
+      return NextResponse.json({ error: `Failed to generate slide ${i + 1}` }, { status: 500 });
+    }
+
+    // Upload to storage
+    const fileName = `queue-${queueItem.id}-slide-${i + 1}-${Date.now()}.png`;
+    const storageUrl = await uploadToStorage(imageUrl, fileName, supabase);
+
+    // Save to generated_images
+    const carouselTitle = queueItem.title || `${queueItem.niche} ${category.name}`;
+    const { data: savedImage } = await supabase
+      .from('generated_images')
+      .insert({
+        title: `${carouselTitle} - Slide ${i + 1}`,
+        image_url: storageUrl,
+        prompt_used: prompt,
+        niche: queueItem.niche,
+        style: queueItem.style,
+        content_type: 'carousel',
+      })
+      .select()
+      .single();
+
+    // Update queue progress
+    const newImageIds = [...existingIds];
+    if (savedImage) {
+      newImageIds.push(savedImage.id);
+    }
+
+    const nextSlide = currentSlide + 1;
+    const progress = Math.round((nextSlide / queueItem.slide_count) * 100);
+    const isComplete = nextSlide >= queueItem.slide_count;
+
     await supabase
       .from('carousel_queue')
       .update({ 
-        status: 'complete',
-        progress: 100,
-        completed_at: new Date().toISOString(),
-        generated_image_ids: generatedImageIds
+        current_slide: nextSlide,
+        progress,
+        generated_image_ids: newImageIds,
+        ...(isComplete ? {
+          status: 'complete',
+          completed_at: new Date().toISOString()
+        } : {})
       })
       .eq('id', queueItem.id);
 
-    console.log(`Completed queue item: ${queueItem.id}`);
+    console.log(`Generated slide ${nextSlide}/${queueItem.slide_count} for queue ${queueItem.id}`);
 
     return NextResponse.json({ 
       success: true, 
-      processed: queueItem.id,
-      slides_generated: generatedImageIds.length
+      queueId: queueItem.id,
+      slide: nextSlide,
+      total: queueItem.slide_count,
+      complete: isComplete
     });
 
   } catch (error: any) {
