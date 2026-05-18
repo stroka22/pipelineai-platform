@@ -459,30 +459,14 @@ Create a DIFFERENT visual composition than the previous version while maintainin
       
       if (carouselError) throw carouselError;
       
-      // Create slides
+      // Create slides (images already saved during generation)
       for (const slide of slides) {
         if (slide.imageUrl) {
-          // Save image first
-          const { data: image } = await supabase
-            .from('generated_images')
-            .insert({
-              image_url: slide.imageUrl,
-              prompt_used: `Carousel slide ${slide.slideNumber}`,
-              brand_profile_id: selectedBrand || null,
-              content_type: 'Carousel Slide',
-              niche: carouselConfig.niche,
-              style: carouselConfig.style,
-              title: `${carouselConfig.title || 'Carousel'} - Slide ${slide.slideNumber}`,
-            })
-            .select()
-            .single();
-          
-          // Create slide record
+          // Create slide record - image was already saved to generated_images during generation
           await supabase
             .from('carousel_slides')
             .insert({
               carousel_project_id: carousel.id,
-              generated_image_id: image?.id,
               slide_number: slide.slideNumber,
               headline: slide.headline,
               body_text: slide.bodyText,
