@@ -271,6 +271,21 @@ export default function ContentLibraryPage() {
     setSelectedImage(null);
   }
 
+  async function deleteSelected() {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} selected images?`)) return;
+    
+    const ids = Array.from(selectedIds);
+    await supabase
+      .from('generated_images')
+      .update({ is_archived: true })
+      .in('id', ids);
+    
+    setImages(images.filter(img => !selectedIds.has(img.id)));
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  }
+
   function openVaultModal() {
     if (!selectedImage) return;
     setVaultForm({
@@ -425,6 +440,14 @@ export default function ContentLibraryPage() {
                   >
                     <ShoppingBag className="w-4 h-4" />
                     Add to Vault ({selectedIds.size})
+                  </button>
+                  <button
+                    onClick={deleteSelected}
+                    disabled={selectedIds.size === 0}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 disabled:opacity-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete ({selectedIds.size})
                   </button>
                   <button
                     onClick={toggleSelectMode}
