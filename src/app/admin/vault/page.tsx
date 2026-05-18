@@ -30,6 +30,7 @@ export default function VaultAdminPage() {
     price: '',
     caption: '',
     is_active: true,
+    featured_on_homepage: false,
     display_order: 0,
   });
   
@@ -120,6 +121,7 @@ export default function VaultAdminPage() {
       price: formData.price ? parseFloat(formData.price) : null,
       caption: formData.caption || null,
       is_active: formData.is_active,
+      featured_on_homepage: formData.featured_on_homepage,
       display_order: formData.display_order,
     };
 
@@ -167,6 +169,11 @@ export default function VaultAdminPage() {
     if (!error) fetchData();
   }
 
+  async function toggleFeatured(item: VaultItem) {
+    const { error } = await supabase.from('vault_items').update({ featured_on_homepage: !item.featured_on_homepage }).eq('id', item.id);
+    if (!error) fetchData();
+  }
+
   function startEdit(item: VaultItem) {
     setEditingItem(item);
     setFormData({
@@ -177,6 +184,7 @@ export default function VaultAdminPage() {
       price: item.price?.toString() || '',
       caption: item.caption || '',
       is_active: item.is_active,
+      featured_on_homepage: item.featured_on_homepage || false,
       display_order: item.display_order,
     });
     setUploadedImages(item.images);
@@ -192,6 +200,7 @@ export default function VaultAdminPage() {
       price: '',
       caption: '',
       is_active: true,
+      featured_on_homepage: false,
       display_order: 0,
     });
     setUploadedImages([]);
@@ -414,7 +423,7 @@ export default function VaultAdminPage() {
               />
             </div>
             
-            <div className="flex items-center">
+            <div className="flex items-center gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -423,6 +432,15 @@ export default function VaultAdminPage() {
                   className="w-4 h-4 text-[#C96A2B] rounded focus:ring-[#C96A2B]"
                 />
                 <span className="text-sm text-[#081F33]">Active (visible in vault)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.featured_on_homepage}
+                  onChange={(e) => setFormData({ ...formData, featured_on_homepage: e.target.checked })}
+                  className="w-4 h-4 text-blue-500 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-[#081F33]">⭐ Featured on Homepage</span>
               </label>
             </div>
             
@@ -524,6 +542,7 @@ export default function VaultAdminPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Type</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Files</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Price</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Featured</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-[#4B5563] uppercase tracking-wider">Actions</th>
                 </tr>
@@ -565,6 +584,14 @@ export default function VaultAdminPage() {
                       ) : (
                         <span className="text-[#9CA3AF]">—</span>
                       )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => toggleFeatured(item)}
+                        className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${item.featured_on_homepage ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-500'}`}
+                      >
+                        {item.featured_on_homepage ? '⭐ Yes' : 'No'}
+                      </button>
                     </td>
                     <td className="px-6 py-4">
                       <button

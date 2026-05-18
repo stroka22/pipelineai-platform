@@ -113,6 +113,7 @@ export interface VaultItem {
   stripe_link?: string;
   caption?: string;
   is_active: boolean;
+  featured_on_homepage?: boolean;
   display_order: number;
   created_at: string;
   updated_at: string;

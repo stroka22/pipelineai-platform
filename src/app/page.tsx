@@ -79,6 +79,8 @@ export default function HomePage() {
   const [niches, setNiches] = useState<Niche[]>([]);
   const [nicheCounts, setNicheCounts] = useState<Record<string, number>>({});
   const [previewItems, setPreviewItems] = useState<PreviewItem[]>([]);
+  const [beforeImage, setBeforeImage] = useState<string | null>(null);
+  const [afterImage, setAfterImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -90,10 +92,23 @@ export default function HomePage() {
         .order('display_order');
       
       if (nicheData) setNiches(nicheData);
+      
+      // Fetch homepage branding images
+      const { data: settingsData } = await supabase
+        .from('site_settings')
+        .select('*')
+        .in('key', ['homepage_before_image', 'homepage_after_image']);
+      
+      if (settingsData) {
+        settingsData.forEach(item => {
+          if (item.key === 'homepage_before_image') setBeforeImage(item.value);
+          if (item.key === 'homepage_after_image') setAfterImage(item.value);
+        });
+      }
 
       const { data: vaultItems } = await supabase
         .from('vault_items')
-        .select('id, title, images, niche')
+        .select('id, title, images, niche, featured_on_homepage')
         .eq('is_active', true);
       
       if (vaultItems) {
@@ -103,10 +118,18 @@ export default function HomePage() {
         });
         setNicheCounts(counts);
         
-        // Get 8 random items that have images for preview
-        const withImages = vaultItems.filter(item => item.images && item.images.length > 0);
-        const shuffled = [...withImages].sort(() => 0.5 - Math.random());
-        setPreviewItems(shuffled.slice(0, 8));
+        // Get featured items first, then fill with random if needed
+        const featured = vaultItems.filter(item => item.featured_on_homepage && item.images?.length > 0);
+        const nonFeatured = vaultItems.filter(item => !item.featured_on_homepage && item.images?.length > 0);
+        
+        let previewList = [...featured];
+        if (previewList.length < 8) {
+          const shuffledNonFeatured = [...nonFeatured].sort(() => 0.5 - Math.random());
+          previewList = [...previewList, ...shuffledNonFeatured].slice(0, 8);
+        } else {
+          previewList = previewList.slice(0, 8);
+        }
+        setPreviewItems(previewList);
       }
       
       setLoading(false);
@@ -277,6 +300,27 @@ export default function HomePage() {
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
+                  {/* Watermark overlay */}
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+                    <div className="absolute inset-0 flex flex-col justify-around py-2">
+                      {[0, 1, 2].map((row) => (
+                        <div key={row} className="flex justify-around">
+                          {[0, 1].map((col) => (
+                            <div 
+                              key={col} 
+                              className="text-white font-black rotate-[-30deg] whitespace-nowrap text-xs md:text-sm"
+                              style={{ 
+                                textShadow: '1px 1px 3px rgba(0,0,0,0.8)',
+                                opacity: 0.4
+                              }}
+                            >
+                              PREVIEW
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform">
                     <p className="text-white text-xs font-medium truncate">{item.title}</p>
@@ -459,34 +503,46 @@ export default function HomePage() {
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   {/* Before */}
                   <div className="relative aspect-square rounded-xl border border-white/10 overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-                      <div className="w-16 h-16 rounded-lg bg-white/10 mb-3 flex items-center justify-center">
-                        <span className="text-2xl">📷</span>
+                    {beforeImage ? (
+                      <Image src={beforeImage} alt="Before branding" fill className="object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                        <div className="w-16 h-16 rounded-lg bg-white/10 mb-3 flex items-center justify-center">
+                          <span className="text-2xl">📷</span>
+                        </div>
+                        <span className="text-white/50 text-xs text-center font-medium">Generic Template</span>
+                        <span className="text-white/30 text-[10px] text-center mt-1">No branding</span>
                       </div>
-                      <span className="text-white/50 text-xs text-center font-medium">Generic Template</span>
-                      <span className="text-white/30 text-[10px] text-center mt-1">No branding</span>
-                    </div>
+                    )}
                   </div>
                   
                   {/* After */}
                   <div className="relative aspect-square rounded-xl border-2 border-purple-500/50 overflow-hidden bg-gradient-to-br from-purple-900/40 to-blue-900/40">
-                    <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
-                      <span className="text-white text-[10px] font-bold tracking-wide">YOUR BUSINESS NAME</span>
-                    </div>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4 pt-10">
-                      <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-500/30 to-blue-500/30 border border-white/20 mb-3 flex items-center justify-center">
-                        <span className="text-2xl">✨</span>
-                      </div>
-                      <span className="text-white text-xs text-center font-medium">Branded Content</span>
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/40 backdrop-blur-sm">
-                      <div className="flex items-center justify-between text-[9px] text-white/70">
-                        <span>📞 (555) 123-4567</span>
-                        <span>🌐 yoursite.com</span>
-                      </div>
-                    </div>
-                    {/* Glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 via-transparent to-blue-500/10 pointer-events-none" />
+                    {afterImage ? (
+                      <>
+                        <Image src={afterImage} alt="After branding" fill className="object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 via-transparent to-blue-500/10 pointer-events-none" />
+                      </>
+                    ) : (
+                      <>
+                        <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
+                          <span className="text-white text-[10px] font-bold tracking-wide">YOUR BUSINESS NAME</span>
+                        </div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 pt-10">
+                          <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-500/30 to-blue-500/30 border border-white/20 mb-3 flex items-center justify-center">
+                            <span className="text-2xl">✨</span>
+                          </div>
+                          <span className="text-white text-xs text-center font-medium">Branded Content</span>
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/40 backdrop-blur-sm">
+                          <div className="flex items-center justify-between text-[9px] text-white/70">
+                            <span>📞 (555) 123-4567</span>
+                            <span>🌐 yoursite.com</span>
+                          </div>
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 via-transparent to-blue-500/10 pointer-events-none" />
+                      </>
+                    )}
                   </div>
                 </div>
                 
