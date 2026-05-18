@@ -73,10 +73,10 @@ export default function ContentLibraryPage() {
     
     let query = supabase
       .from('generated_images')
-      .select('*')
+      .select('id, title, image_url, thumbnail_url, niche, style, content_type, is_favorite, created_at')
       .eq('is_archived', false)
       .order('created_at', { ascending: false })
-      .limit(200);
+      .limit(100);
     
     if (filterNiche) query = query.eq('niche', filterNiche);
     if (filterType) query = query.eq('content_type', filterType);
