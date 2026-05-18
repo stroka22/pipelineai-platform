@@ -57,10 +57,13 @@ export default function ContentLibraryPage() {
   const [niches, setNiches] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [addingToVault, setAddingToVault] = useState(false);
+  const [nicheCounts, setNicheCounts] = useState<Record<string, number>>({});
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     loadImages();
     loadNichesAndCategories();
+    loadNicheCounts();
   }, [filterNiche, filterType, filterStyle]);
 
   async function loadNichesAndCategories() {
@@ -70,6 +73,26 @@ export default function ContentLibraryPage() {
     ]);
     if (nichesRes.data) setNiches(nichesRes.data);
     if (catsRes.data) setCategories(catsRes.data);
+  }
+
+  async function loadNicheCounts() {
+    // Get counts per niche
+    const { data } = await supabase
+      .from('generated_images')
+      .select('niche')
+      .eq('is_archived', false);
+    
+    if (data) {
+      const counts: Record<string, number> = {};
+      let total = 0;
+      data.forEach(img => {
+        const niche = img.niche || '__uncategorized__';
+        counts[niche] = (counts[niche] || 0) + 1;
+        total++;
+      });
+      setNicheCounts(counts);
+      setTotalCount(total);
+    }
   }
 
   async function loadImages() {
@@ -547,9 +570,10 @@ export default function ContentLibraryPage() {
               </button>
             </div>
             <div className="space-y-2">
-              {uniqueNiches.map(niche => {
-                const count = images.filter(img => img.niche === niche).length;
-                return (
+              {Object.entries(nicheCounts)
+                .filter(([niche]) => niche !== '__uncategorized__')
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([niche, count]) => (
                   <button
                     key={niche}
                     onClick={() => {
@@ -563,10 +587,9 @@ export default function ContentLibraryPage() {
                     </span>
                     <span className="text-white/50 text-sm">{count} images</span>
                   </button>
-                );
-              })}
+                ))}
               {/* Uncategorized */}
-              {images.filter(img => !img.niche).length > 0 && (
+              {nicheCounts['__uncategorized__'] > 0 && (
                 <button
                   onClick={() => {
                     setFilterNiche('__uncategorized__');
@@ -577,7 +600,7 @@ export default function ContentLibraryPage() {
                   <span className="text-white/60 font-medium group-hover:text-[#C96A2B] transition-colors">
                     Uncategorized
                   </span>
-                  <span className="text-white/50 text-sm">{images.filter(img => !img.niche).length} images</span>
+                  <span className="text-white/50 text-sm">{nicheCounts['__uncategorized__']} images</span>
                 </button>
               )}
             </div>
@@ -640,11 +663,12 @@ export default function ContentLibraryPage() {
                 : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
             }`}
           >
-            All ({images.length})
+            All ({totalCount})
           </button>
-          {uniqueNiches.map(niche => {
-            const count = images.filter(img => img.niche === niche).length;
-            return (
+          {Object.entries(nicheCounts)
+            .filter(([niche]) => niche !== '__uncategorized__')
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([niche, count]) => (
               <button
                 key={niche}
                 onClick={() => setFilterNiche(niche === filterNiche ? '' : niche)}
@@ -656,8 +680,7 @@ export default function ContentLibraryPage() {
               >
                 {niche} ({count})
               </button>
-            );
-          })}
+            ))}
         </div>
         )}
 
