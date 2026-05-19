@@ -403,7 +403,7 @@ export default function HomePage() {
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
               {niches.map((niche) => {
                 const IconComponent = nicheIcons[niche.slug] || Briefcase;
                 const itemCount = nicheCounts[niche.slug] || 0;
@@ -411,28 +411,25 @@ export default function HomePage() {
                   <Link
                     key={niche.slug}
                     href={`/industries/${niche.slug}`}
-                    className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.02]"
+                    className="group relative overflow-hidden rounded-xl md:rounded-2xl transition-all duration-300 hover:scale-[1.02]"
                   >
-                    {/* Glowing border effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-cyan-500/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity blur-sm" />
-                    
                     {/* Card content */}
-                    <div className="relative bg-[#0a0f1a] border border-white/10 group-hover:border-blue-500/50 rounded-2xl p-6 h-full transition-all">
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
+                    <div className="relative bg-[#0a0f1a] border border-white/10 group-hover:border-blue-500/50 rounded-xl md:rounded-2xl p-4 md:p-6 h-full transition-all">
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-xl md:rounded-t-2xl" />
                       
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center mb-4 group-hover:from-blue-500/30 group-hover:to-purple-500/30 transition-all">
-                        <IconComponent className="w-7 h-7 text-blue-400" />
+                      <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg md:rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center mb-3 md:mb-4 group-hover:from-blue-500/30 group-hover:to-purple-500/30 transition-all">
+                        <IconComponent className="w-5 h-5 md:w-7 md:h-7 text-blue-400" />
                       </div>
                       
-                      <h3 className="text-lg font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                      <h3 className="text-sm md:text-lg font-bold text-white mb-1 md:mb-2 group-hover:text-blue-400 transition-colors leading-tight">
                         {niche.name}
                       </h3>
                       
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-white/40 font-medium">
+                        <span className="text-[10px] md:text-xs text-white/40 font-medium">
                           {itemCount} {itemCount === 1 ? 'item' : 'items'}
                         </span>
-                        <ArrowRight className="w-4 h-4 text-white/20 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+                        <ArrowRight className="w-3 h-3 md:w-4 md:h-4 text-white/20 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
                       </div>
                     </div>
                   </Link>
