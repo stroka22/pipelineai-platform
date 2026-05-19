@@ -150,6 +150,17 @@ export async function GET(request: NextRequest) {
         .eq('id', queueItem.id);
     }
 
+    // Re-fetch to check if item was cancelled
+    const { data: freshItem } = await supabase
+      .from('carousel_queue')
+      .select('status')
+      .eq('id', queueItem.id)
+      .single();
+    
+    if (freshItem?.status === 'cancelled') {
+      return NextResponse.json({ message: 'Item was cancelled' });
+    }
+
     // Determine which slide to generate next
     const currentSlide = queueItem.current_slide || 0;
     const existingIds = queueItem.generated_image_ids || [];

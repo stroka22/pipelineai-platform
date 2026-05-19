@@ -11,7 +11,8 @@ import {
   Trash2,
   RefreshCw,
   Layers,
-  Play
+  Play,
+  StopCircle
 } from 'lucide-react';
 
 interface QueueItem {
@@ -21,7 +22,7 @@ interface QueueItem {
   category: string;
   style: string;
   slide_count: number;
-  status: 'pending' | 'processing' | 'complete' | 'failed';
+  status: 'pending' | 'processing' | 'complete' | 'failed' | 'cancelled';
   progress: number;
   current_slide: number;
   error_message: string | null;
@@ -68,6 +69,17 @@ export default function QueuePage() {
     }
   }
 
+  async function cancelItem(id: string) {
+    if (!confirm('Cancel this carousel? It will be marked as cancelled and stop processing.')) return;
+    
+    try {
+      await fetch(`/api/queue?id=${id}&action=cancel`, { method: 'PATCH' });
+      fetchQueue();
+    } catch (error) {
+      console.error('Failed to cancel:', error);
+    }
+  }
+
   async function triggerProcessing() {
     try {
       setRefreshing(true);
@@ -89,6 +101,8 @@ export default function QueuePage() {
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'failed':
         return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'cancelled':
+        return <StopCircle className="w-5 h-5 text-orange-500" />;
       default:
         return <Clock className="w-5 h-5 text-gray-500" />;
     }
@@ -104,6 +118,8 @@ export default function QueuePage() {
         return 'bg-green-500/20 text-green-400';
       case 'failed':
         return 'bg-red-500/20 text-red-400';
+      case 'cancelled':
+        return 'bg-orange-500/20 text-orange-400';
       default:
         return 'bg-gray-500/20 text-gray-400';
     }
@@ -250,7 +266,16 @@ export default function QueuePage() {
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(item.status)}`}>
                       {item.status}
                     </span>
-                    {item.status !== 'processing' && (
+                    {(item.status === 'pending' || item.status === 'processing') && (
+                      <button
+                        onClick={() => cancelItem(item.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 transition-colors text-sm font-medium"
+                      >
+                        <StopCircle className="w-4 h-4" />
+                        Cancel
+                      </button>
+                    )}
+                    {(item.status === 'complete' || item.status === 'failed' || item.status === 'cancelled') && (
                       <button
                         onClick={() => deleteItem(item.id)}
                         className="p-2 hover:bg-red-500/20 rounded-lg text-red-400 transition-colors"

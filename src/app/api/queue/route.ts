@@ -94,3 +94,35 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+// Cancel queue item
+export async function PATCH(request: NextRequest) {
+  try {
+    const supabase = getSupabase();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    const action = searchParams.get('action');
+    
+    if (!id) {
+      return NextResponse.json({ error: 'ID required' }, { status: 400 });
+    }
+
+    if (action === 'cancel') {
+      const { error } = await supabase
+        .from('carousel_queue')
+        .update({ 
+          status: 'cancelled',
+          error_message: 'Cancelled by user'
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
