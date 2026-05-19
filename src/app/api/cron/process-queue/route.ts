@@ -113,13 +113,42 @@ export async function GET(request: NextRequest) {
 
   try {
     // First check for items already processing (continue where we left off)
-    let { data: queueItem } = await supabase
+    // Only get ONE processing item - the oldest one by started_at
+    let { data: processingItems } = await supabase
       .from('carousel_queue')
       .select('*')
       .eq('status', 'processing')
-      .order('started_at', { ascending: true })
-      .limit(1)
-      .single();
+      .order('started_at', { ascending: true });
+
+    let queueItem = processingItems?.[0] || null;
+
+    // If there are multiple items stuck in "processing", that's a problem
+    // Only work on the oldest one, ignore others until it's done
+    if (processingItems && processingItems.length > 1) {
+      console.warn(`Warning: ${processingItems.length} items in processing state. Only working on oldest.`);
+    }
+
+    // Check if processing item is stuck (started more than 10 minutes ago with no progress)
+    if (queueItem) {
+      const startedAt = new Date(queueItem.started_at).getTime();
+      const now = Date.now();
+      const minutesSinceStart = (now - startedAt) / 1000 / 60;
+      
+      // If started over 10 mins ago and still on same slide, it might be stuck
+      if (minutesSinceStart > 10 && queueItem.current_slide === 0 && queueItem.progress === 0) {
+        console.warn(`Queue item ${queueItem.id} appears stuck. Resetting...`);
+        await supabase
+          .from('carousel_queue')
+          .update({ 
+            status: 'pending',
+            started_at: null,
+            current_slide: 0,
+            progress: 0
+          })
+          .eq('id', queueItem.id);
+        queueItem = null; // Will pick up as pending below
+      }
+    }
 
     // If no processing items, get next pending
     if (!queueItem) {
@@ -138,8 +167,8 @@ export async function GET(request: NextRequest) {
 
       queueItem = pendingItem;
 
-      // Mark as processing
-      await supabase
+      // Mark as processing with a timestamp
+      const { error: updateError } = await supabase
         .from('carousel_queue')
         .update({ 
           status: 'processing', 
@@ -147,19 +176,36 @@ export async function GET(request: NextRequest) {
           current_slide: 0,
           progress: 0 
         })
-        .eq('id', queueItem.id);
+        .eq('id', queueItem.id)
+        .eq('status', 'pending'); // Only update if still pending (prevents race condition)
+      
+      if (updateError) {
+        console.error('Failed to mark as processing:', updateError);
+        return NextResponse.json({ error: 'Failed to acquire queue item' }, { status: 500 });
+      }
     }
 
-    // Re-fetch to check if item was cancelled
+    // Re-fetch to get latest state and check if item was cancelled or grabbed by another process
     const { data: freshItem } = await supabase
       .from('carousel_queue')
-      .select('status')
+      .select('*')
       .eq('id', queueItem.id)
       .single();
     
-    if (freshItem?.status === 'cancelled') {
+    if (!freshItem) {
+      return NextResponse.json({ message: 'Queue item no longer exists' });
+    }
+    
+    if (freshItem.status === 'cancelled') {
       return NextResponse.json({ message: 'Item was cancelled' });
     }
+    
+    if (freshItem.status !== 'processing') {
+      return NextResponse.json({ message: 'Item status changed, skipping' });
+    }
+
+    // Use fresh data
+    queueItem = freshItem;
 
     // Determine which slide to generate next
     const currentSlide = queueItem.current_slide || 0;
