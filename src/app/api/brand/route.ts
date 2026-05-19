@@ -33,42 +33,6 @@ async function createCircularImage(imageBuffer: Buffer, size: number): Promise<B
     .toBuffer();
 }
 
-// Create text SVG
-function createTextSvg(
-  text: string, 
-  fontSize: number, 
-  color: string, 
-  maxWidth: number,
-  fontWeight: string = 'bold',
-  align: string = 'left'
-): Buffer {
-  const escapedText = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-  
-  const textAnchor = align === 'center' ? 'middle' : align === 'right' ? 'end' : 'start';
-  const x = align === 'center' ? maxWidth / 2 : align === 'right' ? maxWidth - 10 : 10;
-  const height = fontSize + 10;
-  
-  const svg = `
-    <svg width="${maxWidth}" height="${height}">
-      <text 
-        x="${x}" 
-        y="${fontSize}" 
-        font-family="Arial, Helvetica, sans-serif" 
-        font-size="${fontSize}" 
-        font-weight="${fontWeight}"
-        fill="${color}"
-        text-anchor="${textAnchor}"
-      >${escapedText}</text>
-    </svg>
-  `;
-  
-  return Buffer.from(svg);
-}
-
 export async function POST(request: NextRequest) {
   const openai = getOpenAI();
 
@@ -95,73 +59,62 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Business name required' }, { status: 400 });
     }
 
-    // Step 1: Analyze the image to find the best placement positions
+    // Step 1: Analyze the image to find the dominant/brand color
     const analysisResponse = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {
           role: 'system',
-          content: `You are an expert at analyzing images for branding placement. Analyze this carousel/social media image and identify:
-
-1. The PRIMARY COLOR used (hex code) - for the contact bar background
-2. The SECONDARY/TEXT COLOR (hex code) - for text on the contact bar
-3. Where is the best position for a contact info bar? (usually bottom)
-4. Is there an existing headshot/person photo? If yes, where? (top-left, center-right, etc.)
-5. Is there an existing logo? If yes, where?
-6. What areas have empty/clean space suitable for overlays?
-
-Respond in this exact JSON format:
-{
-  "primaryColor": "#hex",
-  "textColor": "#hex",
-  "contactBarPosition": "bottom",
-  "existingHeadshot": { "found": true/false, "position": "position or null" },
-  "existingLogo": { "found": true/false, "position": "position or null" },
-  "cleanSpaces": ["list of positions with clean space"]
-}`
+          content: `Analyze this image and identify the PRIMARY BRAND COLOR used (usually a dark blue, navy, or accent color - NOT white or light gray). Return ONLY a JSON object like: {"brandColor": "#1e3a5f"}`
         },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: 'Analyze this image for branding element placement. Return JSON only.'
+              text: 'What is the primary brand/accent color in this image? Return JSON only.'
             },
             {
               type: 'image_url',
               image_url: {
                 url: carouselImage,
-                detail: 'high'
+                detail: 'low'
               }
             }
           ]
         }
       ],
-      max_tokens: 500,
+      max_tokens: 100,
     });
 
-    let analysis: any = {};
+    let brandColor = '#1e3a5f'; // Default dark navy
     try {
       const content = analysisResponse.choices[0].message.content || '{}';
-      // Extract JSON from response (might have markdown code blocks)
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        analysis = JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.brandColor) {
+          brandColor = parsed.brandColor;
+        }
       }
     } catch (e) {
-      console.log('Could not parse analysis, using defaults');
-      analysis = {
-        primaryColor: '#1e3a5f',
-        textColor: '#ffffff',
-        contactBarPosition: 'bottom'
-      };
+      console.log('Could not parse color, using default navy');
     }
 
-    console.log('Image analysis:', analysis);
+    // Override with user's brand colors if provided
+    if (brandColors) {
+      const firstColor = brandColors.split(',')[0]?.trim();
+      if (firstColor && firstColor.startsWith('#')) {
+        brandColor = firstColor;
+      }
+    }
 
-    // Step 2: Process the original image - just resize to standard size
+    console.log('Using brand color:', brandColor);
+
+    // Step 2: Process the original image
     const originalBuffer = base64ToBuffer(carouselImage);
     const imageSize = 1024;
+    const barHeight = 140; // Taller bar for better visibility
     
     // Resize original to 1024x1024
     let baseImage = await sharp(originalBuffer)
@@ -172,43 +125,39 @@ Respond in this exact JSON format:
     // Step 3: Build composite operations
     const compositeOperations: sharp.OverlayOptions[] = [];
     
-    // Determine colors
-    const barColor = analysis.primaryColor || brandColors?.split(',')[0]?.trim() || '#1e3a5f';
-    const textColor = analysis.textColor || '#ffffff';
-    
-    // Create contact bar at bottom (120px height)
-    const barHeight = 120;
-    const contactBar = Buffer.from(`
-      <svg width="${imageSize}" height="${barHeight}">
-        <rect width="${imageSize}" height="${barHeight}" fill="${barColor}"/>
-      </svg>
-    `);
+    // Create solid contact bar at bottom
+    const contactBarSvg = `<svg width="${imageSize}" height="${barHeight}">
+      <rect x="0" y="0" width="${imageSize}" height="${barHeight}" fill="${brandColor}"/>
+    </svg>`;
     
     compositeOperations.push({
-      input: contactBar,
+      input: Buffer.from(contactBarSvg),
       top: imageSize - barHeight,
       left: 0,
     });
 
-    // Add headshot to contact bar (left side) if provided
-    let textStartX = 30;
+    // Track positions
+    let currentX = 25;
+    const barTop = imageSize - barHeight;
+
+    // Add headshot (left side) if provided
     if (headshotImage) {
       try {
         const headshotBuffer = base64ToBuffer(headshotImage);
-        const headshotSize = 90;
+        const headshotSize = 100; // Larger headshot
         const circularHeadshot = await createCircularImage(headshotBuffer, headshotSize);
         
         // Add white border
-        const borderSize = 3;
+        const borderSize = 4;
         const totalSize = headshotSize + (borderSize * 2);
-        const withBorder = await sharp({
-          create: {
-            width: totalSize,
-            height: totalSize,
-            channels: 4,
-            background: { r: 255, g: 255, b: 255, alpha: 1 }
-          }
-        })
+        
+        const borderCircle = Buffer.from(
+          `<svg width="${totalSize}" height="${totalSize}">
+            <circle cx="${totalSize/2}" cy="${totalSize/2}" r="${totalSize/2}" fill="white"/>
+          </svg>`
+        );
+        
+        const withBorder = await sharp(borderCircle)
           .composite([{
             input: circularHeadshot,
             top: borderSize,
@@ -217,66 +166,65 @@ Respond in this exact JSON format:
           .png()
           .toBuffer();
         
-        const borderMask = Buffer.from(
-          `<svg><circle cx="${totalSize/2}" cy="${totalSize/2}" r="${totalSize/2}" fill="white"/></svg>`
-        );
-        
-        const finalHeadshot = await sharp(withBorder)
-          .composite([{ input: borderMask, blend: 'dest-in' }])
-          .png()
-          .toBuffer();
-        
         compositeOperations.push({
-          input: finalHeadshot,
-          top: imageSize - barHeight + Math.round((barHeight - totalSize) / 2),
-          left: 20,
+          input: withBorder,
+          top: barTop + Math.round((barHeight - totalSize) / 2),
+          left: currentX,
         });
         
-        textStartX = 140; // Move text to the right of headshot
+        currentX += totalSize + 20; // Move past headshot
       } catch (e) {
         console.error('Failed to process headshot:', e);
       }
     }
 
-    // Add business name text
-    const nameText = createTextSvg(businessName, 28, textColor, 400, 'bold', 'left');
+    // Add vertical divider line
+    const dividerSvg = `<svg width="3" height="80">
+      <rect x="0" y="0" width="3" height="80" fill="white" opacity="0.5"/>
+    </svg>`;
+    
     compositeOperations.push({
-      input: nameText,
-      top: imageSize - barHeight + 25,
-      left: textStartX,
+      input: Buffer.from(dividerSvg),
+      top: barTop + 30,
+      left: currentX,
+    });
+    
+    currentX += 20;
+
+    // Add business name (larger, bold)
+    const nameSvg = `<svg width="350" height="40">
+      <text x="0" y="30" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="white">${escapeXml(businessName)}</text>
+    </svg>`;
+    
+    compositeOperations.push({
+      input: Buffer.from(nameSvg),
+      top: barTop + 35,
+      left: currentX,
     });
 
-    // Add phone number if provided
+    // Add phone number with icon
     if (phoneNumber) {
-      // Phone icon + number
-      const phoneText = createTextSvg(`📞 ${phoneNumber}`, 22, textColor, 300, 'normal', 'left');
+      const phoneSvg = `<svg width="350" height="35">
+        <circle cx="12" cy="17" r="12" fill="white"/>
+        <text x="10" y="22" font-family="Arial" font-size="14" fill="${brandColor}">☎</text>
+        <text x="32" y="24" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="white">${escapeXml(phoneNumber)}</text>
+      </svg>`;
+      
       compositeOperations.push({
-        input: phoneText,
-        top: imageSize - barHeight + 65,
-        left: textStartX,
+        input: Buffer.from(phoneSvg),
+        top: barTop + 75,
+        left: currentX,
       });
     }
 
-    // Add website if provided (smaller, below phone)
-    if (websiteUrl) {
-      const cleanUrl = websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      const webText = createTextSvg(`🌐 ${cleanUrl}`, 18, textColor, 300, 'normal', 'left');
-      compositeOperations.push({
-        input: webText,
-        top: imageSize - barHeight + (phoneNumber ? 92 : 65),
-        left: textStartX,
-      });
-    }
-
-    // Add logo (right side of contact bar) if provided
+    // Add logo (right side) if provided
     if (logoImage) {
       try {
         const logoBuffer = base64ToBuffer(logoImage);
         const logoMeta = await sharp(logoBuffer).metadata();
-        const maxLogoHeight = 80;
-        const maxLogoWidth = 180;
+        const maxLogoHeight = 100;
+        const maxLogoWidth = 200;
         
-        // Calculate dimensions maintaining aspect ratio
         let logoWidth = maxLogoWidth;
         let logoHeight = maxLogoHeight;
         if (logoMeta.width && logoMeta.height) {
@@ -297,8 +245,8 @@ Respond in this exact JSON format:
         
         compositeOperations.push({
           input: resizedLogo,
-          top: imageSize - barHeight + Math.round((barHeight - logoHeight) / 2),
-          left: imageSize - logoWidth - 30,
+          top: barTop + Math.round((barHeight - logoHeight) / 2),
+          left: imageSize - logoWidth - 25,
         });
       } catch (e) {
         console.error('Failed to process logo:', e);
@@ -317,7 +265,7 @@ Respond in this exact JSON format:
     return NextResponse.json({
       success: true,
       imageUrl: finalBase64,
-      analysis: analysis,
+      brandColor: brandColor,
     });
   } catch (error: any) {
     console.error('Branding error:', error);
@@ -328,4 +276,14 @@ Respond in this exact JSON format:
       details: error?.error || error?.code || 'Unknown error'
     }, { status: 500 });
   }
+}
+
+// Helper to escape XML special characters
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
