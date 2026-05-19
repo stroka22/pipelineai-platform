@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import sharp from 'sharp';
-import path from 'path';
 
 function getOpenAI() {
   return new OpenAI({
@@ -48,7 +47,8 @@ function createTextSvg(
   color: string, 
   maxWidth: number,
   fontWeight: string = 'bold',
-  align: string = 'center'
+  align: string = 'left',
+  bgColor?: string
 ): Buffer {
   const escapedText = text
     .replace(/&/g, '&amp;')
@@ -58,12 +58,16 @@ function createTextSvg(
   
   const textAnchor = align === 'center' ? 'middle' : align === 'right' ? 'end' : 'start';
   const x = align === 'center' ? maxWidth / 2 : align === 'right' ? maxWidth - 10 : 10;
+  const height = fontSize + 20;
+  
+  const bgRect = bgColor ? `<rect width="${maxWidth}" height="${height}" fill="${bgColor}" rx="4"/>` : '';
   
   const svg = `
-    <svg width="${maxWidth}" height="${fontSize + 20}">
+    <svg width="${maxWidth}" height="${height}">
+      ${bgRect}
       <text 
         x="${x}" 
-        y="${fontSize}" 
+        y="${fontSize + 5}" 
         font-family="Arial, Helvetica, sans-serif" 
         font-size="${fontSize}" 
         font-weight="${fontWeight}"
@@ -102,26 +106,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Business name required' }, { status: 400 });
     }
 
-    // Step 1: Analyze the carousel image with GPT-4 Vision
+    // Step 1: Analyze the carousel image comprehensively
     const analysisResponse = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {
           role: 'system',
-          content: `You are an expert at analyzing images for recreation. Analyze the image and describe:
-- Overall style and mood (corporate, playful, luxury, etc.)
-- Color palette (specific colors)
-- Background elements and patterns
-- Layout structure
-- Any graphical elements (shapes, icons, gradients)
-Do NOT describe any text - we will add text separately. Focus only on visual/graphical elements.`
+          content: `You are an expert at analyzing carousel/social media images. Provide a DETAILED description that would allow recreation of this exact image. Include:
+
+1. LAYOUT: Exact positioning of elements (top-left, center, bottom-right, etc.)
+2. COLORS: Specific hex colors or close approximations for background, text, accents
+3. TYPOGRAPHY: Font styles (serif/sans-serif), sizes (large heading, medium body, small caption), text content word-for-word
+4. IMAGERY: Any photos, illustrations, icons, shapes and their exact positions
+5. STYLE: Overall aesthetic (minimal, bold, elegant, playful, corporate)
+6. DECORATIVE ELEMENTS: Lines, gradients, shadows, borders, curves
+
+Be extremely specific so the image can be recreated with modifications.`
         },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: 'Analyze this image for visual style and elements. Ignore any text - describe only the graphical/visual elements.'
+              text: 'Analyze this carousel slide in detail. I need to recreate it with custom branding (different contact info, logo, headshot). Describe everything precisely.'
             },
             {
               type: 'image_url',
@@ -133,31 +140,52 @@ Do NOT describe any text - we will add text separately. Focus only on visual/gra
           ]
         }
       ],
-      max_tokens: 800,
+      max_tokens: 1500,
     });
 
     const imageAnalysis = analysisResponse.choices[0].message.content;
+    console.log('Image analysis:', imageAnalysis?.substring(0, 500));
 
-    // Step 2: Generate background image (NO TEXT)
-    const backgroundPrompt = `Create a professional social media graphic background with these characteristics:
+    // Step 2: Build a comprehensive prompt to recreate with new branding
+    let brandingDetails = `
+BRANDING TO ADD:
+- Business/Agent Name: "${businessName}"
+${phoneNumber ? `- Phone Number: ${phoneNumber}` : ''}
+${websiteUrl ? `- Website: ${websiteUrl}` : ''}
+${brandColors ? `- Brand Colors: ${brandColors}` : ''}`;
+
+    if (headshotImage) {
+      brandingDetails += `
+- Include a professional headshot photo in a circular frame (the person is a professional in the industry)`;
+    }
+
+    if (logoImage) {
+      brandingDetails += `
+- Include the company logo prominently`;
+    }
+
+    const recreationPrompt = `RECREATE this carousel slide with new branding. Here is the original design analysis:
 
 ${imageAnalysis}
 
-${brandColors ? `Use these brand colors: ${brandColors}` : ''}
+${brandingDetails}
 
-CRITICAL REQUIREMENTS:
-- Do NOT include ANY text, words, letters, or numbers in the image
-- Leave clean space at the top for a business name to be added later
-- Leave clean space at the bottom for contact info to be added later
-${headshotImage ? '- Leave space on the right side for a professional headshot to be added' : ''}
-${logoImage ? '- Leave space in a corner for a logo to be added' : ''}
-- Create a visually appealing background/template only
-- Make it 1024x1024 pixels, suitable for Instagram
+CRITICAL INSTRUCTIONS:
+1. PRESERVE the original layout, style, colors, and design aesthetic exactly
+2. KEEP all the original text content, headlines, and messaging
+3. ADD a professional contact info bar at the bottom with: name "${businessName}"${phoneNumber ? `, phone "${phoneNumber}"` : ''}${websiteUrl ? `, website` : ''}
+4. The contact bar should be clean and professional with the business logo if space allows
+5. If there's a headshot/photo placeholder in the original, include a professional headshot there
+6. Make text READABLE and PROPERLY SPELLED
+7. This should look like a professionally designed real estate/business carousel slide
+8. Square format (1:1 ratio) for Instagram
+9. Make sure ALL TEXT is crisp, clear, and correctly spelled
 
-This is a BACKGROUND TEMPLATE - text and branding elements will be composited on top afterwards.`;
+The final image should look like the original slide but with this person's professional branding added.`;
 
-    console.log('Generating background with prompt:', backgroundPrompt.substring(0, 200));
+    console.log('Recreation prompt:', recreationPrompt.substring(0, 400));
 
+    // Generate the branded image
     const imageApiResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -166,7 +194,7 @@ This is a BACKGROUND TEMPLATE - text and branding elements will be composited on
       },
       body: JSON.stringify({
         model: 'gpt-image-2',
-        prompt: backgroundPrompt,
+        prompt: recreationPrompt,
         n: 1,
         size: '1024x1024',
       }),
@@ -175,93 +203,86 @@ This is a BACKGROUND TEMPLATE - text and branding elements will be composited on
     const imageResponse = await imageApiResponse.json();
 
     if (!imageApiResponse.ok) {
+      console.error('Image generation failed:', imageResponse.error);
       return NextResponse.json({ 
         error: imageResponse.error?.message || 'Image generation failed',
         details: imageResponse.error
       }, { status: 400 });
     }
 
-    // Get the generated background
-    let backgroundBuffer: Buffer;
+    // Get the generated image
+    let generatedBuffer: Buffer;
     if (imageResponse.data?.[0]?.b64_json) {
-      backgroundBuffer = Buffer.from(imageResponse.data[0].b64_json, 'base64');
+      generatedBuffer = Buffer.from(imageResponse.data[0].b64_json, 'base64');
     } else if (imageResponse.data?.[0]?.url) {
-      backgroundBuffer = await urlToBuffer(imageResponse.data[0].url);
+      generatedBuffer = await urlToBuffer(imageResponse.data[0].url);
     } else {
-      return NextResponse.json({ error: 'Failed to generate background' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to generate image' }, { status: 500 });
     }
 
-    // Step 3: Composite all elements with Sharp
+    // Step 3: If headshot or logo provided, composite them on top for accuracy
     const compositeOperations: sharp.OverlayOptions[] = [];
     const imageSize = 1024;
 
-    // Add business name at top
-    const businessNameSvg = createTextSvg(
-      businessName.toUpperCase(),
-      56,
-      '#FFFFFF',
-      imageSize - 40,
-      'bold',
-      'center'
-    );
-    compositeOperations.push({
-      input: businessNameSvg,
-      top: 60,
-      left: 20,
-    });
-
-    // Add logo if provided (top-left corner)
+    // Add logo if provided (top-left or bottom corner)
     if (logoImage) {
       try {
         const logoBuffer = base64ToBuffer(logoImage);
+        // Get logo dimensions to maintain aspect ratio
+        const logoMeta = await sharp(logoBuffer).metadata();
+        const logoMaxSize = 140;
+        const logoWidth = logoMeta.width && logoMeta.height 
+          ? (logoMeta.width > logoMeta.height ? logoMaxSize : Math.round(logoMaxSize * (logoMeta.width / logoMeta.height)))
+          : logoMaxSize;
+        const logoHeight = logoMeta.width && logoMeta.height
+          ? (logoMeta.height > logoMeta.width ? logoMaxSize : Math.round(logoMaxSize * (logoMeta.height / logoMeta.width)))
+          : logoMaxSize;
+        
         const resizedLogo = await sharp(logoBuffer)
-          .resize(120, 120, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+          .resize(logoWidth, logoHeight, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
           .png()
           .toBuffer();
         
+        // Position in bottom right area
         compositeOperations.push({
           input: resizedLogo,
-          top: 40,
-          left: 40,
+          top: imageSize - logoHeight - 30,
+          left: imageSize - logoWidth - 30,
         });
-
-        // Shift business name if logo present
-        compositeOperations[0] = {
-          input: businessNameSvg,
-          top: 70,
-          left: 180,
-        };
       } catch (e) {
         console.error('Failed to process logo:', e);
       }
     }
 
-    // Add headshot if provided (right side, circular)
+    // Add headshot if provided
     if (headshotImage) {
       try {
         const headshotBuffer = base64ToBuffer(headshotImage);
-        const circularHeadshot = await createCircularImage(headshotBuffer, 280);
+        const headshotSize = 200;
+        const circularHeadshot = await createCircularImage(headshotBuffer, headshotSize);
         
         // Add white border around headshot
+        const borderSize = 6;
+        const totalSize = headshotSize + (borderSize * 2);
         const withBorder = await sharp({
           create: {
-            width: 290,
-            height: 290,
+            width: totalSize,
+            height: totalSize,
             channels: 4,
             background: { r: 255, g: 255, b: 255, alpha: 1 }
           }
         })
           .composite([{
             input: circularHeadshot,
-            top: 5,
-            left: 5,
+            top: borderSize,
+            left: borderSize,
           }])
           .png()
           .toBuffer();
         
         // Create circular border
         const borderMask = Buffer.from(
-          `<svg><circle cx="145" cy="145" r="145" fill="white"/></svg>`
+          `<svg><circle cx="${totalSize/2}" cy="${totalSize/2}" r="${totalSize/2}" fill="white"/></svg>`
         );
         
         const finalHeadshot = await sharp(withBorder)
@@ -269,65 +290,34 @@ This is a BACKGROUND TEMPLATE - text and branding elements will be composited on
           .png()
           .toBuffer();
         
+        // Position center-left or where appropriate
         compositeOperations.push({
           input: finalHeadshot,
-          top: 350,
-          left: 700,
+          top: Math.round((imageSize - totalSize) / 2),
+          left: 40,
         });
       } catch (e) {
         console.error('Failed to process headshot:', e);
       }
     }
 
-    // Add contact info at bottom
-    const contactLines: string[] = [];
-    if (phoneNumber) contactLines.push(phoneNumber);
-    if (websiteUrl) contactLines.push(websiteUrl.replace(/^https?:\/\//, ''));
-    
-    if (contactLines.length > 0) {
-      const contactText = contactLines.join('  •  ');
-      const contactSvg = createTextSvg(
-        contactText,
-        32,
-        '#FFFFFF',
-        imageSize - 40,
-        'normal',
-        'center'
-      );
-      
-      // Add semi-transparent background bar for contact info
-      const contactBg = Buffer.from(
-        `<svg width="${imageSize}" height="70">
-          <rect width="${imageSize}" height="70" fill="rgba(0,0,0,0.5)"/>
-        </svg>`
-      );
-      
-      compositeOperations.push({
-        input: contactBg,
-        top: imageSize - 70,
-        left: 0,
-      });
-      
-      compositeOperations.push({
-        input: contactSvg,
-        top: imageSize - 55,
-        left: 20,
-      });
+    // Compose final image if we have overlays
+    let finalBuffer = generatedBuffer;
+    if (compositeOperations.length > 0) {
+      finalBuffer = await sharp(generatedBuffer)
+        .composite(compositeOperations)
+        .png()
+        .toBuffer();
     }
 
-    // Compose final image
-    const finalImage = await sharp(backgroundBuffer)
-      .composite(compositeOperations)
-      .png()
-      .toBuffer();
-
     // Convert to base64 data URL
-    const finalBase64 = `data:image/png;base64,${finalImage.toString('base64')}`;
+    const finalBase64 = `data:image/png;base64,${finalBuffer.toString('base64')}`;
 
     return NextResponse.json({
       success: true,
       imageUrl: finalBase64,
-      prompt: backgroundPrompt,
+      analysis: imageAnalysis,
+      prompt: recreationPrompt,
     });
   } catch (error: any) {
     console.error('Branding error:', error);
