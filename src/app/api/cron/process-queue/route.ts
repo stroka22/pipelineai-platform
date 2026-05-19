@@ -201,28 +201,39 @@ export async function GET(request: NextRequest) {
 
 This is ${slidePosition} in a ${queueItem.slide_count}-slide carousel.
 
-Requirements:
+CRITICAL REQUIREMENTS:
+- Industry/Niche: ${queueItem.niche.toUpperCase()} business content ONLY
+- Primary color: ${queueItem.primary_color} (use this as the dominant accent color)
+- Secondary color: ${queueItem.secondary_color} (use this as the background or secondary elements)
 - Create a visually distinct slide that fits this position in the carousel narrative
-- Maintain visual consistency with the overall carousel theme
 - Optimize for Instagram/social media square format (1:1)
 - Include readable, well-positioned text
 - Make it premium and professional
 ${i === 0 ? '- This is the HOOK - make it attention-grabbing and make people want to swipe' : ''}
-${i === queueItem.slide_count - 1 ? '- This is the CLOSING - include a compelling call-to-action' : ''}`;
-    } else {
-      prompt = `Create a premium ${queueItem.style} style carousel slide for a ${queueItem.niche.toLowerCase()} business.
+${i === queueItem.slide_count - 1 ? '- This is the CLOSING - include a compelling call-to-action' : ''}
 
+DO NOT create content for any other industry. This MUST be ${queueItem.niche} specific.`;
+    } else {
+      prompt = `Create a premium ${queueItem.style} style carousel slide for a ${queueItem.niche.toUpperCase()} business.
+
+INDUSTRY: ${queueItem.niche.toUpperCase()} - All visuals and text MUST be specific to this industry.
 This is ${slidePosition} in a ${queueItem.slide_count}-slide ${category.name} carousel.
-${queueItem.business_name ? `Business: "${queueItem.business_name}"` : ''}
+${queueItem.business_name ? `Business Name: "${queueItem.business_name}"` : ''}
 Topic: ${queueItem.topic || category.description}
 
 ${i === 0 ? 'This is the HOOK slide - it should grab attention and make people want to swipe.' : ''}
 ${i === queueItem.slide_count - 1 ? 'This is the CLOSING slide - include a strong call-to-action.' : ''}
 
-Color scheme: primary ${queueItem.primary_color}, secondary ${queueItem.secondary_color}.
+REQUIRED COLOR SCHEME (must follow exactly):
+- Primary/Accent Color: ${queueItem.primary_color}
+- Background/Secondary Color: ${queueItem.secondary_color}
+Use these exact colors throughout the design.
+
 The slide should be visually distinct from other slides while maintaining brand consistency.
 Include readable text that fits the slide position in the carousel narrative.
-Optimize for Instagram/social media square format.`;
+Optimize for Instagram/social media square format (1:1 aspect ratio).
+
+IMPORTANT: This is for a ${queueItem.niche} business. Do NOT create content for any other industry.`;
     }
 
     if (queueItem.reference_analysis) {

@@ -387,17 +387,25 @@ Match the visual style, colors, and aesthetic of the reference image while creat
                          index === slides.length - 1 ? 'closing CTA slide' :
                          `slide ${index + 1} of ${slides.length}`;
     
-    const prompt = `Create a premium ${carouselConfig.style} style carousel slide for a ${carouselConfig.niche.toLowerCase()} business.
+    const prompt = `Create a premium ${carouselConfig.style} style carousel slide for a ${carouselConfig.niche.toUpperCase()} business.
 
+INDUSTRY: ${carouselConfig.niche.toUpperCase()} - All visuals and text MUST be specific to this industry.
 This is ${slidePosition} in a ${carouselConfig.slideCount}-slide ${category?.name} carousel.
-${carouselConfig.businessName ? `Business: "${carouselConfig.businessName}"` : ''}
+${carouselConfig.businessName ? `Business Name: "${carouselConfig.businessName}"` : ''}
 Topic: ${carouselConfig.topic || category?.description}
 
 ${index === 0 ? 'This is the HOOK slide - grab attention and make people want to swipe.' : ''}
 ${index === slides.length - 1 ? 'This is the CLOSING slide - include a strong call-to-action.' : ''}
 
-Color scheme: primary ${carouselConfig.primaryColor}, secondary ${carouselConfig.secondaryColor}.
-Create a DIFFERENT visual composition than the previous version while maintaining brand consistency.`;
+REQUIRED COLOR SCHEME (must follow exactly):
+- Primary/Accent Color: ${carouselConfig.primaryColor}
+- Background/Secondary Color: ${carouselConfig.secondaryColor}
+Use these exact colors throughout the design.
+
+Create a DIFFERENT visual composition than the previous version while maintaining brand consistency.
+Optimize for Instagram/social media square format (1:1 aspect ratio).
+
+IMPORTANT: This is for a ${carouselConfig.niche} business. Do NOT create content for any other industry.`;
 
     try {
       const response = await fetch('/api/studio/generate', {
