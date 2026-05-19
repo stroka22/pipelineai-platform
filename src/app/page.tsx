@@ -246,6 +246,7 @@ export default function HomePage() {
               Explore Content Vaults
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
+{/* Branding Tool - Hidden until perfected
             <Link 
               href="/brand"
               className="group bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 hover:border-white/20 transition-all inline-flex items-center justify-center gap-2 backdrop-blur-sm"
@@ -253,6 +254,7 @@ export default function HomePage() {
               <Sparkles className="w-5 h-5 text-purple-400" />
               Try the Free Branding Tool
             </Link>
+*/}
           </div>
           
           <div className="flex items-center justify-center gap-8 text-white/40 text-sm flex-wrap">
@@ -441,122 +443,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Free Branding Tool Section */}
-      <section className="py-20 bg-[#0a0f1a] relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent" />
-        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-[100px] -translate-y-1/2" />
-        <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px] -translate-y-1/2" />
-        
-        <div className="max-w-6xl mx-auto px-6 relative z-10">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 text-purple-400 px-4 py-2 rounded-full text-sm font-semibold mb-6">
-                <Sparkles className="w-4 h-4" />
-                Free AI Tool
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Turn Generic Content Into{' '}
-                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Branded Marketing Assets</span>
-              </h2>
-              <p className="text-white/50 text-lg mb-8">
-                Upload a carousel or graphic, add your business details, and see how Pipeline AI can upgrade your visual presence.
-              </p>
-              
-              <ul className="space-y-4 mb-8">
-                {[
-                  'Upload any carousel image',
-                  'AI adds your business name, phone & website',
-                  'Matches your brand colors automatically',
-                  'Ready in about 30 seconds',
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-white/70">
-                    <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle className="w-4 h-4 text-purple-400" />
-                    </div>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              
-              <Link 
-                href="/brand"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-500 text-white px-8 py-4 rounded-xl font-semibold hover:from-purple-500 hover:to-purple-400 transition-all shadow-lg shadow-purple-500/25"
-              >
-                <Sparkles className="w-5 h-5" />
-                Try the Free Branding Tool
-              </Link>
-            </div>
-            
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-2xl blur-xl" />
-              <div className="relative bg-[#0d1423] border border-white/10 rounded-2xl p-6 md:p-8">
-                {/* Before/After Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">Before</span>
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-purple-400" />
-                    <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider">AI Branded</span>
-                  </div>
-                </div>
-                
-                {/* Before/After Images */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  {/* Before */}
-                  <div className="relative aspect-square rounded-xl border border-white/10 overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
-                    {beforeImage ? (
-                      <Image src={beforeImage} alt="Before branding" fill className="object-cover" />
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-                        <div className="w-16 h-16 rounded-lg bg-white/10 mb-3 flex items-center justify-center">
-                          <span className="text-2xl">📷</span>
-                        </div>
-                        <span className="text-white/50 text-xs text-center font-medium">Generic Template</span>
-                        <span className="text-white/30 text-[10px] text-center mt-1">No branding</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* After */}
-                  <div className="relative aspect-square rounded-xl border-2 border-purple-500/50 overflow-hidden bg-gradient-to-br from-purple-900/40 to-blue-900/40">
-                    {afterImage ? (
-                      <>
-                        <Image src={afterImage} alt="After branding" fill className="object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 via-transparent to-blue-500/10 pointer-events-none" />
-                      </>
-                    ) : (
-                      <>
-                        <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
-                          <span className="text-white text-[10px] font-bold tracking-wide">YOUR BUSINESS NAME</span>
-                        </div>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 pt-10">
-                          <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-500/30 to-blue-500/30 border border-white/20 mb-3 flex items-center justify-center">
-                            <span className="text-2xl">✨</span>
-                          </div>
-                          <span className="text-white text-xs text-center font-medium">Branded Content</span>
-                        </div>
-                        <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/40 backdrop-blur-sm">
-                          <div className="flex items-center justify-between text-[9px] text-white/70">
-                            <span>📞 (555) 123-4567</span>
-                            <span>🌐 yoursite.com</span>
-                          </div>
-                        </div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 via-transparent to-blue-500/10 pointer-events-none" />
-                      </>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Arrow indicator */}
-                <div className="flex items-center justify-center gap-2 text-white/40 text-sm">
-                  <span>Upload</span>
-                  <ArrowRight className="w-4 h-4" />
-                  <span className="text-purple-400 font-medium">AI transforms in ~30 seconds</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Free Branding Tool Section - Hidden until perfected */}
 
       {/* Download Growth Vaults Section */}
       <section className="py-20 bg-[#030712] relative">
@@ -601,7 +488,7 @@ export default function HomePage() {
             </span>
           </h2>
           <p className="text-xl text-white/50 mb-10 max-w-2xl mx-auto">
-            Start with a content vault, test the free branding tool, or use Pipeline AI to create smarter marketing assets for your business.
+            Start with a content vault, or use Pipeline AI to create smarter marketing assets for your business.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -612,6 +499,7 @@ export default function HomePage() {
               Explore Vaults
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
+{/* Branding Tool - Hidden until perfected
             <Link 
               href="/brand"
               className="group bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 hover:border-white/20 transition-all inline-flex items-center justify-center gap-2"
@@ -619,6 +507,7 @@ export default function HomePage() {
               <Sparkles className="w-5 h-5 text-purple-400" />
               Try Branding Tool
             </Link>
+*/}
           </div>
         </div>
       </section>

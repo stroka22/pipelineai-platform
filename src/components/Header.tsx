@@ -89,6 +89,7 @@ export default function Header({ currentNiche }: HeaderProps) {
           <Link href="/#how-it-works" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
             How It Works
           </Link>
+{/* Branding Tool - Hidden until perfected
           <div className="relative group">
             <Link 
               href="/brand" 
@@ -98,6 +99,7 @@ export default function Header({ currentNiche }: HeaderProps) {
               Branding Tool
             </Link>
           </div>
+*/}
         </nav>
 
         {/* Desktop CTA + Cart */}
@@ -181,6 +183,7 @@ export default function Header({ currentNiche }: HeaderProps) {
             >
               How It Works
             </Link>
+{/* Branding Tool - Hidden until perfected
             <Link 
               href="/brand" 
               className="block px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-lg text-base font-medium flex items-center gap-2"
@@ -189,6 +192,7 @@ export default function Header({ currentNiche }: HeaderProps) {
               <Sparkles className="w-5 h-5" />
               Branding Tool
             </Link>
+*/}
             <div className="pt-4">
               {currentNiche ? (
                 <Link 

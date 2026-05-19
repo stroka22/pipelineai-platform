@@ -227,7 +227,7 @@ function DownloadContent() {
           </div>
         ))}
 
-        {/* Branding Tool Upsell */}
+        {/* Branding Tool Upsell - Hidden until perfected
         <div className="mt-12 bg-purple-500/10 border border-purple-500/30 rounded-2xl p-6 text-center">
           <Sparkles className="w-10 h-10 text-purple-400 mx-auto mb-3" />
           <h3 className="text-xl font-bold text-white mb-2">Want Your Brand on This Content?</h3>
@@ -242,6 +242,7 @@ function DownloadContent() {
             Try Branding Tool - FREE
           </Link>
         </div>
+        */}
 
         <div className="text-center mt-8">
           <p className="text-white/40 text-sm mb-4">

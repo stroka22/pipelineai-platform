@@ -312,7 +312,7 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
         </div>
       </section>
 
-      {/* AI Branding Tool */}
+      {/* AI Branding Tool - Hidden until perfected
       <section className="py-16 bg-[#030712]">
         <div className="max-w-4xl mx-auto px-6">
           <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-2xl p-8 md:p-10">
@@ -339,6 +339,7 @@ export default function IndustryPage({ niche, nicheSlug, tagline, description }:
           </div>
         </div>
       </section>
+      */}
 
       {/* Final CTA */}
       <section className="py-24 bg-[#0a0f1a] relative overflow-hidden">
