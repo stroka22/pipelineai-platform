@@ -387,7 +387,21 @@ Match the visual style, colors, and aesthetic of the reference image while creat
                          index === slides.length - 1 ? 'closing CTA slide' :
                          `slide ${index + 1} of ${slides.length}`;
     
-    const prompt = `Create a premium ${carouselConfig.style} style carousel slide for a ${carouselConfig.niche.toUpperCase()} business.
+    let prompt: string;
+    
+    // If using custom prompt mode, use the original prompt
+    if (mode === 'prompt' && openPrompt) {
+      prompt = `${openPrompt}
+
+This is ${slidePosition} in a ${promptSlideCount}-slide carousel.
+${index === 0 ? 'This is the HOOK slide - grab attention and make people want to swipe.' : ''}
+${index === slides.length - 1 ? 'This is the CLOSING slide - include a strong call-to-action.' : ''}
+
+Create a DIFFERENT visual composition than the previous version while maintaining the same style and theme.
+Optimize for Instagram/social media square format (1:1 aspect ratio).`;
+    } else {
+      // Form mode - build prompt from config
+      prompt = `Create a premium ${carouselConfig.style} style carousel slide for a ${carouselConfig.niche.toUpperCase()} business.
 
 INDUSTRY: ${carouselConfig.niche.toUpperCase()} - All visuals and text MUST be specific to this industry.
 This is ${slidePosition} in a ${carouselConfig.slideCount}-slide ${category?.name} carousel.
@@ -406,6 +420,12 @@ Create a DIFFERENT visual composition than the previous version while maintainin
 Optimize for Instagram/social media square format (1:1 aspect ratio).
 
 IMPORTANT: This is for a ${carouselConfig.niche} business. Do NOT create content for any other industry.`;
+    }
+    
+    // Add reference analysis if available
+    if (referenceAnalysis) {
+      prompt = `REFERENCE STYLE TO MATCH:\n${referenceAnalysis}\n\n${prompt}\n\nMatch the visual style, colors, and aesthetic of the reference image.`;
+    }
 
     try {
       const response = await fetch('/api/studio/generate', {
