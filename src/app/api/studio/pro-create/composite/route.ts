@@ -94,35 +94,77 @@ export async function POST(request: NextRequest) {
     </svg>`;
     composites.push({ input: Buffer.from(badgeSvg), top: 25, left: imageSize - 85 });
 
-    // Add headshot
+    // Add headshot - ALWAYS add it for better branding
     if (headshot) {
       try {
         const headshotBuffer = base64ToBuffer(headshot);
         
         if (isLastSlide) {
-          // Circular headshot in bottom area for last slide
-          const circularHeadshot = await createCircularHeadshot(headshotBuffer, 120);
-          composites.push({ input: circularHeadshot, top: imageSize - 180, left: 40 });
-        } else if (slideNumber === 1 || slideNumber % 2 === 0) {
-          // Larger headshot on right side for some slides
+          // Circular headshot in contact bar area for last slide
+          const circularHeadshot = await createCircularHeadshot(headshotBuffer, 140);
+          composites.push({ input: circularHeadshot, top: imageSize - 200, left: 50 });
+          
+          // Also add larger headshot on right
           const largeHeadshot = await sharp(headshotBuffer)
-            .resize(320, 400, { fit: 'cover' })
+            .resize(280, 350, { fit: 'cover' })
+            .png()
+            .toBuffer();
+          const mask = Buffer.from(
+            `<svg width="280" height="350"><rect width="280" height="350" rx="16" ry="16" fill="white"/></svg>`
+          );
+          const maskedHeadshot = await sharp(largeHeadshot)
+            .composite([{ input: mask, blend: 'dest-in' }])
+            .png()
+            .toBuffer();
+          composites.push({ input: maskedHeadshot, top: 180, left: imageSize - 320 });
+        } else {
+          // All other slides - large headshot on right side
+          const headshotSize = slideNumber === 1 ? { w: 340, h: 420 } : { w: 300, h: 380 };
+          
+          const largeHeadshot = await sharp(headshotBuffer)
+            .resize(headshotSize.w, headshotSize.h, { fit: 'cover' })
             .png()
             .toBuffer();
           
           // Add rounded corners
           const mask = Buffer.from(
-            `<svg width="320" height="400"><rect width="320" height="400" rx="16" ry="16" fill="white"/></svg>`
+            `<svg width="${headshotSize.w}" height="${headshotSize.h}"><rect width="${headshotSize.w}" height="${headshotSize.h}" rx="20" ry="20" fill="white"/></svg>`
           );
           const maskedHeadshot = await sharp(largeHeadshot)
             .composite([{ input: mask, blend: 'dest-in' }])
             .png()
             .toBuffer();
           
-          // Add border
-          const borderSvg = `<svg width="328" height="408"><rect x="0" y="0" width="328" height="408" rx="20" ry="20" fill="none" stroke="white" stroke-width="4"/></svg>`;
+          // Add white border
+          const borderWidth = 4;
+          const borderedHeadshot = await sharp({
+            create: {
+              width: headshotSize.w + borderWidth * 2,
+              height: headshotSize.h + borderWidth * 2,
+              channels: 4,
+              background: { r: 255, g: 255, b: 255, alpha: 1 }
+            }
+          })
+            .composite([{ input: maskedHeadshot, top: borderWidth, left: borderWidth }])
+            .png()
+            .toBuffer();
           
-          composites.push({ input: maskedHeadshot, top: 280, left: 660 });
+          // Apply border mask for rounded corners
+          const borderMask = Buffer.from(
+            `<svg width="${headshotSize.w + borderWidth * 2}" height="${headshotSize.h + borderWidth * 2}">
+              <rect width="${headshotSize.w + borderWidth * 2}" height="${headshotSize.h + borderWidth * 2}" rx="24" ry="24" fill="white"/>
+            </svg>`
+          );
+          const finalHeadshot = await sharp(borderedHeadshot)
+            .composite([{ input: borderMask, blend: 'dest-in' }])
+            .png()
+            .toBuffer();
+          
+          // Position: right side, vertically centered-ish
+          const topPos = slideNumber === 1 ? 200 : 250;
+          const leftPos = imageSize - headshotSize.w - 50;
+          
+          composites.push({ input: finalHeadshot, top: topPos, left: leftPos });
         }
       } catch (e) {
         console.error('Headshot error:', e);
