@@ -216,9 +216,9 @@ export default function AuthorityTestPage() {
             </button>
             
             <p className="text-xs text-white/40 text-center">
-              This will generate 4 different scenes with the person IN them (not just overlaid).
+              This will generate 2 test scenes with the person IN them (not just overlaid).
               <br />
-              Takes ~60-90 seconds. Compare to see if likeness is preserved.
+              Takes ~60-120 seconds. Compare to see if likeness is preserved.
             </p>
           </div>
 

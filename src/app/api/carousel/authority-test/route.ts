@@ -5,7 +5,7 @@ function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-export const maxDuration = 120;
+export const maxDuration = 300; // 5 minutes for image generation
 
 // Convert base64 to Buffer
 function base64ToBuffer(base64: string): Buffer {
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
 Your job is to:
 1. Analyze the provided headshot photo to understand the person's appearance
-2. Come up with 4 compelling SCENE CONCEPTS that would make them look like THE authority in their industry
+2. Come up with 2 compelling SCENE CONCEPTS that would make them look like THE authority in their industry
 
 Each scene should:
 - Show the person in a dynamic, professional context (not just a headshot overlay)
@@ -75,7 +75,7 @@ Goal: ${goal || 'Position as the trusted authority and go-to expert in their fie
 
 IMPORTANT: 
 - First, describe the person's appearance in detail from the photo
-- Then create 4 scenes showing this EXACT person in professional settings
+- Then create 2 scenes showing this EXACT person in professional settings
 - Each imagePrompt must include the person description so the AI generates them accurately
 
 Return ONLY the JSON object.`
@@ -118,7 +118,7 @@ Return ONLY the JSON object.`
     // Convert headshot to file for the edit API
     const headshotBuffer = base64ToBuffer(headshotBase64);
     
-    for (const concept of concepts.slice(0, 4)) {
+    for (const concept of concepts.slice(0, 2)) {
       try {
         // Build the image generation prompt with person description
         const imagePrompt = `Create a professional photograph for a social media carousel.
