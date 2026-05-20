@@ -11,15 +11,15 @@ import {
   Loader2, 
   Download,
   Save,
-  ImageIcon,
   Plus,
-  Check
+  Wand2,
+  Copy
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { uploadImageFromUrl } from '@/lib/storage';
 
 interface UploadedImage {
   id: string;
-  file: File;
   preview: string;
   name: string;
   type: 'logo' | 'headshot' | 'reference';
@@ -32,32 +32,15 @@ interface GeneratedSlide {
   status: 'pending' | 'generating' | 'complete' | 'error';
 }
 
-interface BrandAnalysis {
-  companyName: string;
-  personName: string;
-  title: string;
-  phone: string;
-  email: string;
-  website: string;
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  industry: string;
-  logoDescription: string;
-  styleNotes: string;
-}
-
 export default function ProCreatePage() {
   const [prompt, setPrompt] = useState('');
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [slideCount, setSlideCount] = useState(5);
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState('');
-  const [step, setStep] = useState<'input' | 'review' | 'generating' | 'complete'>('input');
-  
-  const [brandAnalysis, setBrandAnalysis] = useState<BrandAnalysis | null>(null);
-  const [carouselStrategy, setCarouselStrategy] = useState<any>(null);
   const [generatedSlides, setGeneratedSlides] = useState<GeneratedSlide[]>([]);
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -68,150 +51,155 @@ export default function ProCreatePage() {
       const reader = new FileReader();
       reader.onload = (e) => {
         const preview = e.target?.result as string;
-        
-        // Auto-detect type based on filename or let user change it
-        let type: 'logo' | 'headshot' | 'reference' = 'reference';
         const name = file.name.toLowerCase();
-        if (name.includes('logo')) type = 'logo';
-        else if (name.includes('headshot') || name.includes('portrait') || name.includes('photo')) type = 'headshot';
         
-        // If we don't have a logo yet, first image might be logo
+        let type: 'logo' | 'headshot' | 'reference' = 'reference';
+        if (name.includes('logo')) type = 'logo';
+        else if (name.includes('headshot') || name.includes('photo') || name.includes('portrait')) type = 'headshot';
+        
         const hasLogo = images.some(img => img.type === 'logo');
         const hasHeadshot = images.some(img => img.type === 'headshot');
-        
         if (!hasLogo && images.length === 0) type = 'logo';
         else if (!hasHeadshot && images.length === 1) type = 'headshot';
         
-        setImages(prev => [...prev, {
-          id: crypto.randomUUID(),
-          file,
-          preview,
-          name: file.name,
-          type,
-        }]);
+        setImages(prev => [...prev, { id: crypto.randomUUID(), preview, name: file.name, type }]);
       };
       reader.readAsDataURL(file);
     });
-
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const updateImageType = (id: string, type: 'logo' | 'headshot' | 'reference') => {
-    setImages(prev => prev.map(img => 
-      img.id === id ? { ...img, type } : img
-    ));
+    setImages(prev => prev.map(img => img.id === id ? { ...img, type } : img));
   };
 
   const removeImage = (id: string) => {
     setImages(prev => prev.filter(img => img.id !== id));
   };
 
-  const analyzeAndGenerate = async () => {
-    if (!prompt.trim()) {
-      alert('Please enter a prompt describing what you want to create');
-      return;
-    }
-
+  // Generate a detailed prompt template
+  const generatePromptTemplate = async () => {
     const logo = images.find(img => img.type === 'logo');
     const headshot = images.find(img => img.type === 'headshot');
-
-    if (!logo || !headshot) {
-      alert('Please upload at least a logo and a headshot');
+    
+    if (!logo) {
+      alert('Please upload a logo first so we can analyze your brand');
       return;
     }
 
     setLoading(true);
-    setStep('review');
+    setProgress('Analyzing your brand...');
 
     try {
-      // Step 1: Analyze images and generate strategy
-      setProgress('Analyzing your brand assets...');
-      
-      const imageData = images.map(img => ({
-        data: img.preview,
-        type: img.type,
-        name: img.name,
-      }));
-
-      const response = await fetch('/api/studio/pro-create/analyze', {
+      const response = await fetch('/api/studio/pro-create/generate-prompt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt,
-          images: imageData,
+          logoImage: logo.preview,
+          headshotImage: headshot?.preview,
           slideCount,
         })
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Analysis failed');
+      if (data.success) {
+        setGeneratedPrompt(data.prompt);
+        setPrompt(data.prompt);
+      } else {
+        throw new Error(data.error);
       }
-
-      setBrandAnalysis(data.brandAnalysis);
-      setCarouselStrategy(data.carouselStrategy);
-      setProgress('');
-      setLoading(false);
-
     } catch (error: any) {
-      console.error('Analysis error:', error);
       alert('Error: ' + error.message);
+    } finally {
       setLoading(false);
-      setStep('input');
+      setProgress('');
     }
   };
 
   const generateSlides = async () => {
-    if (!brandAnalysis || !carouselStrategy) return;
-
-    setLoading(true);
-    setStep('generating');
+    if (!prompt.trim()) {
+      alert('Please enter a prompt');
+      return;
+    }
 
     const logo = images.find(img => img.type === 'logo');
     const headshot = images.find(img => img.type === 'headshot');
 
+    setGenerating(true);
+    setGeneratedSlides([]);
+
     // Initialize slides
-    const initialSlides: GeneratedSlide[] = carouselStrategy.slides.map((_: any, i: number) => ({
+    const initialSlides: GeneratedSlide[] = Array.from({ length: slideCount }, (_, i) => ({
       id: crypto.randomUUID(),
       slideNumber: i + 1,
       imageUrl: null,
-      status: 'pending' as const,
+      status: 'pending',
     }));
     setGeneratedSlides(initialSlides);
 
     // Generate each slide
-    for (let i = 0; i < carouselStrategy.slides.length; i++) {
-      setProgress(`Rendering slide ${i + 1} of ${carouselStrategy.slides.length}...`);
+    for (let i = 0; i < slideCount; i++) {
+      setProgress(`Generating slide ${i + 1} of ${slideCount}...`);
       
       setGeneratedSlides(prev => prev.map((s, idx) => 
         idx === i ? { ...s, status: 'generating' } : s
       ));
 
       try {
-        const slideStrategy = carouselStrategy.slides[i];
-        
-        const response = await fetch('/api/studio/pro-create/render', {
+        // Build slide-specific prompt
+        const slidePrompt = `${prompt}
+
+---
+NOW GENERATE SLIDE ${i + 1} OF ${slideCount}.
+${i === 0 ? 'This is the HOOK slide - make it attention-grabbing with the headline prominent.' : ''}
+${i === slideCount - 1 ? 'This is the FINAL CTA slide - include strong call to action.' : ''}
+${i > 0 && i < slideCount - 1 ? `This is slide ${i + 1} - focus on building credibility and showcasing expertise.` : ''}
+
+CRITICAL: Generate ONLY the background and design elements. 
+- DO NOT generate any face or person
+- DO NOT generate any logo
+- Leave clear space where a headshot photo will be overlaid
+- Leave space for a logo in the top left
+- The real headshot and logo will be composited on top after generation
+- Square format 1080x1080`;
+
+        const response = await fetch('/api/studio/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            slideNumber: i + 1,
-            totalSlides: carouselStrategy.slides.length,
-            brandAnalysis,
-            slideStrategy,
-            logo: logo?.preview,
-            headshot: headshot?.preview,
-          })
+          body: JSON.stringify({ prompt: slidePrompt, size: '1024x1024' })
         });
 
         const data = await response.json();
 
         if (data.success && data.imageUrl) {
-          setGeneratedSlides(prev => prev.map((s, idx) => 
-            idx === i ? { ...s, imageUrl: data.imageUrl, status: 'complete' } : s
-          ));
+          // Composite headshot and logo on top
+          const compositeResponse = await fetch('/api/studio/pro-create/composite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              backgroundImage: data.imageUrl,
+              logo: logo?.preview,
+              headshot: headshot?.preview,
+              slideNumber: i + 1,
+              totalSlides: slideCount,
+              isLastSlide: i === slideCount - 1,
+            })
+          });
+
+          const compositeData = await compositeResponse.json();
+
+          if (compositeData.success) {
+            setGeneratedSlides(prev => prev.map((s, idx) => 
+              idx === i ? { ...s, imageUrl: compositeData.imageUrl, status: 'complete' } : s
+            ));
+          } else {
+            // Use original if composite fails
+            setGeneratedSlides(prev => prev.map((s, idx) => 
+              idx === i ? { ...s, imageUrl: data.imageUrl, status: 'complete' } : s
+            ));
+          }
         } else {
-          throw new Error(data.error || 'Render failed');
+          throw new Error(data.error || 'Generation failed');
         }
       } catch (error: any) {
         console.error(`Slide ${i + 1} error:`, error);
@@ -221,17 +209,16 @@ export default function ProCreatePage() {
       }
     }
 
-    setLoading(false);
+    setGenerating(false);
     setProgress('');
-    setStep('complete');
   };
 
   const downloadAll = () => {
-    generatedSlides.forEach((slide, index) => {
+    generatedSlides.forEach((slide, i) => {
       if (slide.imageUrl) {
         const link = document.createElement('a');
         link.href = slide.imageUrl;
-        link.download = `${brandAnalysis?.companyName?.replace(/\s+/g, '-') || 'carousel'}-slide-${index + 1}.png`;
+        link.download = `slide-${i + 1}.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -244,49 +231,38 @@ export default function ProCreatePage() {
     try {
       for (const slide of generatedSlides) {
         if (slide.imageUrl) {
-          const response = await fetch(slide.imageUrl);
-          const blob = await response.blob();
-          const fileName = `pro-create-${Date.now()}-slide-${slide.slideNumber}.png`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('generated-images')
-            .upload(fileName, blob, { contentType: 'image/png' });
-
-          if (uploadError) throw uploadError;
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('generated-images')
-            .getPublicUrl(fileName);
+          const { url } = await uploadImageFromUrl(
+            slide.imageUrl,
+            'pro-create',
+            `pro-create-${Date.now()}-slide-${slide.slideNumber}.png`
+          );
 
           await supabase.from('generated_images').insert({
-            title: `${brandAnalysis?.companyName || 'Pro Create'} - Slide ${slide.slideNumber}`,
-            image_url: publicUrl,
-            prompt_used: prompt,
-            niche: brandAnalysis?.industry || 'General',
+            title: `Pro Create - Slide ${slide.slideNumber}`,
+            image_url: url,
+            prompt_used: prompt.substring(0, 500),
+            niche: 'General',
             style: 'pro-create',
             content_type: 'carousel',
           });
         }
       }
-      alert(`Saved ${generatedSlides.length} slides to library!`);
+      alert('Saved to library!');
     } catch (error: any) {
-      console.error('Save error:', error);
-      alert('Error saving: ' + error.message);
+      alert('Error: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const startOver = () => {
-    setStep('input');
-    setGeneratedSlides([]);
-    setBrandAnalysis(null);
-    setCarouselStrategy(null);
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(prompt);
+    alert('Prompt copied to clipboard!');
   };
 
   return (
     <div className="min-h-screen bg-[#030712] text-white">
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Link href="/admin/studio" className="text-white/60 hover:text-white">
@@ -297,91 +273,50 @@ export default function ProCreatePage() {
               <Sparkles className="w-6 h-6 text-amber-400" />
               Pro Create
             </h1>
-            <p className="text-white/50 text-sm">Upload images + simple prompt = professional branded carousels</p>
+            <p className="text-white/50 text-sm">Write a detailed prompt or let AI help generate one</p>
           </div>
         </div>
 
-        {/* Step 1: Input */}
-        {step === 'input' && (
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Left: Input */}
           <div className="space-y-6">
-            {/* Simple Prompt */}
+            {/* Image Uploads */}
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">
-                Contact Info & Context <span className="text-white/40">(paste or type)</span>
-              </label>
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Craig Pitts (513) 264-3318 craigp@sbacfunding.com sbacfunding.com - 15 years helping businesses get the funds they need"
-                className="w-full h-24 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
-              />
-              <p className="text-white/30 text-xs mt-1">AI extracts company name, colors & style from your logo automatically</p>
-            </div>
-
-            {/* Slide count */}
-            <div className="flex items-center gap-4">
-              <label className="text-sm font-medium text-white/70">Slides:</label>
-              <select
-                value={slideCount}
-                onChange={(e) => setSlideCount(Number(e.target.value))}
-                className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
-              >
-                {[3, 5, 7, 10].map(n => (
-                  <option key={n} value={n} className="bg-gray-900">{n}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Image uploads */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-white/70">
-                  Upload Images (logo, headshot, references)
+                  Reference Images (logo, headshot, style references)
                 </label>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1"
                 >
-                  <Plus className="w-4 h-4" />
-                  Add Images
+                  <Plus className="w-4 h-4" /> Add
                 </button>
               </div>
+              <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileSelect} className="hidden" />
               
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-
               {images.length === 0 ? (
                 <div 
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-white/20 rounded-xl p-12 text-center cursor-pointer hover:border-amber-500/50 transition-colors"
+                  className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center cursor-pointer hover:border-amber-500/50"
                 >
-                  <Upload className="w-12 h-12 text-white/30 mx-auto mb-3" />
-                  <p className="text-white/50">Click to upload logo and headshot</p>
-                  <p className="text-white/30 text-sm mt-1">First image = Logo, Second = Headshot (you can change)</p>
+                  <Upload className="w-10 h-10 text-white/30 mx-auto mb-2" />
+                  <p className="text-white/50 text-sm">Upload logo + headshot</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {images.map((img) => (
+                <div className="grid grid-cols-4 gap-3">
+                  {images.map(img => (
                     <div key={img.id} className="relative group">
-                      <div className="aspect-square relative rounded-xl overflow-hidden border-2 border-white/10">
-                        <Image src={img.preview} alt={img.name} fill className="object-cover" />
-                        <button
-                          onClick={() => removeImage(img.id)}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
+                      <div className="aspect-square rounded-lg overflow-hidden border border-white/10">
+                        <Image src={img.preview} alt="" fill className="object-cover" />
+                        <button onClick={() => removeImage(img.id)} className="absolute top-1 right-1 bg-red-500 p-1 rounded-full opacity-0 group-hover:opacity-100">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
                       <select
                         value={img.type}
                         onChange={(e) => updateImageType(img.id, e.target.value as any)}
-                        className="mt-2 w-full bg-white/10 border border-white/10 rounded-lg px-2 py-1 text-xs text-white"
+                        className="mt-1 w-full bg-white/10 border-0 rounded text-xs text-white py-1"
                       >
                         <option value="logo" className="bg-gray-900">Logo</option>
                         <option value="headshot" className="bg-gray-900">Headshot</option>
@@ -389,23 +324,57 @@ export default function ProCreatePage() {
                       </select>
                     </div>
                   ))}
-                  <div 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="aspect-square border-2 border-dashed border-white/20 rounded-xl flex items-center justify-center cursor-pointer hover:border-amber-500/50"
-                  >
-                    <Plus className="w-8 h-8 text-white/30" />
-                  </div>
                 </div>
               )}
             </div>
 
-            {/* Generate button */}
+            {/* Slide Count */}
+            <div className="flex items-center gap-4">
+              <label className="text-sm text-white/70">Slides:</label>
+              <select
+                value={slideCount}
+                onChange={(e) => setSlideCount(Number(e.target.value))}
+                className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+              >
+                {[3, 5, 7, 10].map(n => <option key={n} value={n} className="bg-gray-900">{n}</option>)}
+              </select>
+              <button
+                onClick={generatePromptTemplate}
+                disabled={loading || images.length === 0}
+                className="ml-auto bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                Generate Prompt
+              </button>
+            </div>
+
+            {/* Prompt */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-white/70">Detailed Prompt</label>
+                {prompt && (
+                  <button onClick={copyPrompt} className="text-xs text-white/50 hover:text-white flex items-center gap-1">
+                    <Copy className="w-3 h-3" /> Copy
+                  </button>
+                )}
+              </div>
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Write a detailed prompt describing the carousel you want to create. Include: brand colors, style direction, headlines for each slide, visual elements, etc.
+
+Or click 'Generate Prompt' to have AI create a detailed prompt based on your uploaded logo."
+                className="w-full h-80 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none font-mono"
+              />
+            </div>
+
+            {/* Generate Button */}
             <button
-              onClick={analyzeAndGenerate}
-              disabled={loading || !prompt.trim() || images.length < 2}
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:from-gray-600 disabled:to-gray-600 text-black font-bold px-8 py-4 rounded-xl flex items-center justify-center gap-2 transition-all"
+              onClick={generateSlides}
+              disabled={generating || !prompt.trim()}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:from-gray-600 disabled:to-gray-600 text-black font-bold px-8 py-4 rounded-xl flex items-center justify-center gap-2"
             >
-              {loading ? (
+              {generating ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   {progress}
@@ -413,161 +382,66 @@ export default function ProCreatePage() {
               ) : (
                 <>
                   <Sparkles className="w-5 h-5" />
-                  Analyze & Create Strategy
+                  Generate {slideCount} Slides
                 </>
               )}
             </button>
           </div>
-        )}
 
-        {/* Step 2: Review Strategy */}
-        {step === 'review' && brandAnalysis && carouselStrategy && (
-          <div className="space-y-6">
-            {/* Brand Analysis */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-400" />
-                Brand Analysis
-              </h2>
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-white/50">Company:</span>{' '}
-                  <span className="text-white">{brandAnalysis.companyName}</span>
+          {/* Right: Output */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Generated Slides</h2>
+              {generatedSlides.some(s => s.imageUrl) && (
+                <div className="flex gap-2">
+                  <button onClick={downloadAll} className="text-sm text-white/60 hover:text-white flex items-center gap-1">
+                    <Download className="w-4 h-4" /> Download
+                  </button>
+                  <button onClick={saveToLibrary} disabled={loading} className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Save
+                  </button>
                 </div>
-                <div>
-                  <span className="text-white/50">Person:</span>{' '}
-                  <span className="text-white">{brandAnalysis.personName}</span>
-                </div>
-                <div>
-                  <span className="text-white/50">Title:</span>{' '}
-                  <span className="text-white">{brandAnalysis.title}</span>
-                </div>
-                <div>
-                  <span className="text-white/50">Industry:</span>{' '}
-                  <span className="text-white">{brandAnalysis.industry}</span>
-                </div>
-                <div className="col-span-2 flex items-center gap-2">
-                  <span className="text-white/50">Colors:</span>
-                  <div className="w-6 h-6 rounded" style={{ backgroundColor: brandAnalysis.primaryColor }} />
-                  <div className="w-6 h-6 rounded" style={{ backgroundColor: brandAnalysis.secondaryColor }} />
-                  <div className="w-6 h-6 rounded" style={{ backgroundColor: brandAnalysis.accentColor }} />
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* Carousel Strategy */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h2 className="text-lg font-semibold mb-4">Carousel Strategy</h2>
-              <p className="text-white/60 mb-4">{carouselStrategy.overview}</p>
-              
-              <div className="space-y-3">
-                {carouselStrategy.slides.map((slide: any, i: number) => (
-                  <div key={i} className="bg-white/5 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="bg-amber-500 text-black text-xs font-bold px-2 py-1 rounded">
-                        Slide {i + 1}
-                      </span>
-                      {slide.includeHeadshot && (
-                        <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded">Headshot</span>
-                      )}
-                      {slide.includeLogo && (
-                        <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded">Logo</span>
+            {generatedSlides.length === 0 ? (
+              <div className="bg-white/5 border border-white/10 rounded-xl p-12 text-center">
+                <Sparkles className="w-12 h-12 text-white/20 mx-auto mb-3" />
+                <p className="text-white/40">Generated slides will appear here</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {generatedSlides.map(slide => (
+                  <div key={slide.id} className="relative">
+                    <div className={`aspect-square rounded-xl overflow-hidden border-2 ${
+                      slide.status === 'complete' ? 'border-green-500' :
+                      slide.status === 'generating' ? 'border-amber-500 animate-pulse' :
+                      slide.status === 'error' ? 'border-red-500' : 'border-white/10'
+                    }`}>
+                      {slide.imageUrl ? (
+                        <Image src={slide.imageUrl} alt={`Slide ${slide.slideNumber}`} fill className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                          {slide.status === 'generating' ? (
+                            <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+                          ) : slide.status === 'error' ? (
+                            <X className="w-8 h-8 text-red-400" />
+                          ) : (
+                            <span className="text-white/30 text-xl font-bold">{slide.slideNumber}</span>
+                          )}
+                        </div>
                       )}
                     </div>
-                    <h3 className="text-white font-bold">{slide.headline}</h3>
-                    <p className="text-white/50 text-sm">{slide.bodyText}</p>
+                    <div className="absolute top-2 left-2 bg-black/60 px-2 py-1 rounded text-xs">
+                      {slide.slideNumber}/{generatedSlides.length}
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex gap-4">
-              <button
-                onClick={startOver}
-                className="flex-1 bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-semibold"
-              >
-                Start Over
-              </button>
-              <button
-                onClick={generateSlides}
-                disabled={loading}
-                className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-5 h-5" />
-                Generate Slides
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3 & 4: Generating & Complete */}
-        {(step === 'generating' || step === 'complete') && (
-          <div className="space-y-6">
-            {loading && (
-              <div className="text-center py-4">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-amber-400" />
-                <p className="text-white/60">{progress}</p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {generatedSlides.map((slide) => (
-                <div key={slide.id} className="relative">
-                  <div className={`aspect-square rounded-xl overflow-hidden border-2 ${
-                    slide.status === 'complete' ? 'border-green-500' :
-                    slide.status === 'generating' ? 'border-amber-500 animate-pulse' :
-                    slide.status === 'error' ? 'border-red-500' :
-                    'border-white/10'
-                  }`}>
-                    {slide.imageUrl ? (
-                      <Image src={slide.imageUrl} alt={`Slide ${slide.slideNumber}`} fill className="object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-white/5 flex items-center justify-center">
-                        {slide.status === 'generating' ? (
-                          <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
-                        ) : slide.status === 'error' ? (
-                          <X className="w-8 h-8 text-red-400" />
-                        ) : (
-                          <span className="text-white/30 text-2xl font-bold">{slide.slideNumber}</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                    {slide.slideNumber}/{generatedSlides.length}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {step === 'complete' && (
-              <div className="flex justify-center gap-4">
-                <button
-                  onClick={startOver}
-                  className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-semibold"
-                >
-                  Create Another
-                </button>
-                <button
-                  onClick={downloadAll}
-                  className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2"
-                >
-                  <Download className="w-5 h-5" />
-                  Download All
-                </button>
-                <button
-                  onClick={saveToLibrary}
-                  disabled={loading}
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-black font-bold px-6 py-3 rounded-xl flex items-center gap-2"
-                >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                  Save to Library
-                </button>
-              </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
