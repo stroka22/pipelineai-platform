@@ -93,9 +93,16 @@ Return ONLY the JSON object.`
 
     let parsed;
     try {
-      parsed = JSON.parse(conceptResponse.choices[0].message.content || '{}');
-    } catch (e) {
-      return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
+      const content = conceptResponse.choices[0].message.content || '{}';
+      console.log('GPT Response:', content.substring(0, 500));
+      parsed = JSON.parse(content);
+    } catch (e: any) {
+      console.error('JSON parse error:', e.message);
+      console.error('Raw content:', conceptResponse.choices[0].message.content?.substring(0, 500));
+      return NextResponse.json({ 
+        error: 'Failed to parse AI response', 
+        details: conceptResponse.choices[0].message.content?.substring(0, 200)
+      }, { status: 500 });
     }
 
     const personDescription = parsed.personDescription || '';
@@ -105,26 +112,25 @@ Return ONLY the JSON object.`
       return NextResponse.json({ error: 'No scenes generated' }, { status: 500 });
     }
 
+    // Step 2: Generate images - try edit API first, fall back to generate
+    const results = [];
+    
     // Convert headshot to file for the edit API
     const headshotBuffer = base64ToBuffer(headshotBase64);
-    const headshotFile = await toFile(headshotBuffer, 'headshot.png', { type: 'image/png' });
-
-    // Step 2: Generate images using the edit API with the headshot as reference
-    const results = [];
     
     for (const concept of concepts.slice(0, 4)) {
       try {
         // Build the image generation prompt with person description
         const imagePrompt = `Create a professional photograph for a social media carousel.
 
-PERSON (must match exactly):
+PERSON TO DEPICT (use reference image as guide - must match exactly):
 ${personDescription}
 
 SCENE:
 ${concept.imagePrompt}
 
-REQUIREMENTS:
-- The person described above must be the main subject
+STYLE REQUIREMENTS:
+- The person from the reference image must be the main subject
 - Preserve their EXACT facial features, skin tone, hair style, and overall appearance  
 - Professional, high-end photography style with excellent lighting
 - Photorealistic quality, not illustrated or cartoonish
@@ -132,21 +138,51 @@ REQUIREMENTS:
 - Premium corporate aesthetic
 - Natural pose and expression appropriate for the scene`;
 
-        // Use images.edit with the headshot as input reference
-        const imageResponse = await openai.images.edit({
-          model: 'gpt-image-2',
-          image: headshotFile,
-          prompt: imagePrompt,
-          n: 1,
-          size: '1024x1024',
-        });
-
+        console.log('Generating scene:', concept.scene);
+        
         let imageUrl = '';
-        if (imageResponse.data?.[0]?.b64_json) {
-          imageUrl = `data:image/png;base64,${imageResponse.data[0].b64_json}`;
-        } else if (imageResponse.data?.[0]?.url) {
-          imageUrl = imageResponse.data[0].url;
+        let method = 'unknown';
+        
+        // Try using the edit API with reference image
+        try {
+          const headshotFile = await toFile(headshotBuffer, 'headshot.png', { type: 'image/png' });
+          
+          const imageResponse = await openai.images.edit({
+            model: 'gpt-image-2',
+            image: headshotFile,
+            prompt: imagePrompt,
+            n: 1,
+            size: '1024x1024',
+          });
+          
+          if (imageResponse.data?.[0]?.b64_json) {
+            imageUrl = `data:image/png;base64,${imageResponse.data[0].b64_json}`;
+            method = 'edit';
+          } else if (imageResponse.data?.[0]?.url) {
+            imageUrl = imageResponse.data[0].url;
+            method = 'edit';
+          }
+        } catch (editError: any) {
+          console.log('Edit API failed, trying generate:', editError.message);
+          
+          // Fall back to generate API with detailed person description
+          const generateResponse = await openai.images.generate({
+            model: 'gpt-image-2',
+            prompt: imagePrompt,
+            n: 1,
+            size: '1024x1024',
+          });
+          
+          if (generateResponse.data?.[0]?.b64_json) {
+            imageUrl = `data:image/png;base64,${generateResponse.data[0].b64_json}`;
+            method = 'generate';
+          } else if (generateResponse.data?.[0]?.url) {
+            imageUrl = generateResponse.data[0].url;
+            method = 'generate';
+          }
         }
+
+        console.log('Image generated via:', method);
 
         results.push({
           scene: concept.scene,
@@ -154,6 +190,7 @@ REQUIREMENTS:
           subtext: concept.subtext,
           personDescription,
           imageUrl,
+          method,
           success: !!imageUrl,
         });
 
