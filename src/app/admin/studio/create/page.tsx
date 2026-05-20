@@ -38,7 +38,9 @@ export default function AICreatePage() {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
   const [saving, setSaving] = useState(false);
+  const [addingToQueue, setAddingToQueue] = useState(false);
   const [slideCount, setSlideCount] = useState(5);
+  const [title, setTitle] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,6 +173,75 @@ export default function AICreatePage() {
     }
   };
 
+  const addToQueue = async () => {
+    if (!prompt.trim()) {
+      alert('Please enter a prompt');
+      return;
+    }
+
+    setAddingToQueue(true);
+    setProgress('Analyzing your request...');
+
+    try {
+      // First, get GPT-4o to analyze and create the slide prompts
+      const imageData = attachedImages.map(img => ({
+        name: img.name,
+        data: img.preview
+      }));
+
+      const response = await fetch('/api/studio/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          images: imageData,
+          slideCount
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to analyze request');
+      }
+
+      setProgress('Adding to queue...');
+
+      // Add to carousel queue with the open_prompt containing all slide prompts
+      const queueResponse = await fetch('/api/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title || `AI Create - ${new Date().toLocaleDateString()}`,
+          niche: 'General',
+          category: 'custom',
+          style: 'custom',
+          slideCount: data.slidePrompts.length,
+          openPrompt: prompt,
+          slidePrompts: data.slidePrompts, // Pass the individual prompts
+          priority: 5,
+        })
+      });
+
+      const queueData = await queueResponse.json();
+
+      if (queueData.success) {
+        alert('Added to queue! Your content will be generated in the background. Check the Queue page for status.');
+        setPrompt('');
+        setTitle('');
+        setAttachedImages([]);
+      } else {
+        throw new Error(queueData.error);
+      }
+    } catch (error: any) {
+      console.error('Queue error:', error);
+      alert('Error: ' + error.message);
+    } finally {
+      setAddingToQueue(false);
+      setProgress('');
+    }
+  };
+
   const downloadAll = () => {
     generatedImages.forEach((image, index) => {
       const link = document.createElement('a');
@@ -207,6 +278,20 @@ export default function AICreatePage() {
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Left: Input */}
           <div className="space-y-6">
+            {/* Title (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-2">
+                Project Title <span className="text-white/40">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g., Craig Pitts Business Funding Carousel"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              />
+            </div>
+
             {/* Prompt */}
             <div>
               <label className="block text-sm font-medium text-white/70 mb-2">
@@ -302,24 +387,46 @@ export default function AICreatePage() {
               )}
             </div>
 
-            {/* Generate Button */}
-            <button
-              onClick={generateContent}
-              disabled={loading || !prompt.trim()}
-              className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:from-gray-600 disabled:to-gray-600 text-white px-6 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  {progress || 'Generating...'}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  Generate Content
-                </>
-              )}
-            </button>
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={generateContent}
+                disabled={loading || addingToQueue || !prompt.trim()}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:from-gray-600 disabled:to-gray-600 text-white px-6 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    {progress || 'Generating...'}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    Generate Now
+                  </>
+                )}
+              </button>
+              <button
+                onClick={addToQueue}
+                disabled={loading || addingToQueue || !prompt.trim()}
+                className="flex-1 bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 disabled:from-gray-600 disabled:to-gray-600 text-white px-6 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all"
+              >
+                {addingToQueue ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    {progress || 'Adding...'}
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5" />
+                    Add to Queue
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-white/40 text-xs text-center">
+              "Generate Now" creates immediately. "Add to Queue" processes in the background.
+            </p>
           </div>
 
           {/* Right: Output */}

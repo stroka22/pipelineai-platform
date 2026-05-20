@@ -16,23 +16,30 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabase();
     const body = await request.json();
     
+    const insertData: any = {
+      title: body.title,
+      niche: body.niche,
+      category: body.category,
+      style: body.style || 'modern',
+      slide_count: body.slideCount || 8,
+      topic: body.topic,
+      business_name: body.businessName,
+      primary_color: body.primaryColor || '#C96A2B',
+      secondary_color: body.secondaryColor || '#081F33',
+      reference_image_url: body.referenceImageUrl,
+      reference_analysis: body.referenceAnalysis,
+      open_prompt: body.openPrompt,
+      priority: body.priority || 10,
+    };
+
+    // If pre-generated slide prompts are provided, store them
+    if (body.slidePrompts && Array.isArray(body.slidePrompts)) {
+      insertData.slide_prompts = body.slidePrompts;
+    }
+
     const { data, error } = await supabase
       .from('carousel_queue')
-      .insert({
-        title: body.title,
-        niche: body.niche,
-        category: body.category,
-        style: body.style || 'modern',
-        slide_count: body.slideCount || 8,
-        topic: body.topic,
-        business_name: body.businessName,
-        primary_color: body.primaryColor || '#C96A2B',
-        secondary_color: body.secondaryColor || '#081F33',
-        reference_image_url: body.referenceImageUrl,
-        reference_analysis: body.referenceAnalysis,
-        open_prompt: body.openPrompt,
-        priority: body.priority || 10,
-      })
+      .insert(insertData)
       .select()
       .single();
 

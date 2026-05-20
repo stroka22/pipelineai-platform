@@ -242,7 +242,12 @@ export async function GET(request: NextRequest) {
 
     let prompt: string;
     
-    if (queueItem.open_prompt) {
+    // Check if we have pre-generated slide prompts (from AI Create)
+    if (queueItem.slide_prompts && Array.isArray(queueItem.slide_prompts) && queueItem.slide_prompts[i]) {
+      // Use the pre-generated prompt directly
+      prompt = queueItem.slide_prompts[i];
+      console.log(`Using pre-generated prompt for slide ${i + 1}`);
+    } else if (queueItem.open_prompt) {
       prompt = `${queueItem.open_prompt}
 
 This is ${slidePosition} in a ${queueItem.slide_count}-slide carousel.
