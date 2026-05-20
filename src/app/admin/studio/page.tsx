@@ -65,6 +65,13 @@ export default function StudioDashboard() {
 
   const quickActions = [
     {
+      title: 'AI Create',
+      description: 'Prompt + images = magic',
+      icon: Sparkles,
+      href: '/admin/studio/create',
+      color: 'from-fuchsia-500 to-purple-600',
+    },
+    {
       title: 'Generate Image',
       description: 'Create a single AI image',
       icon: ImageIcon,
