@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI, { toFile } from 'openai';
+import OpenAI from 'openai';
 
 function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-export const maxDuration = 300; // 5 minutes for image generation
-
-// Convert base64 to Buffer
-function base64ToBuffer(base64: string): Buffer {
-  const data = base64.replace(/^data:image\/\w+;base64,/, '');
-  return Buffer.from(data, 'base64');
-}
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   const openai = getOpenAI();
@@ -22,7 +16,6 @@ export async function POST(request: NextRequest) {
       name, 
       company, 
       industry, 
-      phone,
       goal 
     } = await request.json();
 
@@ -30,55 +23,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Headshot image required' }, { status: 400 });
     }
 
-    // Step 1: Ask GPT-4o to analyze the headshot and come up with scene concepts
-    const conceptResponse = await openai.chat.completions.create({
+    // Step 1: Ask GPT-4o to analyze the headshot - simple and fast
+    console.log('Step 1: Analyzing headshot...');
+    const analysisResponse = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
-        {
-          role: 'system',
-          content: `You are a creative director specializing in personal branding and authority positioning for social media.
-
-Your job is to:
-1. Analyze the provided headshot photo to understand the person's appearance
-2. Come up with 2 compelling SCENE CONCEPTS that would make them look like THE authority in their industry
-
-Each scene should:
-- Show the person in a dynamic, professional context (not just a headshot overlay)
-- Position them as successful, trustworthy, and expert
-- Be visually interesting for social media
-- Feel premium and custom, not stock-photo-ish
-
-Output JSON with this structure:
-{
-  "personDescription": "Detailed description of the person's appearance from the photo - face shape, skin tone, hair color/style, approximate age, any distinguishing features, clothing style visible",
-  "scenes": [
-    {
-      "scene": "Short scene title",
-      "imagePrompt": "Detailed prompt for AI image generation that includes the person description and the scene setting",
-      "headline": "Bold headline for this slide",
-      "subtext": "Supporting copy"
-    }
-  ]
-}`
-        },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `Analyze this person's headshot and create 4 authority-building scene concepts for:
+              text: `Describe this person's appearance in precise detail for AI image generation. Include:
+- Gender, approximate age
+- Face shape, skin tone
+- Hair color, style, length
+- Facial hair if any
+- Eye color if visible
+- Any distinguishing features
+- What they're wearing (if visible)
 
-Name: ${name || 'Business Professional'}
-Company: ${company || 'Professional Services'}
-Industry: ${industry || 'Business Consulting'}
-Goal: ${goal || 'Position as the trusted authority and go-to expert in their field'}
-
-IMPORTANT: 
-- First, describe the person's appearance in detail from the photo
-- Then create 2 scenes showing this EXACT person in professional settings
-- Each imagePrompt must include the person description so the AI generates them accurately
-
-Return ONLY the JSON object.`
+Be specific and detailed. This will be used to generate images of this exact person in different scenes.`
             },
             {
               type: 'image_url',
@@ -87,133 +51,60 @@ Return ONLY the JSON object.`
           ]
         }
       ],
-      response_format: { type: 'json_object' },
-      max_tokens: 3000,
+      max_tokens: 400,
     });
 
-    let parsed;
-    try {
-      const content = conceptResponse.choices[0].message.content || '{}';
-      console.log('GPT Response:', content.substring(0, 500));
-      parsed = JSON.parse(content);
-    } catch (e: any) {
-      console.error('JSON parse error:', e.message);
-      console.error('Raw content:', conceptResponse.choices[0].message.content?.substring(0, 500));
-      return NextResponse.json({ 
-        error: 'Failed to parse AI response', 
-        details: conceptResponse.choices[0].message.content?.substring(0, 200)
-      }, { status: 500 });
-    }
+    const personDescription = analysisResponse.choices[0].message.content || '';
+    console.log('Person description complete');
 
-    const personDescription = parsed.personDescription || '';
-    const concepts = parsed.scenes || [];
-
-    if (!Array.isArray(concepts) || concepts.length === 0) {
-      return NextResponse.json({ error: 'No scenes generated' }, { status: 500 });
-    }
-
-    // Step 2: Generate images - try edit API first, fall back to generate
-    const results = [];
+    // Step 2: Generate ONE scene - keep it simple
+    console.log('Step 2: Generating image...');
     
-    // Convert headshot to file for the edit API
-    const headshotBuffer = base64ToBuffer(headshotBase64);
-    
-    for (const concept of concepts.slice(0, 2)) {
-      try {
-        // Build the image generation prompt with person description
-        const imagePrompt = `Create a professional photograph for a social media carousel.
+    const sceneDescription = industry?.toLowerCase().includes('fund') || industry?.toLowerCase().includes('loan') || industry?.toLowerCase().includes('capital')
+      ? 'sitting at a modern executive desk in a premium office, reviewing financial documents with a client seated across from them. Natural light from large windows, bookshelf in background.'
+      : 'in a professional consultation meeting at a modern office, confidently explaining something to a client. Premium corporate environment with excellent lighting.';
 
-PERSON TO DEPICT (use reference image as guide - must match exactly):
+    const imagePrompt = `Photorealistic professional photograph of a business professional.
+
+THIS PERSON MUST LOOK EXACTLY LIKE:
 ${personDescription}
 
-SCENE:
-${concept.imagePrompt}
+SCENE: ${sceneDescription}
 
-STYLE REQUIREMENTS:
-- The person from the reference image must be the main subject
-- Preserve their EXACT facial features, skin tone, hair style, and overall appearance  
-- Professional, high-end photography style with excellent lighting
-- Photorealistic quality, not illustrated or cartoonish
-- Square format (1:1) suitable for Instagram
+REQUIREMENTS:
+- The person described above is the main subject
+- Match their EXACT appearance - face, hair, skin tone, features
+- Professional photography quality
+- Square 1:1 format
 - Premium corporate aesthetic
-- Natural pose and expression appropriate for the scene`;
+- Photorealistic, NOT illustrated`;
 
-        console.log('Generating scene:', concept.scene);
-        
-        let imageUrl = '';
-        let method = 'unknown';
-        
-        // Try using the edit API with reference image
-        try {
-          const headshotFile = await toFile(headshotBuffer, 'headshot.png', { type: 'image/png' });
-          
-          const imageResponse = await openai.images.edit({
-            model: 'gpt-image-2',
-            image: headshotFile,
-            prompt: imagePrompt,
-            n: 1,
-            size: '1024x1024',
-          });
-          
-          if (imageResponse.data?.[0]?.b64_json) {
-            imageUrl = `data:image/png;base64,${imageResponse.data[0].b64_json}`;
-            method = 'edit';
-          } else if (imageResponse.data?.[0]?.url) {
-            imageUrl = imageResponse.data[0].url;
-            method = 'edit';
-          }
-        } catch (editError: any) {
-          console.log('Edit API failed, trying generate:', editError.message);
-          
-          // Fall back to generate API with detailed person description
-          const generateResponse = await openai.images.generate({
-            model: 'gpt-image-2',
-            prompt: imagePrompt,
-            n: 1,
-            size: '1024x1024',
-          });
-          
-          if (generateResponse.data?.[0]?.b64_json) {
-            imageUrl = `data:image/png;base64,${generateResponse.data[0].b64_json}`;
-            method = 'generate';
-          } else if (generateResponse.data?.[0]?.url) {
-            imageUrl = generateResponse.data[0].url;
-            method = 'generate';
-          }
-        }
+    const imageResponse = await openai.images.generate({
+      model: 'gpt-image-2',
+      prompt: imagePrompt,
+      n: 1,
+      size: '1024x1024',
+    });
 
-        console.log('Image generated via:', method);
+    console.log('Image generation complete');
 
-        results.push({
-          scene: concept.scene,
-          headline: concept.headline,
-          subtext: concept.subtext,
-          personDescription,
-          imageUrl,
-          method,
-          success: !!imageUrl,
-        });
-
-      } catch (error: any) {
-        console.error('Image generation error:', error);
-        results.push({
-          scene: concept.scene,
-          headline: concept.headline,
-          subtext: concept.subtext,
-          personDescription,
-          imageUrl: null,
-          success: false,
-          error: error.message,
-        });
-      }
+    let imageUrl = '';
+    if (imageResponse.data?.[0]?.b64_json) {
+      imageUrl = `data:image/png;base64,${imageResponse.data[0].b64_json}`;
+    } else if (imageResponse.data?.[0]?.url) {
+      imageUrl = imageResponse.data[0].url;
     }
 
     return NextResponse.json({
       success: true,
       personDescription,
-      concepts,
-      results,
-      note: 'These images use gpt-image-2 edit API with the headshot as reference. Check likeness accuracy.',
+      results: [{
+        scene: 'Professional Consultation',
+        headline: `${name || 'Your'} - Trusted Expert`,
+        subtext: `${company || 'Professional'} - Building success together`,
+        imageUrl,
+        success: !!imageUrl,
+      }],
     });
 
   } catch (error: any) {
