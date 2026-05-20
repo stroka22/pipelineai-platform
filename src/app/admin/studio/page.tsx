@@ -65,9 +65,16 @@ export default function StudioDashboard() {
 
   const quickActions = [
     {
+      title: 'Pro Create',
+      description: 'Real headshots & logos',
+      icon: Sparkles,
+      href: '/admin/studio/pro-create',
+      color: 'from-amber-500 to-orange-600',
+    },
+    {
       title: 'AI Create',
       description: 'Prompt + images = magic',
-      icon: Sparkles,
+      icon: Zap,
       href: '/admin/studio/create',
       color: 'from-fuchsia-500 to-purple-600',
     },
@@ -76,7 +83,7 @@ export default function StudioDashboard() {
       description: 'Create a single AI image',
       icon: ImageIcon,
       href: '/admin/studio/generate',
-      color: 'from-orange-500 to-amber-500',
+      color: 'from-cyan-500 to-blue-500',
     },
     {
       title: 'Create Carousel',
