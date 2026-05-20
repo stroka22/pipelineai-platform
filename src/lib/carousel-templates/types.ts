@@ -18,6 +18,61 @@ export interface BrandProfile {
   tagline?: string;
 }
 
+// Adaptive layout types
+export type HeadshotPosition = 
+  | 'left-center' | 'right-center' | 'center'
+  | 'left-top' | 'right-top' | 'left-bottom' | 'right-bottom'
+  | 'floating-right' | 'floating-left'
+  | 'hero-large' | 'contact-bar';
+
+export type HeadshotSize = 'small' | 'medium' | 'large' | 'hero' | 'thumbnail';
+
+export type HeadshotShape = 'circle' | 'rounded-rect' | 'square' | 'hexagon' | 'arch' | 'blob';
+
+export type HeadshotStyle = 
+  | 'clean' | 'soft-shadow' | 'dramatic-shadow' 
+  | 'glow' | 'gradient-border' | 'double-border'
+  | 'cutout' | 'floating' | 'framed';
+
+export type LogoPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'contact-bar';
+
+export type TextAlignment = 'left' | 'center' | 'right';
+
+export type ContentPosition = 'left' | 'right' | 'center' | 'bottom' | 'top';
+
+export interface HeadshotLayout {
+  position: HeadshotPosition;
+  size: HeadshotSize;
+  shape: HeadshotShape;
+  style: HeadshotStyle;
+  borderColor?: string;
+  glowColor?: string;
+  shadowDirection?: 'left' | 'right' | 'bottom' | 'center';
+  overlayOnBackground?: boolean;
+}
+
+export interface LogoLayout {
+  position: LogoPosition;
+  size: 'small' | 'medium' | 'large';
+  style: 'clean' | 'white-bg' | 'shadow';
+}
+
+export interface ContentLayout {
+  position: ContentPosition;
+  alignment: TextAlignment;
+  width: 'narrow' | 'medium' | 'wide' | 'full';
+  verticalAlign: 'top' | 'center' | 'bottom';
+}
+
+export interface SlideLayout {
+  headshot?: HeadshotLayout;
+  logo?: LogoLayout;
+  content: ContentLayout;
+  backgroundStyle: 'full-bleed' | 'gradient-overlay' | 'split' | 'vignette';
+  colorOverlay?: string;
+  overlayOpacity?: number;
+}
+
 export interface SlideData {
   id: string;
   slideNumber: number;
@@ -30,9 +85,11 @@ export interface SlideData {
   stats?: { value: string; label: string }[];
   backgroundUrl?: string;
   backgroundPrompt?: string;
-  includeHeadshot: boolean;
-  includeLogo: boolean;
-  includeContactBar: boolean;
+  layout: SlideLayout;
+  // Legacy fields for compatibility
+  includeHeadshot?: boolean;
+  includeLogo?: boolean;
+  includeContactBar?: boolean;
   customOverrides?: Record<string, any>;
 }
 

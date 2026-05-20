@@ -29,7 +29,7 @@ import {
   Layers
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { BrandProfile, SlideData, CarouselStrategy } from '@/lib/carousel-templates/types';
+import { BrandProfile, SlideData, CarouselStrategy, SlideLayout } from '@/lib/carousel-templates/types';
 
 interface RenderedSlide extends SlideData {
   renderedImageUrl?: string;
@@ -829,35 +829,149 @@ export default function CarouselStudioPage() {
                       />
                     </div>
 
-                    <div className="flex gap-4 text-sm">
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={currentSlide.includeLogo}
-                          onChange={e => updateSlide(selectedSlide, { includeLogo: e.target.checked })}
-                          className="w-4 h-4"
-                        />
-                        Logo
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={currentSlide.includeHeadshot}
-                          onChange={e => updateSlide(selectedSlide, { includeHeadshot: e.target.checked })}
-                          className="w-4 h-4"
-                        />
-                        Headshot
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={currentSlide.includeContactBar}
-                          onChange={e => updateSlide(selectedSlide, { includeContactBar: e.target.checked })}
-                          className="w-4 h-4"
-                        />
-                        Contact
-                      </label>
-                    </div>
+                    {/* Layout Controls */}
+                    {currentSlide.layout && (
+                      <div className="border-t border-white/10 pt-4 mt-4">
+                        <h4 className="text-sm font-semibold mb-3 text-white/80">Adaptive Layout</h4>
+                        
+                        {currentSlide.layout.headshot && (
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <div>
+                              <label className="text-xs text-white/50">Headshot Position</label>
+                              <select
+                                value={currentSlide.layout.headshot.position}
+                                onChange={e => updateSlide(selectedSlide, { 
+                                  layout: { 
+                                    ...currentSlide.layout, 
+                                    headshot: { ...currentSlide.layout.headshot!, position: e.target.value as any } 
+                                  } 
+                                })}
+                                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs mt-1"
+                              >
+                                <option value="right-center" className="bg-gray-900">Right Center</option>
+                                <option value="left-center" className="bg-gray-900">Left Center</option>
+                                <option value="floating-right" className="bg-gray-900">Floating Right</option>
+                                <option value="floating-left" className="bg-gray-900">Floating Left</option>
+                                <option value="hero-large" className="bg-gray-900">Hero (Large)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-xs text-white/50">Size</label>
+                              <select
+                                value={currentSlide.layout.headshot.size}
+                                onChange={e => updateSlide(selectedSlide, { 
+                                  layout: { 
+                                    ...currentSlide.layout, 
+                                    headshot: { ...currentSlide.layout.headshot!, size: e.target.value as any } 
+                                  } 
+                                })}
+                                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs mt-1"
+                              >
+                                <option value="small" className="bg-gray-900">Small</option>
+                                <option value="medium" className="bg-gray-900">Medium</option>
+                                <option value="large" className="bg-gray-900">Large</option>
+                                <option value="hero" className="bg-gray-900">Hero</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-xs text-white/50">Shape</label>
+                              <select
+                                value={currentSlide.layout.headshot.shape}
+                                onChange={e => updateSlide(selectedSlide, { 
+                                  layout: { 
+                                    ...currentSlide.layout, 
+                                    headshot: { ...currentSlide.layout.headshot!, shape: e.target.value as any } 
+                                  } 
+                                })}
+                                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs mt-1"
+                              >
+                                <option value="rounded-rect" className="bg-gray-900">Rounded Rect</option>
+                                <option value="circle" className="bg-gray-900">Circle</option>
+                                <option value="square" className="bg-gray-900">Square</option>
+                                <option value="arch" className="bg-gray-900">Arch</option>
+                                <option value="hexagon" className="bg-gray-900">Hexagon</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-xs text-white/50">Style</label>
+                              <select
+                                value={currentSlide.layout.headshot.style}
+                                onChange={e => updateSlide(selectedSlide, { 
+                                  layout: { 
+                                    ...currentSlide.layout, 
+                                    headshot: { ...currentSlide.layout.headshot!, style: e.target.value as any } 
+                                  } 
+                                })}
+                                className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs mt-1"
+                              >
+                                <option value="clean" className="bg-gray-900">Clean</option>
+                                <option value="soft-shadow" className="bg-gray-900">Soft Shadow</option>
+                                <option value="dramatic-shadow" className="bg-gray-900">Dramatic Shadow</option>
+                                <option value="glow" className="bg-gray-900">Glow</option>
+                                <option value="gradient-border" className="bg-gray-900">Gradient Border</option>
+                                <option value="framed" className="bg-gray-900">Framed</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="flex gap-4 text-sm">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={!!currentSlide.layout.headshot}
+                              onChange={e => {
+                                if (e.target.checked) {
+                                  updateSlide(selectedSlide, { 
+                                    layout: { 
+                                      ...currentSlide.layout, 
+                                      headshot: { position: 'right-center', size: 'medium', shape: 'rounded-rect', style: 'soft-shadow' }
+                                    },
+                                    includeHeadshot: true
+                                  });
+                                } else {
+                                  const { headshot, ...rest } = currentSlide.layout;
+                                  updateSlide(selectedSlide, { layout: rest as any, includeHeadshot: false });
+                                }
+                              }}
+                              className="w-4 h-4"
+                            />
+                            Headshot
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={!!currentSlide.layout.logo}
+                              onChange={e => {
+                                if (e.target.checked) {
+                                  updateSlide(selectedSlide, { 
+                                    layout: { 
+                                      ...currentSlide.layout, 
+                                      logo: { position: 'top-left', size: 'medium', style: 'clean' }
+                                    },
+                                    includeLogo: true
+                                  });
+                                } else {
+                                  const { logo, ...rest } = currentSlide.layout;
+                                  updateSlide(selectedSlide, { layout: rest as any, includeLogo: false });
+                                }
+                              }}
+                              className="w-4 h-4"
+                            />
+                            Logo
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={currentSlide.includeContactBar}
+                              onChange={e => updateSlide(selectedSlide, { includeContactBar: e.target.checked })}
+                              className="w-4 h-4"
+                            />
+                            Contact Bar
+                          </label>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
