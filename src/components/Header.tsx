@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Eye, Menu, X, ShoppingCart, Sparkles, Info } from 'lucide-react';
+import { ChevronDown, Eye, Menu, X, ShoppingCart, Sparkles, Info, Calendar } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { supabase, Niche } from '@/lib/supabase';
 
@@ -89,6 +89,15 @@ export default function Header({ currentNiche }: HeaderProps) {
           <Link href="/#how-it-works" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
             How It Works
           </Link>
+          <a 
+            href="https://calendly.com/getpipelineai-support/30min"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-500/20"
+          >
+            <Calendar className="w-4 h-4" />
+            Book a Call
+          </a>
 {/* Branding Tool - Hidden until perfected
           <div className="relative group">
             <Link 
@@ -183,6 +192,16 @@ export default function Header({ currentNiche }: HeaderProps) {
             >
               How It Works
             </Link>
+            <a 
+              href="https://calendly.com/getpipelineai-support/30min"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-lg text-base font-medium flex items-center gap-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Calendar className="w-5 h-5" />
+              Book a Strategy Call
+            </a>
 {/* Branding Tool - Hidden until perfected
             <Link 
               href="/brand" 

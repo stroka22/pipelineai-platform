@@ -26,7 +26,9 @@ import {
   DollarSign,
   Snowflake,
   Wrench,
-  Scissors
+  Scissors,
+  Calendar,
+  Phone
 } from 'lucide-react';
 import { supabase, Niche } from '@/lib/supabase';
 import Header from '@/components/Header';
@@ -441,6 +443,57 @@ export default function HomePage() {
       </section>
 
       {/* Free Branding Tool Section - Hidden until perfected */}
+
+      {/* Strategy Call CTA Section */}
+      <section className="py-16 bg-[#0a0f1a] relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/20 via-transparent to-emerald-950/20" />
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+        
+        <div className="max-w-4xl mx-auto px-6 relative z-10">
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+            <div className="flex-1 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                <Phone className="w-4 h-4" />
+                Custom Projects & Strategy
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+                Need a Custom Content Strategy?
+              </h2>
+              <p className="text-white/50 text-lg mb-6">
+                Book a free 30-minute strategy call to discuss custom marketing projects, 
+                ongoing content creation, or white-label solutions for your agency.
+              </p>
+              <ul className="flex flex-wrap justify-center md:justify-start gap-4 mb-6 text-sm text-white/60">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  Custom carousel packs
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  Agency partnerships
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  Ongoing content support
+                </li>
+              </ul>
+            </div>
+            <div className="flex-shrink-0">
+              <a 
+                href="https://calendly.com/getpipelineai-support/30min"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg shadow-emerald-500/25"
+              >
+                <Calendar className="w-5 h-5" />
+                Book a Strategy Call
+              </a>
+              <p className="text-center text-white/40 text-sm mt-3">Free 30-minute consultation</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Download Growth Vaults Section */}
       <section className="py-20 bg-[#030712] relative">
