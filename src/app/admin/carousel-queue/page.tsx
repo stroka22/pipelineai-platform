@@ -1,0 +1,444 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { 
+  ArrowLeft, 
+  Plus, 
+  Loader2, 
+  Clock, 
+  CheckCircle, 
+  XCircle,
+  Download,
+  Trash2,
+  RefreshCw,
+  Upload,
+  Layers,
+  Play
+} from 'lucide-react';
+
+interface QueueItem {
+  id: string;
+  company_name: string;
+  person_name: string;
+  industry: string;
+  topic: string;
+  slide_count: number;
+  status: string;
+  current_slide: number;
+  slides: any[];
+  created_at: string;
+  completed_at: string;
+  headshot_url: string;
+  logo_url: string;
+}
+
+export default function CarouselQueuePage() {
+  const [items, setItems] = useState<QueueItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  
+  // Form state
+  const [companyName, setCompanyName] = useState('');
+  const [personName, setPersonName] = useState('');
+  const [title, setTitle] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [website, setWebsite] = useState('');
+  const [industry, setIndustry] = useState('');
+  const [topic, setTopic] = useState('');
+  const [slideCount, setSlideCount] = useState(5);
+  const [headshotPreview, setHeadshotPreview] = useState('');
+  const [logoPreview, setLogoPreview] = useState('');
+  
+  const headshotInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchQueue = async () => {
+    try {
+      const response = await fetch('/api/carousel/queue');
+      const data = await response.json();
+      if (data.success) {
+        setItems(data.items || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch queue:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchQueue();
+    const interval = setInterval(fetchQueue, 10000); // Refresh every 10s
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'headshot' | 'logo') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (type === 'headshot') {
+        setHeadshotPreview(e.target?.result as string);
+      } else {
+        setLogoPreview(e.target?.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const submitToQueue = async () => {
+    if (!headshotPreview) {
+      alert('Headshot is required');
+      return;
+    }
+    if (!companyName) {
+      alert('Company name is required');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch('/api/carousel/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_name: companyName,
+          person_name: personName,
+          title,
+          phone,
+          email,
+          website,
+          industry,
+          topic,
+          slide_count: slideCount,
+          headshot_url: headshotPreview,
+          logo_url: logoPreview || null,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('Added to queue!');
+        setShowForm(false);
+        // Reset form
+        setCompanyName('');
+        setPersonName('');
+        setTitle('');
+        setPhone('');
+        setEmail('');
+        setWebsite('');
+        setIndustry('');
+        setTopic('');
+        setHeadshotPreview('');
+        setLogoPreview('');
+        fetchQueue();
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      alert('Error: ' + error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const deleteItem = async (id: string) => {
+    if (!confirm('Delete this queue item?')) return;
+    
+    try {
+      await fetch(`/api/carousel/queue?id=${id}`, { method: 'DELETE' });
+      fetchQueue();
+    } catch (error) {
+      console.error('Delete failed:', error);
+    }
+  };
+
+  const downloadSlides = (item: QueueItem) => {
+    item.slides.forEach((slide, i) => {
+      if (slide.imageUrl) {
+        const link = document.createElement('a');
+        link.href = slide.imageUrl;
+        link.download = `${item.company_name.replace(/\s+/g, '-')}-slide-${i + 1}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    });
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'complete':
+        return <CheckCircle className="w-5 h-5 text-green-400" />;
+      case 'error':
+        return <XCircle className="w-5 h-5 text-red-400" />;
+      case 'processing':
+      case 'generating_slides':
+        return <Loader2 className="w-5 h-5 text-amber-400 animate-spin" />;
+      default:
+        return <Clock className="w-5 h-5 text-white/40" />;
+    }
+  };
+
+  const getStatusText = (item: QueueItem) => {
+    switch (item.status) {
+      case 'complete':
+        return 'Complete';
+      case 'error':
+        return 'Error';
+      case 'processing':
+        return 'Starting...';
+      case 'generating_slides':
+        return `Slide ${item.current_slide}/${item.slide_count}`;
+      default:
+        return 'Pending';
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#030712] text-white">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link href="/admin/studio" className="text-white/60 hover:text-white">
+              <ArrowLeft className="w-6 h-6" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <Layers className="w-6 h-6 text-purple-400" />
+                Carousel Queue
+              </h1>
+              <p className="text-white/50 text-sm">Batch process carousels at scale</p>
+            </div>
+          </div>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={fetchQueue}
+              className="p-2 bg-white/5 hover:bg-white/10 rounded-lg"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              Add to Queue
+            </button>
+          </div>
+        </div>
+
+        {/* Add Form Modal */}
+        {showForm && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#0a0a0f] border border-white/10 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+              <h2 className="text-xl font-bold mb-6">Add Carousel to Queue</h2>
+              
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {/* Headshot */}
+                <div>
+                  <label className="text-sm text-white/60 mb-2 block">Headshot *</label>
+                  <input ref={headshotInputRef} type="file" accept="image/*" onChange={e => handleImageUpload(e, 'headshot')} className="hidden" />
+                  {headshotPreview ? (
+                    <div className="relative w-32 h-32">
+                      <Image src={headshotPreview} alt="" fill className="object-cover rounded-lg" />
+                      <button onClick={() => setHeadshotPreview('')} className="absolute -top-2 -right-2 bg-red-500 p-1 rounded-full text-xs">✕</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => headshotInputRef.current?.click()} className="w-32 h-32 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center hover:border-purple-500/50">
+                      <Upload className="w-8 h-8 text-white/30" />
+                    </button>
+                  )}
+                </div>
+                
+                {/* Logo */}
+                <div>
+                  <label className="text-sm text-white/60 mb-2 block">Logo (optional)</label>
+                  <input ref={logoInputRef} type="file" accept="image/*" onChange={e => handleImageUpload(e, 'logo')} className="hidden" />
+                  {logoPreview ? (
+                    <div className="relative w-32 h-32">
+                      <Image src={logoPreview} alt="" fill className="object-contain rounded-lg bg-white/5 p-2" />
+                      <button onClick={() => setLogoPreview('')} className="absolute -top-2 -right-2 bg-red-500 p-1 rounded-full text-xs">✕</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => logoInputRef.current?.click()} className="w-32 h-32 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center hover:border-purple-500/50">
+                      <Upload className="w-8 h-8 text-white/30" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <input
+                  type="text"
+                  value={companyName}
+                  onChange={e => setCompanyName(e.target.value)}
+                  placeholder="Company Name *"
+                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-3"
+                />
+                <input
+                  type="text"
+                  value={personName}
+                  onChange={e => setPersonName(e.target.value)}
+                  placeholder="Person Name"
+                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-3"
+                />
+                <input
+                  type="text"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="Title"
+                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-3"
+                />
+                <input
+                  type="text"
+                  value={industry}
+                  onChange={e => setIndustry(e.target.value)}
+                  placeholder="Industry"
+                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-3"
+                />
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  placeholder="Phone"
+                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-3"
+                />
+                <input
+                  type="text"
+                  value={website}
+                  onChange={e => setWebsite(e.target.value)}
+                  placeholder="Website"
+                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-3"
+                />
+              </div>
+
+              <textarea
+                value={topic}
+                onChange={e => setTopic(e.target.value)}
+                placeholder="Topic / Focus (e.g., '5 reasons to work with us')"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-20 resize-none mb-4"
+              />
+
+              <div className="flex items-center gap-4 mb-6">
+                <label className="text-sm text-white/60">Slides:</label>
+                <select
+                  value={slideCount}
+                  onChange={e => setSlideCount(Number(e.target.value))}
+                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-2"
+                >
+                  {[3, 5, 7, 10].map(n => <option key={n} value={n} className="bg-gray-900">{n}</option>)}
+                </select>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="flex-1 bg-white/5 hover:bg-white/10 px-6 py-3 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitToQueue}
+                  disabled={submitting || !headshotPreview || !companyName}
+                  className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 px-6 py-3 rounded-lg flex items-center justify-center gap-2"
+                >
+                  {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
+                  Add to Queue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Queue List */}
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-white/40" />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="text-center py-20 text-white/40">
+            <Layers className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>No carousels in queue</p>
+            <p className="text-sm mt-2">Click "Add to Queue" to get started</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {items.map(item => (
+              <div key={item.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <div className="flex items-start gap-4">
+                  {/* Headshot thumbnail */}
+                  <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-white/5">
+                    {item.headshot_url && (
+                      <Image src={item.headshot_url} alt="" width={64} height={64} className="object-cover w-full h-full" />
+                    )}
+                  </div>
+                  
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      {getStatusIcon(item.status)}
+                      <span className="font-semibold">{item.company_name}</span>
+                      {item.person_name && <span className="text-white/50">- {item.person_name}</span>}
+                    </div>
+                    <div className="text-sm text-white/50">
+                      {item.industry && <span>{item.industry} • </span>}
+                      {item.slide_count} slides
+                      {item.topic && <span className="block mt-1 text-white/40 truncate">{item.topic}</span>}
+                    </div>
+                    <div className="text-xs text-white/30 mt-1">
+                      {getStatusText(item)}
+                      {item.completed_at && ` • Completed ${new Date(item.completed_at).toLocaleString()}`}
+                    </div>
+                  </div>
+
+                  {/* Preview slides */}
+                  {item.slides && item.slides.length > 0 && (
+                    <div className="flex gap-1">
+                      {item.slides.slice(0, 5).map((slide, i) => (
+                        <div key={i} className="w-12 h-12 rounded overflow-hidden bg-white/5">
+                          {slide.imageUrl ? (
+                            <Image src={slide.imageUrl} alt="" width={48} height={48} className="object-cover w-full h-full" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-xs text-white/20">{i + 1}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    {item.status === 'complete' && (
+                      <button
+                        onClick={() => downloadSlides(item)}
+                        className="p-2 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded-lg"
+                        title="Download all slides"
+                      >
+                        <Download className="w-5 h-5" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteItem(item.id)}
+                      className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
