@@ -34,22 +34,11 @@ export async function POST(request: NextRequest) {
     // Add the text prompt
     content.push({
       type: 'input_text',
-      text: `I'm providing ${images.length} reference image(s):
-${images.map((img: { label: string }, i: number) => `- Image ${i + 1}: ${img.label}`).join('\n')}
-
-TASK: Generate a NEW image that combines these references:
-${prompt || 'Create a professional image that incorporates all the reference images exactly as they appear.'}
-
-CRITICAL REQUIREMENTS:
-- If there's a person/headshot, their EXACT face and features must appear in the generated image
-- If there's a logo, that EXACT logo must appear in the generated image
-- If there's a location/building, that EXACT location must appear in the generated image
-- Combine them naturally into one cohesive, professional image
-- The output should look like a real photograph, not a collage`,
+      text: prompt || 'Generate an image that incorporates all the provided reference images exactly as they appear.',
     });
 
-    // Use Responses API with image_generation tool
-    // Input must be a message array with proper role structure
+    // Try with gpt-image-1 model which is specifically for image generation
+    // The image_generation tool requires the model to support it
     const response = await openai.responses.create({
       model: 'gpt-4o',
       input: [
@@ -61,11 +50,23 @@ CRITICAL REQUIREMENTS:
       tools: [
         {
           type: 'image_generation',
+          quality: 'high',
+          size: '1024x1024',
         },
       ],
     });
 
-    console.log('Responses API response:', JSON.stringify(response, null, 2).substring(0, 2000));
+    // Extract ALL output items for debugging
+    const outputItems = response.output?.map((item: any) => ({
+      type: item.type,
+      // For messages, include the text content
+      content: item.type === 'message' ? item.content?.map((c: any) => ({
+        type: c.type,
+        text: c.text,
+      })) : undefined,
+      // For image_generation_call, include the result
+      result: item.type === 'image_generation_call' ? item.result : undefined,
+    }));
 
     // Extract generated image from output
     let generatedImage = null;
@@ -84,7 +85,8 @@ CRITICAL REQUIREMENTS:
     return NextResponse.json({
       success: true,
       generatedImage,
-      outputTypes: response.output?.map((o: any) => o.type),
+      outputItems,
+      model: 'gpt-4o',
     });
 
   } catch (error: any) {
