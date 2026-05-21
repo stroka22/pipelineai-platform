@@ -40,8 +40,7 @@ export async function POST(request: NextRequest) {
     // Try with gpt-image-1 model which is specifically for image generation
     // The image_generation tool requires the model to support it
     const response = await openai.responses.create({
-      model: 'gpt-4o',
-      input: [
+      model: 'gpt-4o-mini',
         {
           role: 'user',
           content: content,
