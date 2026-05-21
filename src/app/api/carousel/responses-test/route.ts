@@ -51,7 +51,7 @@ CRITICAL REQUIREMENTS:
     // Use Responses API with image_generation tool
     // Input must be a message array with proper role structure
     const response = await openai.responses.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       input: [
         {
           role: 'user',
