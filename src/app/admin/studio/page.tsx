@@ -107,10 +107,17 @@ export default function StudioDashboard() {
       color: 'from-green-500 to-emerald-500',
     },
     {
-      title: 'Queue',
-      description: 'Background carousel generation',
+      title: 'Carousel Studio',
+      description: 'Build premium carousels',
+      icon: Layers,
+      href: '/admin/carousel-studio',
+      color: 'from-blue-500 to-purple-600',
+    },
+    {
+      title: 'Carousel Queue',
+      description: 'Batch process at scale',
       icon: Clock,
-      href: '/admin/studio/queue',
+      href: '/admin/carousel-queue',
       color: 'from-yellow-500 to-orange-500',
     },
   ];
