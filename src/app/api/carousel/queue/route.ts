@@ -54,9 +54,9 @@ export async function POST(request: NextRequest) {
       priority,
     } = body;
 
-    // Headshot is required for images.edit
-    if (!headshot_url) {
-      return NextResponse.json({ error: 'Headshot URL is required' }, { status: 400 });
+    // Scene prompt is required
+    if (!scene_prompt) {
+      return NextResponse.json({ error: 'Scene/prompt instructions are required' }, { status: 400 });
     }
 
     const { data, error } = await supabase
@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
         email,
         website,
         industry,
-        headshot_url,
-        logo_url,
+        headshot_url: headshot_url || null,
+        logo_url: logo_url || null,
         primary_color: primary_color || '#1e3a5f',
         secondary_color: secondary_color || '#4a7c4e',
         accent_color: accent_color || '#c9a227',

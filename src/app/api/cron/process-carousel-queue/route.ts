@@ -63,13 +63,9 @@ export async function GET(request: NextRequest) {
 
     console.log(`Processing carousel queue item: ${queueItem.id}`);
 
-    // Get headshot buffer
-    const headshotBuffer = await urlToBuffer(queueItem.headshot_url);
-    
-    // Determine which slides to generate based on slide_count
+    // Determine mode: headshot (person in scenes) vs prompt-only (graphics)
+    const hasHeadshot = !!queueItem.headshot_url;
     const slideCount = queueItem.slide_count || 5;
-    
-    // Use custom scene prompt or fallback to defaults
     const customPrompt = queueItem.scene_prompt || '';
 
     const slides: any[] = queueItem.slides || [];
@@ -87,29 +83,33 @@ export async function GET(request: NextRequest) {
         })
         .eq('id', queueItem.id);
 
-      console.log(`Generating slide ${slideIndex + 1}/${slideCount}`);
+      console.log(`Generating slide ${slideIndex + 1}/${slideCount} (mode: ${hasHeadshot ? 'person' : 'graphics'})`);
 
       try {
-        const headshotFile = await toFile(headshotBuffer, 'headshot.png', { type: 'image/png' });
+        let imageUrl = '';
 
-        // Build scene description - use custom prompt or default variation
-        let sceneDescription: string;
-        if (customPrompt) {
-          // Add slight variation for each slide
+        if (hasHeadshot) {
+          // MODE 1: Person in scenes - use images.edit
+          const headshotBuffer = await urlToBuffer(queueItem.headshot_url);
+          const headshotFile = await toFile(headshotBuffer, 'headshot.png', { type: 'image/png' });
+
+          // Add variation for each slide
           const variations = [
-            'Variation: looking directly at camera',
+            'Variation: looking directly at camera with confidence',
             'Variation: slightly turned, engaged expression',
-            'Variation: gesturing while speaking',
-            'Variation: reviewing something on desk',
+            'Variation: gesturing while explaining something',
+            'Variation: reviewing documents or materials',
             'Variation: warm, approachable smile',
+            'Variation: thoughtful expression, hand on chin',
+            'Variation: pointing at something off-camera',
+            'Variation: leaning forward, engaged in conversation',
+            'Variation: standing with arms crossed confidently',
+            'Variation: casual but professional stance',
           ];
           const variation = variations[slideIndex % variations.length];
-          sceneDescription = `${customPrompt}\n\n${variation}`;
-        } else {
-          sceneDescription = DEFAULT_SCENE_VARIATIONS[slideIndex % DEFAULT_SCENE_VARIATIONS.length];
-        }
+          const sceneDescription = `${customPrompt}\n\n${variation}`;
 
-        const editPrompt = `Transform this photo into a professional business scene.
+          const editPrompt = `Transform this photo into a professional business scene.
 
 SCENE INSTRUCTIONS:
 ${sceneDescription}
@@ -125,25 +125,66 @@ CRITICAL REQUIREMENTS:
 - Photorealistic, not illustrated or cartoonish
 - The person should look natural in the scene`;
 
-        const imageResponse = await openai.images.edit({
-          model: 'gpt-image-2',
-          image: headshotFile,
-          prompt: editPrompt,
-          n: 1,
-          size: '1024x1024',
-        });
+          const imageResponse = await openai.images.edit({
+            model: 'gpt-image-2',
+            image: headshotFile,
+            prompt: editPrompt,
+            n: 1,
+            size: '1024x1024',
+          });
 
-        let imageUrl = '';
-        if (imageResponse.data?.[0]?.b64_json) {
-          imageUrl = `data:image/png;base64,${imageResponse.data[0].b64_json}`;
-        } else if (imageResponse.data?.[0]?.url) {
-          imageUrl = imageResponse.data[0].url;
+          if (imageResponse.data?.[0]?.b64_json) {
+            imageUrl = `data:image/png;base64,${imageResponse.data[0].b64_json}`;
+          } else if (imageResponse.data?.[0]?.url) {
+            imageUrl = imageResponse.data[0].url;
+          }
+
+        } else {
+          // MODE 2: Graphics only - use images.generate
+          const slideVariations = [
+            `Slide ${slideIndex + 1} of ${slideCount} - opening/hook image`,
+            `Slide ${slideIndex + 1} of ${slideCount} - supporting visual`,
+            `Slide ${slideIndex + 1} of ${slideCount} - key point illustration`,
+            `Slide ${slideIndex + 1} of ${slideCount} - detailed visual`,
+            `Slide ${slideIndex + 1} of ${slideCount} - summary/CTA image`,
+          ];
+          const slideContext = slideVariations[slideIndex % slideVariations.length];
+
+          const generatePrompt = `Create a professional social media carousel slide image.
+
+CONTENT: ${customPrompt}
+
+SLIDE CONTEXT: ${slideContext}
+INDUSTRY: ${queueItem.industry || 'Business'}
+TOPIC: ${queueItem.topic || customPrompt}
+
+STYLE REQUIREMENTS:
+- Professional, modern design suitable for Instagram/LinkedIn
+- Clean, premium aesthetic
+- Bold and eye-catching
+- Square format (1:1)
+- High contrast, readable even at small sizes
+- NO text or words in the image - just visuals
+- Photorealistic or high-quality graphic design style`;
+
+          const imageResponse = await openai.images.generate({
+            model: 'gpt-image-2',
+            prompt: generatePrompt,
+            n: 1,
+            size: '1024x1024',
+          });
+
+          if (imageResponse.data?.[0]?.b64_json) {
+            imageUrl = `data:image/png;base64,${imageResponse.data[0].b64_json}`;
+          } else if (imageResponse.data?.[0]?.url) {
+            imageUrl = imageResponse.data[0].url;
+          }
         }
 
         // Add slide to results
         slides[slideIndex] = {
           slideNumber: slideIndex + 1,
-          sceneDescription,
+          mode: hasHeadshot ? 'person' : 'graphics',
           imageUrl,
           generatedAt: new Date().toISOString(),
         };

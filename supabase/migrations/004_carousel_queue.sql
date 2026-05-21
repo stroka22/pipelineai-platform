@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS carousel_queue (
   email TEXT,
   website TEXT,
   industry TEXT,
-  headshot_url TEXT NOT NULL, -- Required for images.edit
+  headshot_url TEXT, -- Optional: if provided, uses images.edit for person-in-scene
   logo_url TEXT,
   primary_color TEXT DEFAULT '#1e3a5f',
   secondary_color TEXT DEFAULT '#4a7c4e',

@@ -93,12 +93,8 @@ export default function CarouselQueuePage() {
   };
 
   const submitToQueue = async () => {
-    if (!headshotPreview) {
-      alert('Headshot is required');
-      return;
-    }
-    if (!companyName) {
-      alert('Company name is required');
+    if (!scenePrompt) {
+      alert('Scene/prompt instructions are required');
       return;
     }
 
@@ -242,12 +238,24 @@ export default function CarouselQueuePage() {
         {showForm && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-[#0a0a0f] border border-white/10 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-              <h2 className="text-xl font-bold mb-6">New Brand Photoshoot</h2>
+              <h2 className="text-xl font-bold mb-2">New Brand Photoshoot</h2>
+              <p className="text-white/50 text-sm mb-6">Upload a headshot to place the person in scenes, or leave empty for prompt-based graphics.</p>
               
+              {/* Mode indicator */}
+              <div className={`mb-6 p-3 rounded-lg border ${headshotPreview ? 'bg-purple-500/10 border-purple-500/30' : 'bg-blue-500/10 border-blue-500/30'}`}>
+                <p className="text-sm">
+                  {headshotPreview ? (
+                    <span className="text-purple-300">📸 <strong>Person Mode:</strong> AI will place this person in professional scenes</span>
+                  ) : (
+                    <span className="text-blue-300">🎨 <strong>Graphics Mode:</strong> AI will generate images from your prompt</span>
+                  )}
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4 mb-6">
                 {/* Headshot */}
                 <div>
-                  <label className="text-sm text-white/60 mb-2 block">Headshot *</label>
+                  <label className="text-sm text-white/60 mb-2 block">Headshot (optional)</label>
                   <input ref={headshotInputRef} type="file" accept="image/*" onChange={e => handleImageUpload(e, 'headshot')} className="hidden" />
                   {headshotPreview ? (
                     <div className="relative w-32 h-32">
@@ -255,8 +263,9 @@ export default function CarouselQueuePage() {
                       <button onClick={() => setHeadshotPreview('')} className="absolute -top-2 -right-2 bg-red-500 p-1 rounded-full text-xs">✕</button>
                     </div>
                   ) : (
-                    <button onClick={() => headshotInputRef.current?.click()} className="w-32 h-32 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center hover:border-purple-500/50">
-                      <Upload className="w-8 h-8 text-white/30" />
+                    <button onClick={() => headshotInputRef.current?.click()} className="w-32 h-32 border-2 border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center hover:border-purple-500/50 gap-1">
+                      <Upload className="w-6 h-6 text-white/30" />
+                      <span className="text-xs text-white/30">Optional</span>
                     </button>
                   )}
                 </div>
@@ -271,89 +280,88 @@ export default function CarouselQueuePage() {
                       <button onClick={() => setLogoPreview('')} className="absolute -top-2 -right-2 bg-red-500 p-1 rounded-full text-xs">✕</button>
                     </div>
                   ) : (
-                    <button onClick={() => logoInputRef.current?.click()} className="w-32 h-32 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center hover:border-purple-500/50">
-                      <Upload className="w-8 h-8 text-white/30" />
+                    <button onClick={() => logoInputRef.current?.click()} className="w-32 h-32 border-2 border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center hover:border-purple-500/50 gap-1">
+                      <Upload className="w-6 h-6 text-white/30" />
+                      <span className="text-xs text-white/30">Optional</span>
                     </button>
                   )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <input
-                  type="text"
-                  value={companyName}
-                  onChange={e => setCompanyName(e.target.value)}
-                  placeholder="Company Name *"
-                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-3"
-                />
-                <input
-                  type="text"
-                  value={personName}
-                  onChange={e => setPersonName(e.target.value)}
-                  placeholder="Person Name"
-                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-3"
-                />
-                <input
-                  type="text"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  placeholder="Title"
-                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-3"
-                />
-                <input
-                  type="text"
-                  value={industry}
-                  onChange={e => setIndustry(e.target.value)}
-                  placeholder="Industry"
-                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-3"
-                />
-                <input
-                  type="text"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  placeholder="Phone"
-                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-3"
-                />
-                <input
-                  type="text"
-                  value={website}
-                  onChange={e => setWebsite(e.target.value)}
-                  placeholder="Website"
-                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-3"
-                />
-              </div>
-
-              <textarea
-                value={topic}
-                onChange={e => setTopic(e.target.value)}
-                placeholder="Topic / Focus (e.g., '5 reasons to work with us')"
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-16 resize-none mb-4"
-              />
-
+              {/* Prompt/Scene Instructions - FIRST */}
               <div className="mb-4">
-                <label className="text-sm text-white/60 mb-2 block">Scene Instructions *</label>
+                <label className="text-sm text-white/60 mb-2 block">
+                  {headshotPreview ? 'Scene Instructions *' : 'Image Prompt *'}
+                </label>
                 <textarea
                   value={scenePrompt}
                   onChange={e => setScenePrompt(e.target.value)}
-                  placeholder="Describe how you want this person shown in the images. Examples:
-• At a premium executive desk reviewing financial documents with a client
-• Walking through a luxury home with buyers, pointing out features
-• In a modern conference room presenting to a small team
-• Standing confidently in front of a construction site with blueprints"
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-32 resize-none"
+                  placeholder={headshotPreview 
+                    ? "Describe the scenes (e.g., 'At executive desk with client, in conference room presenting, walking through property')"
+                    : "Describe the images to generate (e.g., 'Professional real estate infographics about home buying tips, modern design, blue color scheme')"
+                  }
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-28 resize-none"
                 />
-                <p className="text-xs text-white/40 mt-1">This prompt will be used to generate each scene while keeping the person's likeness</p>
+                <p className="text-xs text-white/40 mt-1">
+                  {headshotPreview 
+                    ? "AI will place this person in each scene while preserving their exact likeness"
+                    : "AI will generate unique images for each slide based on this prompt"
+                  }
+                </p>
               </div>
+
+              {/* Optional brand info - collapsible */}
+              <details className="mb-4">
+                <summary className="text-sm text-white/60 cursor-pointer hover:text-white/80 mb-3">+ Add brand details (optional)</summary>
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={e => setCompanyName(e.target.value)}
+                    placeholder="Company Name"
+                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={personName}
+                    onChange={e => setPersonName(e.target.value)}
+                    placeholder="Person Name"
+                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={industry}
+                    onChange={e => setIndustry(e.target.value)}
+                    placeholder="Industry"
+                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={topic}
+                    onChange={e => setTopic(e.target.value)}
+                    placeholder="Topic/Focus"
+                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+              </details>
 
               <div className="flex items-center gap-4 mb-6">
                 <label className="text-sm text-white/60">Slides:</label>
-                <select
-                  value={slideCount}
-                  onChange={e => setSlideCount(Number(e.target.value))}
-                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-2"
-                >
-                  {[3, 5, 7, 10].map(n => <option key={n} value={n} className="bg-gray-900">{n}</option>)}
-                </select>
+                <div className="flex gap-2">
+                  {[1, 3, 5, 7, 10].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setSlideCount(n)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        slideCount === n 
+                          ? 'bg-purple-600 text-white' 
+                          : 'bg-white/5 text-white/60 hover:bg-white/10'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="flex gap-3">
@@ -365,11 +373,11 @@ export default function CarouselQueuePage() {
                 </button>
                 <button
                   onClick={submitToQueue}
-                  disabled={submitting || !headshotPreview || !companyName}
+                  disabled={submitting || !scenePrompt}
                   className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 px-6 py-3 rounded-lg flex items-center justify-center gap-2"
                 >
                   {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
-                  Start Photoshoot
+                  {headshotPreview ? 'Start Photoshoot' : 'Generate Images'}
                 </button>
               </div>
             </div>
@@ -392,10 +400,12 @@ export default function CarouselQueuePage() {
             {items.map(item => (
               <div key={item.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <div className="flex items-start gap-4">
-                  {/* Headshot thumbnail */}
-                  <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-white/5">
-                    {item.headshot_url && (
+                  {/* Headshot thumbnail or mode indicator */}
+                  <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center">
+                    {item.headshot_url ? (
                       <Image src={item.headshot_url} alt="" width={64} height={64} className="object-cover w-full h-full" />
+                    ) : (
+                      <span className="text-2xl">🎨</span>
                     )}
                   </div>
                   
