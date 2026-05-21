@@ -67,9 +67,51 @@ export async function GET(request: NextRequest) {
     const hasHeadshot = !!queueItem.headshot_url;
     const slideCount = queueItem.slide_count || 5;
     const customPrompt = queueItem.scene_prompt || '';
+    const referenceImages: string[] = queueItem.reference_images || [];
 
     const slides: any[] = queueItem.slides || [];
     const startSlide = queueItem.current_slide || 0;
+    
+    // Analyze reference images on first slide only (cache the description)
+    let referenceDescription = queueItem.reference_description || '';
+    if (referenceImages.length > 0 && !referenceDescription && startSlide === 0) {
+      console.log(`Analyzing ${referenceImages.length} reference images...`);
+      try {
+        const imageContents = referenceImages.slice(0, 4).map(img => ({
+          type: 'image_url' as const,
+          image_url: { url: img, detail: 'high' as const }
+        }));
+        
+        const analysisResponse = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: `Analyze these reference images and provide a detailed description that can be used to recreate similar scenes in AI image generation. Describe:
+- Settings/locations (architecture, interiors, landscapes)
+- Visual style and mood
+- Colors and lighting
+- Any specific details that should be incorporated
+
+Be specific and detailed. This description will be used to guide AI image generation.` },
+              ...imageContents
+            ]
+          }],
+          max_tokens: 800,
+        });
+        
+        referenceDescription = analysisResponse.choices[0].message.content || '';
+        console.log('Reference analysis complete');
+        
+        // Cache the description so we don't re-analyze on each slide
+        await supabase
+          .from('carousel_queue')
+          .update({ reference_description: referenceDescription })
+          .eq('id', queueItem.id);
+      } catch (analysisError: any) {
+        console.error('Reference analysis failed:', analysisError.message);
+      }
+    }
 
     // Process ONE slide per cron run to avoid timeout
     if (startSlide < slideCount) {

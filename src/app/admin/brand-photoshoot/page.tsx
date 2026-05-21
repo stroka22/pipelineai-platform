@@ -53,9 +53,11 @@ export default function CarouselQueuePage() {
   const [slideCount, setSlideCount] = useState(5);
   const [headshotPreview, setHeadshotPreview] = useState('');
   const [logoPreview, setLogoPreview] = useState('');
+  const [referenceImages, setReferenceImages] = useState<string[]>([]);
   
   const headshotInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const referenceInputRef = useRef<HTMLInputElement>(null);
 
   const fetchQueue = async () => {
     try {
@@ -92,6 +94,28 @@ export default function CarouselQueuePage() {
     reader.readAsDataURL(file);
   };
 
+  const handleReferenceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setReferenceImages(prev => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    // Reset input so same file can be selected again
+    if (referenceInputRef.current) {
+      referenceInputRef.current.value = '';
+    }
+  };
+
+  const removeReference = (index: number) => {
+    setReferenceImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const submitToQueue = async () => {
     if (!scenePrompt) {
       alert('Scene/prompt instructions are required');
@@ -114,8 +138,9 @@ export default function CarouselQueuePage() {
           topic,
           scene_prompt: scenePrompt,
           slide_count: slideCount,
-          headshot_url: headshotPreview,
+          headshot_url: headshotPreview || null,
           logo_url: logoPreview || null,
+          reference_images: referenceImages.length > 0 ? referenceImages : null,
         }),
       });
 
@@ -135,6 +160,7 @@ export default function CarouselQueuePage() {
         setScenePrompt('');
         setHeadshotPreview('');
         setLogoPreview('');
+        setReferenceImages([]);
         fetchQueue();
       } else {
         throw new Error(data.error);
@@ -288,7 +314,41 @@ export default function CarouselQueuePage() {
                 </div>
               </div>
 
-              {/* Prompt/Scene Instructions - FIRST */}
+              {/* Reference Images */}
+              <div className="mb-4">
+                <label className="text-sm text-white/60 mb-2 block">Reference Images (optional)</label>
+                <p className="text-xs text-white/40 mb-2">Upload houses, locations, style examples - AI will analyze and incorporate them</p>
+                <input 
+                  ref={referenceInputRef} 
+                  type="file" 
+                  accept="image/*" 
+                  multiple 
+                  onChange={handleReferenceUpload} 
+                  className="hidden" 
+                />
+                <div className="flex flex-wrap gap-2">
+                  {referenceImages.map((img, i) => (
+                    <div key={i} className="relative w-20 h-20">
+                      <Image src={img} alt="" fill className="object-cover rounded-lg" />
+                      <button 
+                        onClick={() => removeReference(i)} 
+                        className="absolute -top-1 -right-1 bg-red-500 p-0.5 rounded-full text-xs w-5 h-5 flex items-center justify-center"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <button 
+                    onClick={() => referenceInputRef.current?.click()} 
+                    className="w-20 h-20 border-2 border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center hover:border-purple-500/50 gap-1"
+                  >
+                    <Plus className="w-5 h-5 text-white/30" />
+                    <span className="text-[10px] text-white/30">Add</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Prompt/Scene Instructions */}
               <div className="mb-4">
                 <label className="text-sm text-white/60 mb-2 block">
                   {headshotPreview ? 'Scene Instructions *' : 'Image Prompt *'}
@@ -297,7 +357,7 @@ export default function CarouselQueuePage() {
                   value={scenePrompt}
                   onChange={e => setScenePrompt(e.target.value)}
                   placeholder={headshotPreview 
-                    ? "Describe the scenes (e.g., 'At executive desk with client, in conference room presenting, walking through property')"
+                    ? "Describe the scenes (e.g., 'Standing in front of the house in reference image, walking through property with clients')"
                     : "Describe the images to generate (e.g., 'Professional real estate infographics about home buying tips, modern design, blue color scheme')"
                   }
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-28 resize-none"
@@ -307,6 +367,7 @@ export default function CarouselQueuePage() {
                     ? "AI will place this person in each scene while preserving their exact likeness"
                     : "AI will generate unique images for each slide based on this prompt"
                   }
+                  {referenceImages.length > 0 && " • Reference images will be analyzed and incorporated"}
                 </p>
               </div>
 
