@@ -31,7 +31,7 @@ export async function processHeadshot(
   const size = SIZE_MAP[layout.size] || SIZE_MAP.medium;
   
   // Start with resizing to target dimensions
-  let processed = sharp(imageBuffer)
+  const processed = sharp(imageBuffer)
     .resize(size.width, size.height, { fit: 'cover', position: 'top' });
 
   // Get the resized buffer for further processing
@@ -134,7 +134,7 @@ async function applyStyleEffects(
   const canvasHeight = height + padding * 2 + (glowSize * 2) + (layout.style.includes('shadow') ? shadowSize : 0);
   
   // Create canvas with transparent background
-  let canvas = sharp({
+  const canvas = sharp({
     create: {
       width: canvasWidth,
       height: canvasHeight,
