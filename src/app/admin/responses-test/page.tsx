@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Upload, X, Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
 
 interface ImageInput {
@@ -16,56 +16,19 @@ export default function ResponsesTestPage() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, label: string) => {
-    const file = e.target.files?.[0];
+  const headshotRef = useRef<HTMLInputElement>(null);
+  const logoRef = useRef<HTMLInputElement>(null);
+  const locationRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (file: File | undefined, label: string) => {
     if (!file) return;
 
-    try {
-      // Read and compress image
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const dataUrl = event.target?.result as string;
-        
-        // Create image to get dimensions
-        const img = document.createElement('img');
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            // Fallback: use original
-            setImages(prev => [...prev, { url: dataUrl, label, preview: dataUrl }]);
-            return;
-          }
-
-          // Resize if needed (max 800px for smaller payload)
-          const maxWidth = 800;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > maxWidth) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Compress to JPEG
-          const compressed = canvas.toDataURL('image/jpeg', 0.7);
-          setImages(prev => [...prev, { url: compressed, label, preview: compressed }]);
-        };
-        img.onerror = () => {
-          // Fallback: use original
-          setImages(prev => [...prev, { url: dataUrl, label, preview: dataUrl }]);
-        };
-        img.src = dataUrl;
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      console.error('Upload error:', err);
-      setError('Failed to upload image');
-    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      setImages(prev => [...prev, { url: dataUrl, label, preview: dataUrl }]);
+    };
+    reader.readAsDataURL(file);
   };
 
   const removeImage = (index: number) => {
@@ -115,50 +78,76 @@ export default function ResponsesTestPage() {
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Upload Reference Images</h2>
           
+          {/* Hidden file inputs */}
+          <input
+            ref={headshotRef}
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              handleFileSelect(e.target.files?.[0], 'headshot - person photo');
+              e.target.value = '';
+            }}
+          />
+          <input
+            ref={logoRef}
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              handleFileSelect(e.target.files?.[0], 'company logo');
+              e.target.value = '';
+            }}
+          />
+          <input
+            ref={locationRef}
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              handleFileSelect(e.target.files?.[0], 'location/building photo');
+              e.target.value = '';
+            }}
+          />
+          
           <div className="grid grid-cols-3 gap-4 mb-4">
             {/* Headshot Upload */}
             <div>
-              <label className="block text-sm text-gray-400 mb-2">Headshot</label>
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-purple-500 transition-colors">
+              <p className="text-sm text-gray-400 mb-2">Headshot</p>
+              <button
+                type="button"
+                onClick={() => headshotRef.current?.click()}
+                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-gray-800/50 transition-colors"
+              >
                 <Upload className="w-8 h-8 text-gray-500" />
-                <span className="text-sm text-gray-500 mt-2">Upload</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleFileUpload(e, 'headshot - person photo')}
-                />
-              </label>
+                <span className="text-sm text-gray-500 mt-2">Click to Upload</span>
+              </button>
             </div>
 
             {/* Logo Upload */}
             <div>
-              <label className="block text-sm text-gray-400 mb-2">Logo</label>
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-purple-500 transition-colors">
+              <p className="text-sm text-gray-400 mb-2">Logo</p>
+              <button
+                type="button"
+                onClick={() => logoRef.current?.click()}
+                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-gray-800/50 transition-colors"
+              >
                 <Upload className="w-8 h-8 text-gray-500" />
-                <span className="text-sm text-gray-500 mt-2">Upload</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleFileUpload(e, 'company logo')}
-                />
-              </label>
+                <span className="text-sm text-gray-500 mt-2">Click to Upload</span>
+              </button>
             </div>
 
             {/* Location/House Upload */}
             <div>
-              <label className="block text-sm text-gray-400 mb-2">Location/House</label>
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-purple-500 transition-colors">
+              <p className="text-sm text-gray-400 mb-2">Location/House</p>
+              <button
+                type="button"
+                onClick={() => locationRef.current?.click()}
+                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-gray-800/50 transition-colors"
+              >
                 <Upload className="w-8 h-8 text-gray-500" />
-                <span className="text-sm text-gray-500 mt-2">Upload</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleFileUpload(e, 'location/building photo')}
-                />
-              </label>
+                <span className="text-sm text-gray-500 mt-2">Click to Upload</span>
+              </button>
             </div>
           </div>
 
@@ -175,8 +164,9 @@ export default function ResponsesTestPage() {
                       className="w-24 h-24 object-cover rounded-lg"
                     />
                     <button
+                      type="button"
                       onClick={() => removeImage(i)}
-                      className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
+                      className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-400"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -203,6 +193,7 @@ export default function ResponsesTestPage() {
 
         {/* Generate Button */}
         <button
+          type="button"
           onClick={runTest}
           disabled={loading || images.length === 0}
           className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:from-purple-500 hover:to-blue-500 transition-all"
