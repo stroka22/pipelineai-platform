@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
   try {
     // First check for items already processing (continue where we left off)
     // Only get ONE processing item - the oldest one by started_at
-    let { data: processingItems } = await supabase
+    const { data: processingItems } = await supabase
       .from('carousel_queue')
       .select('*')
       .eq('status', 'processing')

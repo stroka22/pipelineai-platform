@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     const barHeight = 140; // Taller bar for better visibility
     
     // Resize original to 1024x1024
-    let baseImage = await sharp(originalBuffer)
+    const baseImage = await sharp(originalBuffer)
       .resize(imageSize, imageSize, { fit: 'cover' })
       .png()
       .toBuffer();
