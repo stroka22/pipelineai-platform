@@ -9,38 +9,13 @@ function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-// Scene templates for different slide positions
-const SCENE_TEMPLATES = [
-  {
-    position: 'hook',
-    scene: 'Professional headshot with premium corporate background, confident executive pose, looking directly at camera with authority',
-    overlay: 'minimal', // Just badge number
-  },
-  {
-    position: 'authority',
-    scene: 'Sitting at an executive desk in a premium corner office, reviewing important documents, natural light from large windows, bookshelves in background',
-    overlay: 'full',
-  },
-  {
-    position: 'consultation', 
-    scene: 'Having a professional consultation meeting with a client (shown from behind), pointing at documents on desk, engaged conversation',
-    overlay: 'full',
-  },
-  {
-    position: 'presenting',
-    scene: 'Standing confidently presenting to a small group (backs visible), modern conference room, large display screen in background',
-    overlay: 'full',
-  },
-  {
-    position: 'success',
-    scene: 'Confident pose in premium office, subtle success indicators (awards, certifications on wall), warm professional lighting',
-    overlay: 'full',
-  },
-  {
-    position: 'cta',
-    scene: 'Warm, approachable pose, slight smile, inviting gesture, clean professional background suitable for contact information overlay',
-    overlay: 'contact',
-  },
+// Default scene variations (used if no custom prompt provided)
+const DEFAULT_SCENE_VARIATIONS = [
+  'confident professional pose, looking at camera',
+  'reviewing documents at desk',
+  'in a meeting with a client',
+  'presenting to a small group',
+  'standing confidently in professional setting',
 ];
 
 async function urlToBuffer(url: string): Promise<Buffer> {
@@ -93,16 +68,9 @@ export async function GET(request: NextRequest) {
     
     // Determine which slides to generate based on slide_count
     const slideCount = queueItem.slide_count || 5;
-    const scenesToUse = SCENE_TEMPLATES.slice(0, Math.min(slideCount, SCENE_TEMPLATES.length));
     
-    // If we need more slides, repeat middle scenes
-    while (scenesToUse.length < slideCount) {
-      const middleScene = SCENE_TEMPLATES[Math.floor(Math.random() * (SCENE_TEMPLATES.length - 2)) + 1];
-      scenesToUse.splice(scenesToUse.length - 1, 0, { ...middleScene });
-    }
-
-    // Ensure last slide is CTA
-    scenesToUse[scenesToUse.length - 1] = SCENE_TEMPLATES[SCENE_TEMPLATES.length - 1];
+    // Use custom scene prompt or fallback to defaults
+    const customPrompt = queueItem.scene_prompt || '';
 
     const slides: any[] = queueItem.slides || [];
     const startSlide = queueItem.current_slide || 0;
@@ -110,7 +78,6 @@ export async function GET(request: NextRequest) {
     // Process ONE slide per cron run to avoid timeout
     if (startSlide < slideCount) {
       const slideIndex = startSlide;
-      const sceneTemplate = scenesToUse[slideIndex];
 
       await supabase
         .from('carousel_queue')
@@ -125,19 +92,38 @@ export async function GET(request: NextRequest) {
       try {
         const headshotFile = await toFile(headshotBuffer, 'headshot.png', { type: 'image/png' });
 
+        // Build scene description - use custom prompt or default variation
+        let sceneDescription: string;
+        if (customPrompt) {
+          // Add slight variation for each slide
+          const variations = [
+            'Variation: looking directly at camera',
+            'Variation: slightly turned, engaged expression',
+            'Variation: gesturing while speaking',
+            'Variation: reviewing something on desk',
+            'Variation: warm, approachable smile',
+          ];
+          const variation = variations[slideIndex % variations.length];
+          sceneDescription = `${customPrompt}\n\n${variation}`;
+        } else {
+          sceneDescription = DEFAULT_SCENE_VARIATIONS[slideIndex % DEFAULT_SCENE_VARIATIONS.length];
+        }
+
         const editPrompt = `Transform this photo into a professional business scene.
 
-SCENE: ${sceneTemplate.scene}
+SCENE INSTRUCTIONS:
+${sceneDescription}
 
-INDUSTRY CONTEXT: ${queueItem.industry || 'Business Professional'}
-TOPIC: ${queueItem.topic || 'Professional expertise and authority'}
+INDUSTRY: ${queueItem.industry || 'Business Professional'}
+CONTEXT: ${queueItem.topic || 'Professional expertise and authority'}
 
 CRITICAL REQUIREMENTS:
-- Keep the EXACT same person - same face, same features, same hair, same appearance
-- Only change the setting/scene around them
+- Keep the EXACT same person - same face, same features, same hair, same beard, same appearance
+- Only change the setting/scene/background around them
 - Professional corporate photography style
 - Premium quality, excellent lighting
-- Photorealistic, not illustrated`;
+- Photorealistic, not illustrated or cartoonish
+- The person should look natural in the scene`;
 
         const imageResponse = await openai.images.edit({
           model: 'gpt-image-2',
@@ -157,9 +143,8 @@ CRITICAL REQUIREMENTS:
         // Add slide to results
         slides[slideIndex] = {
           slideNumber: slideIndex + 1,
-          sceneType: sceneTemplate.position,
+          sceneDescription,
           imageUrl,
-          overlay: sceneTemplate.overlay,
           generatedAt: new Date().toISOString(),
         };
 
@@ -182,7 +167,6 @@ CRITICAL REQUIREMENTS:
         // Mark the slide as failed but continue
         slides[slideIndex] = {
           slideNumber: slideIndex + 1,
-          sceneType: sceneTemplate.position,
           imageUrl: null,
           error: slideError.message,
           generatedAt: new Date().toISOString(),

@@ -49,6 +49,7 @@ export default function CarouselQueuePage() {
   const [website, setWebsite] = useState('');
   const [industry, setIndustry] = useState('');
   const [topic, setTopic] = useState('');
+  const [scenePrompt, setScenePrompt] = useState('');
   const [slideCount, setSlideCount] = useState(5);
   const [headshotPreview, setHeadshotPreview] = useState('');
   const [logoPreview, setLogoPreview] = useState('');
@@ -115,6 +116,7 @@ export default function CarouselQueuePage() {
           website,
           industry,
           topic,
+          scene_prompt: scenePrompt,
           slide_count: slideCount,
           headshot_url: headshotPreview,
           logo_url: logoPreview || null,
@@ -134,6 +136,7 @@ export default function CarouselQueuePage() {
         setWebsite('');
         setIndustry('');
         setTopic('');
+        setScenePrompt('');
         setHeadshotPreview('');
         setLogoPreview('');
         fetchQueue();
@@ -324,8 +327,23 @@ export default function CarouselQueuePage() {
                 value={topic}
                 onChange={e => setTopic(e.target.value)}
                 placeholder="Topic / Focus (e.g., '5 reasons to work with us')"
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-20 resize-none mb-4"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-16 resize-none mb-4"
               />
+
+              <div className="mb-4">
+                <label className="text-sm text-white/60 mb-2 block">Scene Instructions *</label>
+                <textarea
+                  value={scenePrompt}
+                  onChange={e => setScenePrompt(e.target.value)}
+                  placeholder="Describe how you want this person shown in the images. Examples:
+• At a premium executive desk reviewing financial documents with a client
+• Walking through a luxury home with buyers, pointing out features
+• In a modern conference room presenting to a small team
+• Standing confidently in front of a construction site with blueprints"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-32 resize-none"
+                />
+                <p className="text-xs text-white/40 mt-1">This prompt will be used to generate each scene while keeping the person's likeness</p>
+              </div>
 
               <div className="flex items-center gap-4 mb-6">
                 <label className="text-sm text-white/60">Slides:</label>

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS carousel_queue (
   
   -- Carousel settings
   topic TEXT, -- What the carousel is about
+  scene_prompt TEXT, -- User's custom scene instructions
   slide_count INTEGER DEFAULT 5,
   style TEXT DEFAULT 'professional', -- professional, bold, minimal, etc.
   
