@@ -6,24 +6,24 @@ import Link from 'next/link';
 import { 
   Sparkles, 
   Image as ImageIcon, 
-  Layers, 
+  Camera,
   Building2, 
   FileText, 
   FolderOpen,
   Plus,
   ArrowRight,
-  Zap,
   TrendingUp,
-  Clock
+  Layers,
+  Wand2
 } from 'lucide-react';
 
 
 export default function StudioDashboard() {
   const [stats, setStats] = useState({
     totalImages: 0,
-    totalCarousels: 0,
     totalBrands: 0,
     totalTemplates: 0,
+    queueItems: 0,
   });
   const [recentImages, setRecentImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,18 +34,18 @@ export default function StudioDashboard() {
 
   async function loadDashboardData() {
     try {
-      const [imagesRes, carouselsRes, brandsRes, templatesRes] = await Promise.all([
+      const [imagesRes, brandsRes, templatesRes, queueRes] = await Promise.all([
         supabase.from('generated_images').select('*', { count: 'exact', head: true }),
-        supabase.from('carousel_projects').select('*', { count: 'exact', head: true }),
         supabase.from('brand_profiles').select('*', { count: 'exact', head: true }),
         supabase.from('prompt_templates').select('*', { count: 'exact', head: true }),
+        supabase.from('carousel_queue').select('*', { count: 'exact', head: true }).neq('status', 'complete'),
       ]);
 
       setStats({
         totalImages: imagesRes.count || 0,
-        totalCarousels: carouselsRes.count || 0,
         totalBrands: brandsRes.count || 0,
         totalTemplates: templatesRes.count || 0,
+        queueItems: queueRes.count || 0,
       });
 
       // Load recent images
@@ -63,34 +63,38 @@ export default function StudioDashboard() {
     }
   }
 
-  const quickActions = [
+  const createTools = [
     {
-      title: 'Pro Create',
-      description: 'Real headshots & logos',
-      icon: Sparkles,
-      href: '/admin/studio/pro-create',
-      color: 'from-amber-500 to-orange-600',
-    },
-    {
-      title: 'AI Create',
-      description: 'Prompt + images = magic',
-      icon: Zap,
-      href: '/admin/studio/create',
-      color: 'from-fuchsia-500 to-purple-600',
+      title: 'Brand Photoshoot',
+      description: 'Put clients in professional scenes with AI',
+      icon: Camera,
+      href: '/admin/brand-photoshoot',
+      color: 'from-purple-500 to-pink-600',
+      badge: stats.queueItems > 0 ? `${stats.queueItems} in queue` : null,
     },
     {
       title: 'Generate Image',
-      description: 'Create a single AI image',
-      icon: ImageIcon,
+      description: 'Create a single AI image from prompt',
+      icon: Wand2,
       href: '/admin/studio/generate',
       color: 'from-cyan-500 to-blue-500',
     },
     {
-      title: 'Create Carousel',
-      description: 'Build a 5 or 10 slide carousel',
+      title: 'Pro Create',
+      description: 'Composite headshots & logos on templates',
       icon: Layers,
-      href: '/admin/studio/carousel',
-      color: 'from-purple-500 to-pink-500',
+      href: '/admin/studio/pro-create',
+      color: 'from-amber-500 to-orange-600',
+    },
+  ];
+
+  const manageTools = [
+    {
+      title: 'Content Library',
+      description: 'Browse all generated images',
+      icon: FolderOpen,
+      href: '/admin/studio/library',
+      color: 'from-emerald-500 to-green-600',
     },
     {
       title: 'Brand Profiles',
@@ -104,21 +108,7 @@ export default function StudioDashboard() {
       description: 'Saved prompt configurations',
       icon: FileText,
       href: '/admin/studio/templates',
-      color: 'from-green-500 to-emerald-500',
-    },
-    {
-      title: 'Carousel Studio',
-      description: 'Build premium carousels',
-      icon: Layers,
-      href: '/admin/carousel-studio',
-      color: 'from-blue-500 to-purple-600',
-    },
-    {
-      title: 'Carousel Queue',
-      description: 'Batch process at scale',
-      icon: Clock,
-      href: '/admin/carousel-queue',
-      color: 'from-yellow-500 to-orange-500',
+      color: 'from-slate-500 to-gray-600',
     },
   ];
 
@@ -134,43 +124,25 @@ export default function StudioDashboard() {
               </Link>
               <div className="h-6 w-px bg-white/20" />
               <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#C96A2B]" />
+                <Sparkles className="w-5 h-5 text-purple-500" />
                 AI Studio
               </h1>
             </div>
-            <Link
-              href="/admin/studio/library"
-              className="text-white/60 hover:text-white text-sm flex items-center gap-1"
-            >
-              <FolderOpen className="w-4 h-4" />
-              Content Library
-            </Link>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="bg-[#111111] border border-white/10 rounded-xl p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                <ImageIcon className="w-5 h-5 text-orange-500" />
+              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                <ImageIcon className="w-5 h-5 text-purple-500" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{stats.totalImages}</p>
                 <p className="text-white/50 text-sm">Images</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-[#111111] border border-white/10 rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                <Layers className="w-5 h-5 text-purple-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{stats.totalCarousels}</p>
-                <p className="text-white/50 text-sm">Carousels</p>
               </div>
             </div>
           </div>
@@ -198,24 +170,58 @@ export default function StudioDashboard() {
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Create Section */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action) => (
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-purple-400" />
+            Create
+          </h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            {createTools.map((tool) => (
               <Link
-                key={action.title}
-                href={action.href}
-                className="group bg-[#111111] border border-white/10 rounded-xl p-5 hover:border-white/20 transition-all"
+                key={tool.title}
+                href={tool.href}
+                className="group bg-[#111111] border border-white/10 rounded-xl p-5 hover:border-white/20 transition-all relative"
               >
-                <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                  <action.icon className="w-6 h-6 text-white" />
+                {tool.badge && (
+                  <span className="absolute top-3 right-3 bg-purple-500/20 text-purple-400 text-xs px-2 py-1 rounded-full">
+                    {tool.badge}
+                  </span>
+                )}
+                <div className={`w-12 h-12 bg-gradient-to-br ${tool.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                  <tool.icon className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-white font-semibold mb-1 flex items-center gap-2">
-                  {action.title}
+                  {tool.title}
                   <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                 </h3>
-                <p className="text-white/50 text-sm">{action.description}</p>
+                <p className="text-white/50 text-sm">{tool.description}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Manage Section */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <FolderOpen className="w-5 h-5 text-emerald-400" />
+            Manage
+          </h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            {manageTools.map((tool) => (
+              <Link
+                key={tool.title}
+                href={tool.href}
+                className="group bg-[#111111] border border-white/10 rounded-xl p-5 hover:border-white/20 transition-all"
+              >
+                <div className={`w-12 h-12 bg-gradient-to-br ${tool.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                  <tool.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-white font-semibold mb-1 flex items-center gap-2">
+                  {tool.title}
+                  <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </h3>
+                <p className="text-white/50 text-sm">{tool.description}</p>
               </Link>
             ))}
           </div>
@@ -227,7 +233,7 @@ export default function StudioDashboard() {
             <h2 className="text-lg font-semibold text-white">Recent Generations</h2>
             <Link
               href="/admin/studio/library"
-              className="text-[#C96A2B] text-sm hover:underline"
+              className="text-purple-400 text-sm hover:underline"
             >
               View all →
             </Link>
@@ -257,32 +263,32 @@ export default function StudioDashboard() {
           ) : (
             <div className="bg-[#111111] border border-white/10 rounded-xl p-12 text-center">
               <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-8 h-8 text-white/30" />
+                <ImageIcon className="w-8 h-8 text-white/30" />
               </div>
               <h3 className="text-white font-semibold mb-2">No images yet</h3>
               <p className="text-white/50 text-sm mb-4">Start generating AI images to build your content library</p>
               <Link
-                href="/admin/studio/generate"
-                className="inline-flex items-center gap-2 bg-[#C96A2B] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#B55D24] transition-colors"
+                href="/admin/brand-photoshoot"
+                className="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-500 transition-colors"
               >
-                <Plus className="w-4 h-4" />
-                Generate First Image
+                <Camera className="w-4 h-4" />
+                Start Brand Photoshoot
               </Link>
             </div>
           )}
         </div>
 
         {/* Tips Section */}
-        <div className="bg-gradient-to-br from-[#C96A2B]/20 to-transparent border border-[#C96A2B]/30 rounded-xl p-6">
+        <div className="bg-gradient-to-br from-purple-500/20 to-transparent border border-purple-500/30 rounded-xl p-6">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-[#C96A2B] rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
               <TrendingUp className="w-5 h-5 text-white" />
             </div>
             <div>
               <h3 className="text-white font-semibold mb-1">Pro Tip</h3>
               <p className="text-white/60 text-sm">
-                Create Brand Profiles first to save time. When you generate content, you can select a brand 
-                and all the business details, colors, and style preferences will be auto-applied.
+                <strong>Brand Photoshoot</strong> is your main tool - upload a headshot, describe the scene, and AI places 
+                your client in professional settings while preserving their exact likeness. Queue multiple clients to produce at scale.
               </p>
             </div>
           </div>

@@ -14,7 +14,7 @@ import {
   Trash2,
   RefreshCw,
   Upload,
-  Layers,
+  Camera,
   Play
 } from 'lucide-react';
 
@@ -214,10 +214,10 @@ export default function CarouselQueuePage() {
             </Link>
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Layers className="w-6 h-6 text-purple-400" />
-                Carousel Queue
+                <Camera className="w-6 h-6 text-purple-400" />
+                Brand Photoshoot
               </h1>
-              <p className="text-white/50 text-sm">Batch process carousels at scale</p>
+              <p className="text-white/50 text-sm">Put clients in professional scenes with AI</p>
             </div>
           </div>
           
@@ -233,7 +233,7 @@ export default function CarouselQueuePage() {
               className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
-              Add to Queue
+              New Photoshoot
             </button>
           </div>
         </div>
@@ -242,7 +242,7 @@ export default function CarouselQueuePage() {
         {showForm && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-[#0a0a0f] border border-white/10 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-              <h2 className="text-xl font-bold mb-6">Add Carousel to Queue</h2>
+              <h2 className="text-xl font-bold mb-6">New Brand Photoshoot</h2>
               
               <div className="grid grid-cols-2 gap-4 mb-6">
                 {/* Headshot */}
@@ -368,8 +368,8 @@ export default function CarouselQueuePage() {
                   disabled={submitting || !headshotPreview || !companyName}
                   className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 px-6 py-3 rounded-lg flex items-center justify-center gap-2"
                 >
-                  {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
-                  Add to Queue
+                  {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+                  Start Photoshoot
                 </button>
               </div>
             </div>
@@ -383,9 +383,9 @@ export default function CarouselQueuePage() {
           </div>
         ) : items.length === 0 ? (
           <div className="text-center py-20 text-white/40">
-            <Layers className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No carousels in queue</p>
-            <p className="text-sm mt-2">Click "Add to Queue" to get started</p>
+            <Camera className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>No photoshoots yet</p>
+            <p className="text-sm mt-2">Click "New Photoshoot" to get started</p>
           </div>
         ) : (
           <div className="space-y-4">
