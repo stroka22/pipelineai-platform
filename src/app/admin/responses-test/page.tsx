@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Upload, X, Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { useState } from 'react';
+import { X, Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
 
 interface ImageInput {
   url: string;
@@ -16,8 +16,6 @@ export default function ResponsesTestPage() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const fileRef = useRef<HTMLInputElement>(null);
-
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -26,9 +24,8 @@ export default function ResponsesTestPage() {
         img.onload = () => {
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
-          if (!ctx) { reject('Canvas not supported'); return; }
+          if (!ctx) { resolve(reader.result as string); return; }
 
-          // Max 512px wide, JPEG 60% quality to keep payload small
           const maxW = 512;
           let w = img.width, h = img.height;
           if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
@@ -38,7 +35,7 @@ export default function ResponsesTestPage() {
           ctx.drawImage(img, 0, 0, w, h);
           resolve(canvas.toDataURL('image/jpeg', 0.6));
         };
-        img.onerror = () => reject('Image load failed');
+        img.onerror = () => resolve(reader.result as string);
         img.src = reader.result as string;
       };
       reader.onerror = () => reject('File read failed');
@@ -46,14 +43,16 @@ export default function ResponsesTestPage() {
     });
   };
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files) return;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
     for (const file of Array.from(files)) {
       try {
         const compressed = await compressImage(file);
         setImages(prev => [...prev, { url: compressed, label: file.name, preview: compressed }]);
       } catch (err) {
-        console.error('Compress failed for', file.name, err);
+        console.error('Failed:', err);
       }
     }
   };
@@ -101,37 +100,24 @@ export default function ResponsesTestPage() {
           Upload multiple images and describe what you want. Like ChatGPT.
         </p>
 
-        {/* Hidden file input - accepts multiple */}
-        <input
-          ref={fileRef}
-          type="file"
-          multiple
-          className="hidden"
-          onChange={(e) => {
-            handleFiles(e.target.files);
-            e.target.value = '';
-          }}
-        />
-
-        {/* Upload Area */}
+        {/* Plain visible file input - simplest possible approach */}
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Upload Images</h2>
 
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="w-full h-40 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-gray-800/50 transition-colors flex flex-col items-center justify-center gap-3"
-          >
-            <Upload className="w-10 h-10 text-gray-500" />
-            <span className="text-gray-400">Click to upload images</span>
-            <span className="text-sm text-gray-600">Select one or multiple at once</span>
-          </button>
+          <div className="mb-4">
+            <input
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              className="block w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer"
+            />
+          </div>
 
           {/* Previews */}
           {images.length > 0 && (
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-400">{images.length} image{images.length !== 1 ? 's' : ''} uploaded</span>
+                <span className="text-sm text-gray-400">{images.length} image{images.length !== 1 ? 's' : ''}</span>
                 <button
                   type="button"
                   onClick={() => setImages([])}
@@ -165,18 +151,18 @@ export default function ResponsesTestPage() {
           )}
         </div>
 
-        {/* Prompt Section */}
+        {/* Prompt */}
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">What do you want?</h2>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe what you want generated using the uploaded images... e.g., 'Put this person in front of this house with this logo in the corner'"
+            placeholder="Describe what you want generated... e.g., 'Put this person in front of this house with this logo in the corner'"
             className="w-full h-32 bg-gray-800 border border-gray-700 rounded-lg p-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
           />
         </div>
 
-        {/* Generate Button */}
+        {/* Generate */}
         <button
           type="button"
           onClick={runTest}
@@ -186,7 +172,7 @@ export default function ResponsesTestPage() {
           {loading ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              Testing Responses API...
+              Generating...
             </>
           ) : (
             <>
@@ -196,15 +182,14 @@ export default function ResponsesTestPage() {
           )}
         </button>
 
-        {/* Error Display */}
+        {/* Error */}
         {error && (
           <div className="mt-6 bg-red-900/50 border border-red-500 rounded-xl p-4">
-            <h3 className="font-semibold text-red-400 mb-2">Error</h3>
-            <pre className="text-sm text-red-300 whitespace-pre-wrap">{error}</pre>
+            <p className="text-sm text-red-300 whitespace-pre-wrap">{error}</p>
           </div>
         )}
 
-        {/* Result Display */}
+        {/* Result */}
         {result && (
           <div className="mt-6 bg-gray-900 rounded-xl p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
