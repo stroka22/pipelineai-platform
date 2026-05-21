@@ -18,16 +18,44 @@ export default function ResponsesTestPage() {
 
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleFiles = (files: FileList | null) => {
-    if (!files) return;
-    Array.from(files).forEach(file => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        setImages(prev => [...prev, { url: dataUrl, label: file.name, preview: dataUrl }]);
+      reader.onload = () => {
+        const img = document.createElement('img');
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { reject('Canvas not supported'); return; }
+
+          // Max 512px wide, JPEG 60% quality to keep payload small
+          const maxW = 512;
+          let w = img.width, h = img.height;
+          if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+
+          canvas.width = w;
+          canvas.height = h;
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        };
+        img.onerror = () => reject('Image load failed');
+        img.src = reader.result as string;
       };
+      reader.onerror = () => reject('File read failed');
       reader.readAsDataURL(file);
     });
+  };
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files) return;
+    for (const file of Array.from(files)) {
+      try {
+        const compressed = await compressImage(file);
+        setImages(prev => [...prev, { url: compressed, label: file.name, preview: compressed }]);
+      } catch (err) {
+        console.error('Compress failed for', file.name, err);
+      }
+    }
   };
 
   const removeImage = (index: number) => {
