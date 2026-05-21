@@ -16,19 +16,18 @@ export default function ResponsesTestPage() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const headshotRef = useRef<HTMLInputElement>(null);
-  const logoRef = useRef<HTMLInputElement>(null);
-  const locationRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (file: File | undefined, label: string) => {
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const dataUrl = reader.result as string;
-      setImages(prev => [...prev, { url: dataUrl, label, preview: dataUrl }]);
-    };
-    reader.readAsDataURL(file);
+  const handleFiles = (files: FileList | null) => {
+    if (!files) return;
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        setImages(prev => [...prev, { url: dataUrl, label: file.name, preview: dataUrl }]);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const removeImage = (index: number) => {
@@ -53,7 +52,7 @@ export default function ResponsesTestPage() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         setError(data.error || 'Request failed');
       } else {
@@ -71,97 +70,56 @@ export default function ResponsesTestPage() {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">Responses API Test</h1>
         <p className="text-gray-400 mb-8">
-          Test if the new OpenAI Responses API can preserve likeness of multiple input images
+          Upload multiple images and describe what you want. Like ChatGPT.
         </p>
 
-        {/* Image Upload Section */}
+        {/* Hidden file input - accepts multiple */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/png,image/jpeg,image/jpg,image/webp"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            handleFiles(e.target.files);
+            e.target.value = '';
+          }}
+        />
+
+        {/* Upload Area */}
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Upload Reference Images</h2>
-          
-          {/* Hidden file inputs */}
-          <input
-            ref={headshotRef}
-            type="file"
-            accept="image/png,image/jpeg,image/jpg,image/webp"
-            className="hidden"
-            onChange={(e) => {
-              handleFileSelect(e.target.files?.[0], 'headshot - person photo');
-              e.target.value = '';
-            }}
-          />
-          <input
-            ref={logoRef}
-            type="file"
-            accept="image/png,image/jpeg,image/jpg,image/webp"
-            className="hidden"
-            onChange={(e) => {
-              handleFileSelect(e.target.files?.[0], 'company logo');
-              e.target.value = '';
-            }}
-          />
-          <input
-            ref={locationRef}
-            type="file"
-            accept="image/png,image/jpeg,image/jpg,image/webp"
-            className="hidden"
-            onChange={(e) => {
-              handleFileSelect(e.target.files?.[0], 'location/building photo');
-              e.target.value = '';
-            }}
-          />
-          
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            {/* Headshot Upload */}
-            <div>
-              <p className="text-sm text-gray-400 mb-2">Headshot</p>
-              <button
-                type="button"
-                onClick={() => headshotRef.current?.click()}
-                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-gray-800/50 transition-colors"
-              >
-                <Upload className="w-8 h-8 text-gray-500" />
-                <span className="text-sm text-gray-500 mt-2">Click to Upload</span>
-              </button>
-            </div>
+          <h2 className="text-xl font-semibold mb-4">Upload Images</h2>
 
-            {/* Logo Upload */}
-            <div>
-              <p className="text-sm text-gray-400 mb-2">Logo</p>
-              <button
-                type="button"
-                onClick={() => logoRef.current?.click()}
-                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-gray-800/50 transition-colors"
-              >
-                <Upload className="w-8 h-8 text-gray-500" />
-                <span className="text-sm text-gray-500 mt-2">Click to Upload</span>
-              </button>
-            </div>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="w-full h-40 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-gray-800/50 transition-colors flex flex-col items-center justify-center gap-3"
+          >
+            <Upload className="w-10 h-10 text-gray-500" />
+            <span className="text-gray-400">Click to upload images</span>
+            <span className="text-sm text-gray-600">Select one or multiple at once</span>
+          </button>
 
-            {/* Location/House Upload */}
-            <div>
-              <p className="text-sm text-gray-400 mb-2">Location/House</p>
-              <button
-                type="button"
-                onClick={() => locationRef.current?.click()}
-                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-gray-800/50 transition-colors"
-              >
-                <Upload className="w-8 h-8 text-gray-500" />
-                <span className="text-sm text-gray-500 mt-2">Click to Upload</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Uploaded Images Preview */}
+          {/* Previews */}
           {images.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-sm text-gray-400 mb-2">Uploaded ({images.length})</h3>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-400">{images.length} image{images.length !== 1 ? 's' : ''} uploaded</span>
+                <button
+                  type="button"
+                  onClick={() => setImages([])}
+                  className="text-xs text-red-400 hover:text-red-300"
+                >
+                  Clear all
+                </button>
+              </div>
               <div className="flex gap-3 flex-wrap">
                 {images.map((img, i) => (
                   <div key={i} className="relative">
                     <img
                       src={img.preview}
                       alt={img.label}
-                      className="w-24 h-24 object-cover rounded-lg"
+                      className="w-24 h-24 object-cover rounded-lg border border-gray-700"
                     />
                     <button
                       type="button"
@@ -170,7 +128,7 @@ export default function ResponsesTestPage() {
                     >
                       <X className="w-3 h-3" />
                     </button>
-                    <span className="text-xs text-gray-400 block mt-1 truncate w-24">
+                    <span className="text-xs text-gray-500 block mt-1 truncate w-24">
                       {img.label}
                     </span>
                   </div>
@@ -182,11 +140,11 @@ export default function ResponsesTestPage() {
 
         {/* Prompt Section */}
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Generation Prompt</h2>
+          <h2 className="text-xl font-semibold mb-4">What do you want?</h2>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe how you want the images combined... e.g., 'Show this real estate agent standing in front of this house, with their company logo visible in the corner'"
+            placeholder="Describe what you want generated using the uploaded images... e.g., 'Put this person in front of this house with this logo in the corner'"
             className="w-full h-32 bg-gray-800 border border-gray-700 rounded-lg p-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
           />
         </div>
@@ -206,7 +164,7 @@ export default function ResponsesTestPage() {
           ) : (
             <>
               <Sparkles className="w-5 h-5" />
-              Test Multi-Image Generation
+              Generate
             </>
           )}
         </button>
@@ -226,7 +184,7 @@ export default function ResponsesTestPage() {
               <ImageIcon className="w-5 h-5" />
               Result
             </h2>
-            
+
             {result.generatedImage && (
               <div className="mb-4">
                 <img
