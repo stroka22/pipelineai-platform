@@ -16,41 +16,56 @@ export default function ResponsesTestPage() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const compressImage = (file: File, maxWidth = 1024): Promise<string> => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
-      const img = new window.Image();
-      
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
-        
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width;
-          width = maxWidth;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // Compress to JPEG at 80% quality
-        const compressed = canvas.toDataURL('image/jpeg', 0.8);
-        resolve(compressed);
-      };
-      
-      img.src = URL.createObjectURL(file);
-    });
-  };
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, label: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Compress image before storing
-    const compressed = await compressImage(file);
-    setImages(prev => [...prev, { url: compressed, label, preview: compressed }]);
+    try {
+      // Read and compress image
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const dataUrl = event.target?.result as string;
+        
+        // Create image to get dimensions
+        const img = document.createElement('img');
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            // Fallback: use original
+            setImages(prev => [...prev, { url: dataUrl, label, preview: dataUrl }]);
+            return;
+          }
+
+          // Resize if needed (max 800px for smaller payload)
+          const maxWidth = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress to JPEG
+          const compressed = canvas.toDataURL('image/jpeg', 0.7);
+          setImages(prev => [...prev, { url: compressed, label, preview: compressed }]);
+        };
+        img.onerror = () => {
+          // Fallback: use original
+          setImages(prev => [...prev, { url: dataUrl, label, preview: dataUrl }]);
+        };
+        img.src = dataUrl;
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError('Failed to upload image');
+    }
   };
 
   const removeImage = (index: number) => {
