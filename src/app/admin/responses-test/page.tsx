@@ -77,7 +77,6 @@ export default function ResponsesTestPage() {
         <input
           ref={fileRef}
           type="file"
-          accept="image/png,image/jpeg,image/jpg,image/webp"
           multiple
           className="hidden"
           onChange={(e) => {
