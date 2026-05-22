@@ -62,6 +62,8 @@ export async function POST(request: NextRequest) {
       text: prompt || 'Generate a professional image incorporating all the provided reference images.',
     });
 
+    console.log(`Sending to Responses API: ${content.length} content items, prompt length: ${(prompt || '').length}`);
+
     // Use gpt-4o with image_generation tool - same approach as test page
     const response = await openai.responses.create({
       model: 'gpt-4o',
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     // Extract generated image
     let generatedImageBase64 = null;
-    console.log('Response output types:', response.output?.map((o: any) => o.type));
+    console.log('Response output:', JSON.stringify(response.output?.map((o: any) => ({ type: o.type, hasResult: !!(o as any).result }))));
     
     if (response.output) {
       for (const item of response.output) {
@@ -92,20 +94,32 @@ export async function POST(request: NextRequest) {
             break;
           }
         }
+        // Also check for message content that might contain refusal
+        if (item.type === 'message') {
+          const msgItem = item as any;
+          const textContent = msgItem.content?.find((c: any) => c.type === 'output_text');
+          if (textContent) {
+            console.log('API returned text instead of image:', textContent.text?.substring(0, 300));
+          }
+        }
       }
     }
 
     if (!generatedImageBase64) {
       // Return full output for debugging
-      const outputDebug = response.output?.map((o: any) => ({
-        type: o.type,
-        hasResult: !!o.result,
-        content: o.type === 'message' ? o.content?.map((c: any) => ({ type: c.type, text: c.text?.substring(0, 200) })) : undefined,
-      }));
+      const outputDebug = response.output?.map((o: any) => {
+        const debug: any = { type: o.type };
+        if (o.type === 'message') {
+          debug.text = o.content?.map((c: any) => c.text?.substring(0, 300)).join(' | ');
+        }
+        if (o.type === 'image_generation_call') {
+          debug.hasResult = !!o.result;
+        }
+        return debug;
+      });
       return NextResponse.json({ 
-        error: 'No image was generated', 
+        error: 'No image was generated - API returned text instead', 
         debug: outputDebug,
-        outputCount: response.output?.length,
       }, { status: 500 });
     }
 

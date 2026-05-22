@@ -159,20 +159,23 @@ export default function BrandPhotoshootPage() {
     for (let i = 0; i < slideCount; i++) {
       setCurrentGenSlide(i + 1);
       try {
-        const variations = [
-          'confident professional pose, looking at camera',
-          'reviewing documents at desk',
-          'in a meeting with a client',
-          'presenting to a small group',
-          'standing confidently in professional setting',
-          'warm, approachable expression',
-          'thoughtful expression, hand on chin',
-          'gesturing while explaining something',
-          'casual but professional stance',
-          'pointing at something off-camera',
-        ];
-        const variation = variations[i % variations.length];
-        const fullPrompt = `${scenePrompt}\n\nVariation: ${variation}\n\nIndustry: ${industry || 'Business Professional'}`;
+        // Keep prompt simple like the test page - long prompts cause text responses instead of images
+        let fullPrompt = scenePrompt || 'Generate a professional image incorporating all the provided reference images.';
+        if (slideCount > 1) {
+          const variations = [
+            'confident professional pose, looking at camera',
+            'reviewing documents at desk',
+            'in a meeting with a client',
+            'presenting to a small group',
+            'standing confidently in professional setting',
+            'warm, approachable expression',
+            'thoughtful expression, hand on chin',
+            'gesturing while explaining something',
+            'casual but professional stance',
+            'pointing at something off-camera',
+          ];
+          fullPrompt += `\nVariation: ${variations[i % variations.length]}`;
+        }
 
         const res = await fetch('/api/carousel/generate-now', {
           method: 'POST',
@@ -190,7 +193,9 @@ export default function BrandPhotoshootPage() {
 
         const data = await res.json();
         if (!res.ok) {
-          throw new Error(data.error || 'Generation failed');
+          const errMsg = data.error || 'Generation failed';
+          const debugInfo = data.debug ? `\n\nDebug: ${JSON.stringify(data.debug)}` : '';
+          throw new Error(errMsg + debugInfo);
         }
 
         if (data.imageUrl) {
