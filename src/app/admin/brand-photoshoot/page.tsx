@@ -178,11 +178,11 @@ export default function BrandPhotoshootPage() {
   };
 
   const downloadSlides = (item: QueueItem) => {
-    item.slides.forEach((slide, i) => {
+    (item.slides || []).filter(Boolean).forEach((slide, i) => {
       if (slide.imageUrl) {
         const link = document.createElement('a');
         link.href = slide.imageUrl;
-        link.download = `${item.company_name.replace(/\s+/g, '-')}-slide-${i + 1}.png`;
+        link.download = `${(item.company_name || 'photoshoot').replace(/\s+/g, '-')}-slide-${i + 1}.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -453,7 +453,7 @@ export default function BrandPhotoshootPage() {
 
                   {item.slides && item.slides.length > 0 && (
                     <div className="flex gap-1">
-                      {item.slides.slice(0, 5).map((slide, i) => (
+                      {item.slides.slice(0, 5).filter(Boolean).map((slide, i) => (
                         <div key={i} className="w-12 h-12 rounded overflow-hidden bg-white/5">
                           {slide.imageUrl ? (
                             <Image src={slide.imageUrl} alt="" width={48} height={48} className="object-cover w-full h-full" />
