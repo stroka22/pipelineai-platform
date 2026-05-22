@@ -37,9 +37,11 @@ export async function GET(request: NextRequest) {
 
   const openai = getOpenAI();
 
+  let queueItem: any = null;
+
   try {
     // Get next pending item (or one that's in progress but stuck)
-    const { data: queueItem, error: fetchError } = await supabase
+    const { data, error: fetchError } = await supabase
       .from('carousel_queue')
       .select('*')
       .or('status.eq.pending,status.eq.processing,status.eq.generating_slides')
@@ -48,6 +50,7 @@ export async function GET(request: NextRequest) {
       .limit(1)
       .single();
 
+    queueItem = data;
     if (fetchError || !queueItem) {
       return NextResponse.json({ message: 'No items in queue' });
     }
@@ -69,7 +72,8 @@ export async function GET(request: NextRequest) {
     const hasMultipleImages = allImages.length > 1;
     const useResponsesApi = allImages.length > 0; // Always use Responses API when images provided
     const slideCount = queueItem.slide_count || 5;
-    const customPrompt = queueItem.scene_prompt || '';
+    // Support both old (open_prompt) and new (scene_prompt) formats
+    const customPrompt = queueItem.scene_prompt || queueItem.open_prompt || '';
     const referenceImages: string[] = queueItem.reference_images || [];
 
     const slides: any[] = queueItem.slides || [];
@@ -352,6 +356,22 @@ STYLE REQUIREMENTS:
 
   } catch (error: any) {
     console.error('Carousel queue processing error:', error);
+    
+    // Mark the item as errored so it doesn't get stuck in "processing"
+    if (queueItem) {
+      try {
+        await supabase
+          .from('carousel_queue')
+          .update({ 
+            status: 'error', 
+            error_message: error.message 
+          })
+          .eq('id', queueItem.id);
+      } catch (updateError) {
+        console.error('Failed to update error status:', updateError);
+      }
+    }
+    
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
