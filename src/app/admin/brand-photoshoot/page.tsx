@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
@@ -13,9 +13,8 @@ import {
   Download,
   Trash2,
   RefreshCw,
-  Upload,
   Camera,
-  Play
+  X
 } from 'lucide-react';
 
 interface QueueItem {
@@ -34,30 +33,23 @@ interface QueueItem {
   logo_url: string;
 }
 
-export default function CarouselQueuePage() {
+export default function BrandPhotoshootPage() {
   const [items, setItems] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   
-  // Form state
-  const [companyName, setCompanyName] = useState('');
-  const [personName, setPersonName] = useState('');
-  const [title, setTitle] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [website, setWebsite] = useState('');
-  const [industry, setIndustry] = useState('');
-  const [topic, setTopic] = useState('');
+  // Form state - unified image list + prompt
+  const [images, setImages] = useState<string[]>([]);
   const [scenePrompt, setScenePrompt] = useState('');
   const [slideCount, setSlideCount] = useState(5);
-  const [headshotPreview, setHeadshotPreview] = useState('');
-  const [logoPreview, setLogoPreview] = useState('');
-  const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [dragOver, setDragOver] = useState(false);
-
-  const headshotInputRef = useRef<HTMLInputElement>(null);
-  const logoInputRef = useRef<HTMLInputElement>(null);
+  
+  // Optional brand details
+  const [companyName, setCompanyName] = useState('');
+  const [personName, setPersonName] = useState('');
+  const [industry, setIndustry] = useState('');
+  const [topic, setTopic] = useState('');
 
   const processFile = (file: File): Promise<string> => {
     return new Promise((resolve) => {
@@ -67,17 +59,6 @@ export default function CarouselQueuePage() {
     });
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'headshot' | 'logo') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const dataUrl = await processFile(file);
-    if (type === 'headshot') {
-      setHeadshotPreview(dataUrl);
-    } else {
-      setLogoPreview(dataUrl);
-    }
-  };
-
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -85,7 +66,7 @@ export default function CarouselQueuePage() {
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
     for (const file of files) {
       const dataUrl = await processFile(file);
-      setReferenceImages(prev => [...prev, dataUrl]);
+      setImages(prev => [...prev, dataUrl]);
     }
   }, []);
 
@@ -104,21 +85,19 @@ export default function CarouselQueuePage() {
   const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (!items) return;
-    const files: File[] = [];
     for (const item of Array.from(items)) {
       if (item.type.startsWith('image/')) {
         const file = item.getAsFile();
-        if (file) files.push(file);
+        if (file) {
+          const dataUrl = await processFile(file);
+          setImages(prev => [...prev, dataUrl]);
+        }
       }
-    }
-    for (const file of files) {
-      const dataUrl = await processFile(file);
-      setReferenceImages(prev => [...prev, dataUrl]);
     }
   }, []);
 
-  const removeReference = (index: number) => {
-    setReferenceImages(prev => prev.filter((_, i) => i !== index));
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const fetchQueue = async () => {
@@ -142,8 +121,8 @@ export default function CarouselQueuePage() {
   }, []);
 
   const submitToQueue = async () => {
-    if (!scenePrompt) {
-      alert('Scene/prompt instructions are required');
+    if (images.length === 0 && !scenePrompt) {
+      alert('Add at least one image or a prompt');
       return;
     }
 
@@ -155,17 +134,15 @@ export default function CarouselQueuePage() {
         body: JSON.stringify({
           company_name: companyName,
           person_name: personName,
-          title,
-          phone,
-          email,
-          website,
           industry,
           topic,
           scene_prompt: scenePrompt,
           slide_count: slideCount,
-          headshot_url: headshotPreview || null,
-          logo_url: logoPreview || null,
-          reference_images: referenceImages.length > 0 ? referenceImages : null,
+          // Pass all images - first one treated as primary by the processor
+          headshot_url: images[0] || null,
+          logo_url: images[1] || null,
+          reference_images: images.length > 2 ? images.slice(2) : null,
+          all_images: images,
         }),
       });
 
@@ -173,19 +150,12 @@ export default function CarouselQueuePage() {
       if (data.success) {
         alert('Added to queue!');
         setShowForm(false);
-        // Reset form
+        setImages([]);
+        setScenePrompt('');
         setCompanyName('');
         setPersonName('');
-        setTitle('');
-        setPhone('');
-        setEmail('');
-        setWebsite('');
         setIndustry('');
         setTopic('');
-        setScenePrompt('');
-        setHeadshotPreview('');
-        setLogoPreview('');
-        setReferenceImages([]);
         fetchQueue();
       } else {
         throw new Error(data.error);
@@ -199,7 +169,6 @@ export default function CarouselQueuePage() {
 
   const deleteItem = async (id: string) => {
     if (!confirm('Delete this queue item?')) return;
-    
     try {
       await fetch(`/api/carousel/queue?id=${id}`, { method: 'DELETE' });
       fetchQueue();
@@ -264,7 +233,7 @@ export default function CarouselQueuePage() {
                 <Camera className="w-6 h-6 text-purple-400" />
                 Brand Photoshoot
               </h1>
-              <p className="text-white/50 text-sm">Put clients in professional scenes with AI</p>
+              <p className="text-white/50 text-sm">Upload images, tell AI what to do</p>
             </div>
           </div>
           
@@ -285,122 +254,89 @@ export default function CarouselQueuePage() {
           </div>
         </div>
 
-        {/* Add Form Modal */}
+        {/* New Photoshoot Form */}
         {showForm && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#0a0a0f] border border-white/10 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div
+              className="bg-[#0a0a0f] border border-white/10 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6"
+              onPaste={handlePaste}
+            >
               <h2 className="text-xl font-bold mb-2">New Brand Photoshoot</h2>
-              <p className="text-white/50 text-sm mb-6">Upload a headshot to place the person in scenes, or leave empty for prompt-based graphics.</p>
-              
-              {/* Mode indicator */}
-              <div className={`mb-6 p-3 rounded-lg border ${headshotPreview ? 'bg-purple-500/10 border-purple-500/30' : 'bg-blue-500/10 border-blue-500/30'}`}>
-                <p className="text-sm">
-                  {headshotPreview && (logoPreview || referenceImages.length > 0) ? (
-                    <span className="text-purple-300">📸 <strong>Multi-Image Mode:</strong> AI will combine headshot + logo + references into professional scenes (Responses API)</span>
-                  ) : headshotPreview ? (
-                    <span className="text-purple-300">📸 <strong>Person Mode:</strong> AI will place this person in professional scenes</span>
-                  ) : (
-                    <span className="text-blue-300">🎨 <strong>Graphics Mode:</strong> AI will generate images from your prompt</span>
-                  )}
-                </p>
-              </div>
+              <p className="text-white/50 text-sm mb-6">
+                Upload any images (headshots, logos, houses, locations) and tell the AI what to do with them.
+              </p>
 
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                {/* Headshot */}
-                <div>
-                  <label className="text-sm text-white/60 mb-2 block">Headshot (optional)</label>
-                  <input ref={headshotInputRef} type="file" accept="image/*" onChange={e => handleImageUpload(e, 'headshot')} className="hidden" />
-                  {headshotPreview ? (
-                    <div className="relative w-32 h-32">
-                      <Image src={headshotPreview} alt="" fill className="object-cover rounded-lg" />
-                      <button onClick={() => setHeadshotPreview('')} className="absolute -top-2 -right-2 bg-red-500 p-1 rounded-full text-xs">✕</button>
+              {/* Image Upload - unified drag-and-drop */}
+              <div
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                className={`mb-6 border-2 border-dashed rounded-xl p-6 transition-colors cursor-pointer ${
+                  dragOver ? 'border-purple-500 bg-purple-500/10' : 'border-white/20 hover:border-white/30'
+                }`}
+              >
+                {images.length > 0 ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm text-white/60">{images.length} image{images.length !== 1 ? 's' : ''}</span>
+                      <button
+                        type="button"
+                        onClick={() => setImages([])}
+                        className="text-xs text-red-400 hover:text-red-300"
+                      >
+                        Clear all
+                      </button>
                     </div>
-                  ) : (
-                    <button onClick={() => headshotInputRef.current?.click()} className="w-32 h-32 border-2 border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center hover:border-purple-500/50 gap-1">
-                      <Upload className="w-6 h-6 text-white/30" />
-                      <span className="text-xs text-white/30">Optional</span>
-                    </button>
-                  )}
-                </div>
-                
-                {/* Logo */}
-                <div>
-                  <label className="text-sm text-white/60 mb-2 block">Logo (optional)</label>
-                  <input ref={logoInputRef} type="file" accept="image/*" onChange={e => handleImageUpload(e, 'logo')} className="hidden" />
-                  {logoPreview ? (
-                    <div className="relative w-32 h-32">
-                      <Image src={logoPreview} alt="" fill className="object-contain rounded-lg bg-white/5 p-2" />
-                      <button onClick={() => setLogoPreview('')} className="absolute -top-2 -right-2 bg-red-500 p-1 rounded-full text-xs">✕</button>
-                    </div>
-                  ) : (
-                    <button onClick={() => logoInputRef.current?.click()} className="w-32 h-32 border-2 border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center hover:border-purple-500/50 gap-1">
-                      <Upload className="w-6 h-6 text-white/30" />
-                      <span className="text-xs text-white/30">Optional</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Reference Images - Drag and Drop */}
-              <div className="mb-4">
-                <label className="text-sm text-white/60 mb-2 block">Reference Images (optional)</label>
-                <p className="text-xs text-white/40 mb-2">Drop houses, locations, style examples here - AI will incorporate them directly</p>
-                <div
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onPaste={handlePaste}
-                  className={`border-2 border-dashed rounded-lg p-3 transition-colors ${
-                    dragOver ? 'border-purple-500 bg-purple-500/10' : 'border-white/20'
-                  }`}
-                >
-                  {referenceImages.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {referenceImages.map((img, i) => (
-                        <div key={i} className="relative w-20 h-20">
-                          <Image src={img} alt="" fill className="object-cover rounded-lg" />
-                          <button 
-                            onClick={() => removeReference(i)} 
-                            className="absolute -top-1 -right-1 bg-red-500 p-0.5 rounded-full text-xs w-5 h-5 flex items-center justify-center"
+                    <div className="flex flex-wrap gap-3 mb-3">
+                      {images.map((img, i) => (
+                        <div key={i} className="relative">
+                          <Image
+                            src={img}
+                            alt=""
+                            width={80}
+                            height={80}
+                            className="object-cover rounded-lg border border-white/10 w-20 h-20"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(i)}
+                            className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-400"
                           >
-                            ✕
+                            <X className="w-3 h-3" />
                           </button>
                         </div>
                       ))}
                     </div>
-                  )}
-                  <p className="text-xs text-white/30 text-center">
-                    {referenceImages.length === 0 ? 'Drag images here or paste from clipboard (Cmd+V)' : 'Drop more images or paste'}
-                  </p>
-                </div>
+                    <p className="text-xs text-white/30 text-center">
+                      Drop more images here or paste from clipboard (Cmd+V)
+                    </p>
+                  </div>
+                ) : (
+                  <div className="h-32 flex flex-col items-center justify-center gap-2">
+                    <Camera className="w-10 h-10 text-white/20" />
+                    <p className="text-white/40">Drag images here or paste from clipboard (Cmd+V)</p>
+                    <p className="text-xs text-white/25">Headshots, logos, houses, locations, style examples</p>
+                  </div>
+                )}
               </div>
 
-              {/* Prompt/Scene Instructions */}
+              {/* Prompt */}
               <div className="mb-4">
-                <label className="text-sm text-white/60 mb-2 block">
-                  {headshotPreview ? 'Scene Instructions *' : 'Image Prompt *'}
-                </label>
+                <label className="text-sm text-white/60 mb-2 block">What do you want? *</label>
                 <textarea
                   value={scenePrompt}
                   onChange={e => setScenePrompt(e.target.value)}
-                  placeholder={headshotPreview 
-                    ? "Describe the scenes (e.g., 'Standing in front of the house in reference image, walking through property with clients')"
-                    : "Describe the images to generate (e.g., 'Professional real estate infographics about home buying tips, modern design, blue color scheme')"
-                  }
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-28 resize-none"
+                  placeholder="Tell the AI what to do with the images... e.g., 'Put this person in front of this house with this logo in the corner. Professional real estate photography style.'"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-32 resize-none"
                 />
                 <p className="text-xs text-white/40 mt-1">
-                  {headshotPreview 
-                    ? "AI will place this person in each scene while preserving their exact likeness"
-                    : "AI will generate unique images for each slide based on this prompt"
-                  }
-                  {referenceImages.length > 0 && " • Reference images will be analyzed and incorporated"}
+                  Describe each image and what role it plays. The AI will combine them based on your instructions.
                 </p>
               </div>
 
-              {/* Optional brand info - collapsible */}
+              {/* Optional brand details */}
               <details className="mb-4">
-                <summary className="text-sm text-white/60 cursor-pointer hover:text-white/80 mb-3">+ Add brand details (optional)</summary>
+                <summary className="text-sm text-white/60 cursor-pointer hover:text-white/80 mb-3">+ Brand details (optional)</summary>
                 <div className="grid grid-cols-2 gap-3 mt-3">
                   <input
                     type="text"
@@ -433,6 +369,7 @@ export default function CarouselQueuePage() {
                 </div>
               </details>
 
+              {/* Slide count */}
               <div className="flex items-center gap-4 mb-6">
                 <label className="text-sm text-white/60">Slides:</label>
                 <div className="flex gap-2">
@@ -452,6 +389,7 @@ export default function CarouselQueuePage() {
                 </div>
               </div>
 
+              {/* Actions */}
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowForm(false)}
@@ -461,11 +399,11 @@ export default function CarouselQueuePage() {
                 </button>
                 <button
                   onClick={submitToQueue}
-                  disabled={submitting || !scenePrompt}
+                  disabled={submitting || (images.length === 0 && !scenePrompt)}
                   className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 px-6 py-3 rounded-lg flex items-center justify-center gap-2"
                 >
                   {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
-                  {headshotPreview ? 'Start Photoshoot' : 'Generate Images'}
+                  Generate
                 </button>
               </div>
             </div>
@@ -488,7 +426,6 @@ export default function CarouselQueuePage() {
             {items.map(item => (
               <div key={item.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <div className="flex items-start gap-4">
-                  {/* Headshot thumbnail or mode indicator */}
                   <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center">
                     {item.headshot_url ? (
                       <Image src={item.headshot_url} alt="" width={64} height={64} className="object-cover w-full h-full" />
@@ -497,11 +434,10 @@ export default function CarouselQueuePage() {
                     )}
                   </div>
                   
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       {getStatusIcon(item.status)}
-                      <span className="font-semibold">{item.company_name}</span>
+                      <span className="font-semibold">{item.company_name || 'Photoshoot'}</span>
                       {item.person_name && <span className="text-white/50">- {item.person_name}</span>}
                     </div>
                     <div className="text-sm text-white/50">
@@ -515,7 +451,6 @@ export default function CarouselQueuePage() {
                     </div>
                   </div>
 
-                  {/* Preview slides */}
                   {item.slides && item.slides.length > 0 && (
                     <div className="flex gap-1">
                       {item.slides.slice(0, 5).map((slide, i) => (
@@ -530,7 +465,6 @@ export default function CarouselQueuePage() {
                     </div>
                   )}
 
-                  {/* Actions */}
                   <div className="flex gap-2">
                     {item.status === 'complete' && (
                       <button

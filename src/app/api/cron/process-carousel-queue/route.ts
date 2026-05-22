@@ -63,14 +63,14 @@ export async function GET(request: NextRequest) {
 
     console.log(`Processing carousel queue item: ${queueItem.id}`);
 
-    // Determine mode: headshot (person in scenes) vs prompt-only (graphics)
-    const referenceImages: string[] = queueItem.reference_images || [];
+    // Determine mode based on images
+    const allImages: string[] = queueItem.all_images || [];
     const hasHeadshot = !!queueItem.headshot_url;
-    const hasLogo = !!queueItem.logo_url;
-    const hasReferences = referenceImages.length > 0;
-    const useResponsesApi = hasHeadshot && (hasLogo || hasReferences); // Multi-image: use Responses API
+    const hasMultipleImages = allImages.length > 1;
+    const useResponsesApi = allImages.length > 0; // Always use Responses API when images provided
     const slideCount = queueItem.slide_count || 5;
     const customPrompt = queueItem.scene_prompt || '';
+    const referenceImages: string[] = queueItem.reference_images || [];
 
     const slides: any[] = queueItem.slides || [];
     const startSlide = queueItem.current_slide || 0;
@@ -134,31 +134,22 @@ Be specific and detailed. This description will be used to guide AI image genera
         let imageUrl = '';
 
         if (useResponsesApi) {
-          // MODE: Multi-image generation via Responses API
-          // This is the ChatGPT-style approach - passes all images to gpt-4o with image_generation tool
-          console.log(`Using Responses API (multi-image) for slide ${slideIndex + 1}`);
+          // MODE: Image generation via Responses API
+          // Pass all images to gpt-4o with image_generation tool - prompt tells AI what to do
+          console.log(`Using Responses API with ${allImages.length} images for slide ${slideIndex + 1}`);
 
           const content: any[] = [];
 
-          // Add headshot as reference image
-          if (hasHeadshot) {
+          // Add all uploaded images
+          allImages.forEach((imgUrl: string) => {
             content.push({
               type: 'input_image',
-              image_url: queueItem.headshot_url,
+              image_url: imgUrl,
               detail: 'high',
             });
-          }
+          });
 
-          // Add logo as reference image
-          if (hasLogo) {
-            content.push({
-              type: 'input_image',
-              image_url: queueItem.logo_url,
-              detail: 'high',
-            });
-          }
-
-          // Add reference images (houses, locations, etc.)
+          // Also add any legacy reference_images
           referenceImages.forEach((imgUrl: string) => {
             content.push({
               type: 'input_image',

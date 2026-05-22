@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
       headshot_url,
       logo_url,
       reference_images,
+      all_images,
       primary_color,
       secondary_color,
       accent_color,
@@ -55,9 +56,9 @@ export async function POST(request: NextRequest) {
       priority,
     } = body;
 
-    // Scene prompt is required
-    if (!scene_prompt) {
-      return NextResponse.json({ error: 'Scene/prompt instructions are required' }, { status: 400 });
+    // Need at least a prompt or images
+    if (!scene_prompt && (!all_images || all_images.length === 0)) {
+      return NextResponse.json({ error: 'Provide at least a prompt or images' }, { status: 400 });
     }
 
     const { data, error } = await supabase
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
         headshot_url: headshot_url || null,
         logo_url: logo_url || null,
         reference_images: reference_images || null,
+        all_images: all_images || null,
         primary_color: primary_color || '#1e3a5f',
         secondary_color: secondary_color || '#4a7c4e',
         accent_color: accent_color || '#c9a227',
