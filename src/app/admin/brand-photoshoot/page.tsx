@@ -1,19 +1,20 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
-  Plus, 
   Loader2, 
-  Clock, 
-  CheckCircle, 
-  XCircle,
   Download,
   Trash2,
-  RefreshCw,
   Camera,
-  X
+  X,
+  Sparkles,
+  Clock,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  Plus
 } from 'lucide-react';
 
 interface QueueItem {
@@ -32,28 +33,55 @@ interface QueueItem {
   logo_url: string;
 }
 
+interface GeneratedSlide {
+  imageUrl: string;
+  storageUrl: string | null;
+}
+
 export default function BrandPhotoshootPage() {
-  const [items, setItems] = useState<QueueItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  
-  // Form state - unified image list + prompt
   const [images, setImages] = useState<string[]>([]);
   const [scenePrompt, setScenePrompt] = useState('');
-  const [slideCount, setSlideCount] = useState(5);
+  const [slideCount, setSlideCount] = useState(1);
   const [dragOver, setDragOver] = useState(false);
   
-  // Optional brand details
+  // Brand details
   const [companyName, setCompanyName] = useState('');
   const [personName, setPersonName] = useState('');
   const [industry, setIndustry] = useState('');
   const [topic, setTopic] = useState('');
 
-  const processFile = (file: File): Promise<string> => {
+  // Generation state
+  const [generating, setGenerating] = useState(false);
+  const [generatedSlides, setGeneratedSlides] = useState<GeneratedSlide[]>([]);
+  const [currentGenSlide, setCurrentGenSlide] = useState(0);
+  const [genError, setGenError] = useState<string | null>(null);
+
+  // Queue history
+  const [items, setItems] = useState<QueueItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const processFile = async (file: File): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        const img = document.createElement('img');
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { resolve(dataUrl); return; }
+          const maxW = 512;
+          let w = img.width, h = img.height;
+          if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+          canvas.width = w;
+          canvas.height = h;
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      };
       reader.readAsDataURL(file);
     });
   };
@@ -100,6 +128,7 @@ export default function BrandPhotoshootPage() {
   };
 
   const fetchQueue = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/carousel/queue');
       const data = await response.json();
@@ -113,113 +142,131 @@ export default function BrandPhotoshootPage() {
     }
   };
 
-  useEffect(() => {
-    fetchQueue();
-    const interval = setInterval(fetchQueue, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const submitToQueue = async () => {
+  // Generate Now - calls API directly like the test page
+  const generateNow = async () => {
     if (images.length === 0 && !scenePrompt) {
-      alert('Add at least one image or a prompt');
+      setGenError('Add at least one image or a prompt');
       return;
     }
 
-    setSubmitting(true);
-    try {
-      const response = await fetch('/api/carousel/queue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          company_name: companyName,
-          person_name: personName,
-          industry,
-          topic,
-          scene_prompt: scenePrompt,
-          slide_count: slideCount,
-          // Pass all images - first one treated as primary by the processor
-          headshot_url: images[0] || null,
-          logo_url: images[1] || null,
-          reference_images: images.length > 2 ? images.slice(2) : null,
-          all_images: images,
-        }),
-      });
+    setGenerating(true);
+    setGenError(null);
+    setGeneratedSlides([]);
+    setCurrentGenSlide(0);
 
-      const data = await response.json();
-      if (data.success) {
-        alert('Added to queue!');
-        setShowForm(false);
-        setImages([]);
-        setScenePrompt('');
-        setCompanyName('');
-        setPersonName('');
-        setIndustry('');
-        setTopic('');
-        fetchQueue();
-      } else {
-        throw new Error(data.error);
+    const newSlides: GeneratedSlide[] = [];
+
+    for (let i = 0; i < slideCount; i++) {
+      setCurrentGenSlide(i + 1);
+      try {
+        const variations = [
+          'confident professional pose, looking at camera',
+          'reviewing documents at desk',
+          'in a meeting with a client',
+          'presenting to a small group',
+          'standing confidently in professional setting',
+          'warm, approachable expression',
+          'thoughtful expression, hand on chin',
+          'gesturing while explaining something',
+          'casual but professional stance',
+          'pointing at something off-camera',
+        ];
+        const variation = variations[i % variations.length];
+        const fullPrompt = `${scenePrompt}\n\nVariation: ${variation}\n\nIndustry: ${industry || 'Business Professional'}`;
+
+        const res = await fetch('/api/carousel/generate-now', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            images,
+            prompt: fullPrompt,
+            slide_number: i + 1,
+            total_slides: slideCount,
+            company_name: companyName,
+            industry,
+            topic,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Generation failed');
+        }
+
+        if (data.imageUrl) {
+          newSlides.push({ imageUrl: data.imageUrl, storageUrl: data.storageUrl || null });
+          setGeneratedSlides([...newSlides]);
+        } else {
+          throw new Error('No image returned from API');
+        }
+      } catch (err: any) {
+        setGenError(`Slide ${i + 1} failed: ${err.message}`);
+        break;
       }
-    } catch (error: any) {
-      alert('Error: ' + error.message);
-    } finally {
-      setSubmitting(false);
+    }
+
+    setGenerating(false);
+
+    // Also save to library via the API
+    if (newSlides.length > 0) {
+      try {
+        await fetch('/api/carousel/save-to-library', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slides: newSlides.map((s, i) => ({
+              imageUrl: s.storageUrl || s.imageUrl,
+              prompt: scenePrompt,
+              niche: industry || 'General',
+              category: 'tips',
+              slide_number: i + 1,
+              source: 'brand_photoshoot',
+            })),
+          }),
+        });
+      } catch (err) {
+        console.error('Failed to save to library:', err);
+      }
     }
   };
 
-  const deleteItem = async (id: string) => {
-    if (!confirm('Delete this queue item?')) return;
-    try {
-      await fetch(`/api/carousel/queue?id=${id}`, { method: 'DELETE' });
-      fetchQueue();
-    } catch (error) {
-      console.error('Delete failed:', error);
-    }
+  const downloadSlide = (url: string, index: number) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${(companyName || 'photoshoot').replace(/\s+/g, '-')}-slide-${index + 1}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const downloadSlides = (item: QueueItem) => {
-    (item.slides || []).filter(Boolean).forEach((slide, i) => {
-      if (slide.imageUrl) {
-        const link = document.createElement('a');
-        link.href = slide.imageUrl;
-        link.download = `${(item.company_name || 'photoshoot').replace(/\s+/g, '-')}-slide-${i + 1}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+  const downloadAll = () => {
+    generatedSlides.forEach((slide, i) => {
+      setTimeout(() => downloadSlide(slide.imageUrl, i), i * 500);
     });
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'complete':
-        return <CheckCircle className="w-5 h-5 text-green-400" />;
-      case 'error':
-        return <XCircle className="w-5 h-5 text-red-400" />;
+      case 'complete': return <CheckCircle className="w-5 h-5 text-green-400" />;
+      case 'error': return <XCircle className="w-5 h-5 text-red-400" />;
       case 'processing':
-      case 'generating_slides':
-        return <Loader2 className="w-5 h-5 text-amber-400 animate-spin" />;
-      default:
-        return <Clock className="w-5 h-5 text-white/40" />;
+      case 'generating_slides': return <Loader2 className="w-5 h-5 text-amber-400 animate-spin" />;
+      default: return <Clock className="w-5 h-5 text-white/40" />;
     }
   };
 
   const getStatusText = (item: QueueItem) => {
     switch (item.status) {
-      case 'complete':
-        return 'Complete';
-      case 'error':
-        return 'Error';
-      case 'processing':
-        return 'Starting...';
-      case 'generating_slides':
-        return `Slide ${item.current_slide}/${item.slide_count}`;
-      default:
-        return 'Pending';
+      case 'complete': return 'Complete';
+      case 'error': return 'Error';
+      case 'processing': return 'Starting...';
+      case 'generating_slides': return `Slide ${item.current_slide}/${item.slide_count}`;
+      default: return 'Pending';
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#030712] text-white">
+    <div className="min-h-screen bg-[#030712] text-white" onPaste={handlePaste}>
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -232,260 +279,236 @@ export default function BrandPhotoshootPage() {
                 <Camera className="w-6 h-6 text-purple-400" />
                 Brand Photoshoot
               </h1>
-              <p className="text-white/50 text-sm">Upload images, tell AI what to do</p>
+              <p className="text-white/50 text-sm">Upload images, tell AI what to do, get results instantly</p>
             </div>
           </div>
-          
-          <div className="flex gap-3">
-            <button
-              onClick={fetchQueue}
-              className="p-2 bg-white/5 hover:bg-white/10 rounded-lg"
-            >
-              <RefreshCw className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg flex items-center gap-2"
-            >
-              <Plus className="w-5 h-5" />
-              New Photoshoot
-            </button>
-          </div>
+
+          <button
+            onClick={() => { fetchQueue(); setShowHistory(!showHistory); }}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 ${showHistory ? 'bg-white/10 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+          >
+            <Clock className="w-5 h-5" />
+            History
+          </button>
         </div>
 
-        {/* New Photoshoot Form */}
-        {showForm && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left: Input */}
+          <div>
+            {/* Image Upload */}
             <div
-              className="bg-[#0a0a0f] border border-white/10 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6"
-              onPaste={handlePaste}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              className={`mb-6 border-2 border-dashed rounded-xl p-6 transition-colors ${
+                dragOver ? 'border-purple-500 bg-purple-500/10' : 'border-white/20 hover:border-white/30'
+              }`}
             >
-              <h2 className="text-xl font-bold mb-2">New Brand Photoshoot</h2>
-              <p className="text-white/50 text-sm mb-6">
-                Upload any images (headshots, logos, houses, locations) and tell the AI what to do with them.
-              </p>
-
-              {/* Image Upload - unified drag-and-drop */}
-              <div
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                className={`mb-6 border-2 border-dashed rounded-xl p-6 transition-colors cursor-pointer ${
-                  dragOver ? 'border-purple-500 bg-purple-500/10' : 'border-white/20 hover:border-white/30'
-                }`}
-              >
-                {images.length > 0 ? (
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm text-white/60">{images.length} image{images.length !== 1 ? 's' : ''}</span>
-                      <button
-                        type="button"
-                        onClick={() => setImages([])}
-                        className="text-xs text-red-400 hover:text-red-300"
-                      >
-                        Clear all
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-3 mb-3">
-                      {images.map((img, i) => (
-                        <div key={i} className="relative">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={img}
-                            alt=""
-                            className="object-cover rounded-lg border border-white/10 w-20 h-20"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(i)}
-                            className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-400"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-white/30 text-center">
-                      Drop more images here or paste from clipboard (Cmd+V)
-                    </p>
+              {images.length > 0 ? (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-white/60">{images.length} image{images.length !== 1 ? 's' : ''}</span>
+                    <button type="button" onClick={() => setImages([])} className="text-xs text-red-400 hover:text-red-300">Clear all</button>
                   </div>
-                ) : (
-                  <div className="h-32 flex flex-col items-center justify-center gap-2">
-                    <Camera className="w-10 h-10 text-white/20" />
-                    <p className="text-white/40">Drag images here or paste from clipboard (Cmd+V)</p>
-                    <p className="text-xs text-white/25">Headshots, logos, houses, locations, style examples</p>
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {images.map((img, i) => (
+                      <div key={i} className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img} alt="" className="object-cover rounded-lg border border-white/10 w-20 h-20" />
+                        <button type="button" onClick={() => removeImage(i)} className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-400">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-
-              {/* Prompt */}
-              <div className="mb-4">
-                <label className="text-sm text-white/60 mb-2 block">What do you want? *</label>
-                <textarea
-                  value={scenePrompt}
-                  onChange={e => setScenePrompt(e.target.value)}
-                  placeholder="Tell the AI what to do with the images... e.g., 'Put this person in front of this house with this logo in the corner. Professional real estate photography style.'"
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-32 resize-none"
-                />
-                <p className="text-xs text-white/40 mt-1">
-                  Describe each image and what role it plays. The AI will combine them based on your instructions.
-                </p>
-              </div>
-
-              {/* Optional brand details */}
-              <details className="mb-4">
-                <summary className="text-sm text-white/60 cursor-pointer hover:text-white/80 mb-3">+ Brand details (optional)</summary>
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  <input
-                    type="text"
-                    value={companyName}
-                    onChange={e => setCompanyName(e.target.value)}
-                    placeholder="Company Name"
-                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"
-                  />
-                  <input
-                    type="text"
-                    value={personName}
-                    onChange={e => setPersonName(e.target.value)}
-                    placeholder="Person Name"
-                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"
-                  />
-                  <input
-                    type="text"
-                    value={industry}
-                    onChange={e => setIndustry(e.target.value)}
-                    placeholder="Industry"
-                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"
-                  />
-                  <input
-                    type="text"
-                    value={topic}
-                    onChange={e => setTopic(e.target.value)}
-                    placeholder="Topic/Focus"
-                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"
-                  />
+                  <p className="text-xs text-white/30 text-center">Drop more or paste from clipboard (Cmd+V)</p>
                 </div>
-              </details>
+              ) : (
+                <div className="h-32 flex flex-col items-center justify-center gap-2">
+                  <Camera className="w-10 h-10 text-white/20" />
+                  <p className="text-white/40">Drag images here or paste from clipboard (Cmd+V)</p>
+                  <p className="text-xs text-white/25">Headshots, logos, houses, locations, style examples</p>
+                </div>
+              )}
+            </div>
 
-              {/* Slide count */}
-              <div className="flex items-center gap-4 mb-6">
-                <label className="text-sm text-white/60">Slides:</label>
-                <div className="flex gap-2">
-                  {[1, 3, 5, 7, 10].map(n => (
-                    <button
-                      key={n}
-                      onClick={() => setSlideCount(n)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                        slideCount === n 
-                          ? 'bg-purple-600 text-white' 
-                          : 'bg-white/5 text-white/60 hover:bg-white/10'
-                      }`}
-                    >
-                      {n}
-                    </button>
+            {/* Prompt */}
+            <div className="mb-4">
+              <label className="text-sm text-white/60 mb-2 block">What do you want? *</label>
+              <textarea
+                value={scenePrompt}
+                onChange={e => setScenePrompt(e.target.value)}
+                placeholder="Tell the AI what to do... e.g., 'Put this person in front of this house with this logo in the corner. Professional real estate photography style.'"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-32 resize-none focus:outline-none focus:border-purple-500"
+              />
+            </div>
+
+            {/* Brand details */}
+            <details className="mb-4">
+              <summary className="text-sm text-white/60 cursor-pointer hover:text-white/80">+ Brand details (optional)</summary>
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Company Name" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm" />
+                <input type="text" value={personName} onChange={e => setPersonName(e.target.value)} placeholder="Person Name" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm" />
+                <input type="text" value={industry} onChange={e => setIndustry(e.target.value)} placeholder="Industry" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm" />
+                <input type="text" value={topic} onChange={e => setTopic(e.target.value)} placeholder="Topic/Focus" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm" />
+              </div>
+            </details>
+
+            {/* Slide count */}
+            <div className="flex items-center gap-4 mb-6">
+              <label className="text-sm text-white/60">Images to generate:</label>
+              <div className="flex gap-2">
+                {[1, 3, 5, 7, 10].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setSlideCount(n)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      slideCount === n ? 'bg-purple-600 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Generate button */}
+            <button
+              onClick={generateNow}
+              disabled={generating || (images.length === 0 && !scenePrompt)}
+              className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 px-6 py-3 rounded-lg flex items-center justify-center gap-2 font-semibold text-lg"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  Generating slide {currentGenSlide}/{slideCount}...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-6 h-6" />
+                  Generate {slideCount} Image{slideCount > 1 ? 's' : ''}
+                </>
+              )}
+            </button>
+
+            {genError && (
+              <div className="mt-3 p-3 bg-red-900/30 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                {genError}
+              </div>
+            )}
+          </div>
+
+          {/* Right: Results */}
+          <div>
+            {generatedSlides.length > 0 ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">
+                    Results ({generatedSlides.length} image{generatedSlides.length > 1 ? 's' : ''})
+                  </h2>
+                  <button
+                    onClick={downloadAll}
+                    className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download All
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {generatedSlides.map((slide, i) => (
+                    <div key={i} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden group relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={slide.imageUrl} alt={`Slide ${i + 1}`} className="w-full aspect-square object-cover" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => downloadSlide(slide.imageUrl, i)}
+                          className="bg-white/20 hover:bg-white/30 p-2 rounded-lg"
+                        >
+                          <Download className="w-5 h-5" />
+                        </button>
+                      </div>
+                      <div className="absolute bottom-2 right-2 bg-black/60 px-2 py-1 rounded text-xs">
+                        {i + 1}/{generatedSlides.length}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 bg-white/5 hover:bg-white/10 px-6 py-3 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={submitToQueue}
-                  disabled={submitting || (images.length === 0 && !scenePrompt)}
-                  className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 px-6 py-3 rounded-lg flex items-center justify-center gap-2"
-                >
-                  {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
-                  Generate
-                </button>
+            ) : generating ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="w-12 h-12 animate-spin text-purple-400" />
+                <p className="text-white/60">Generating slide {currentGenSlide} of {slideCount}...</p>
+                <p className="text-xs text-white/30">This may take 30-60 seconds per image</p>
               </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-white/30">
+                <Sparkles className="w-12 h-12 mb-4 opacity-30" />
+                <p>Generated images will appear here</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* History Section */}
+        {showHistory && (
+          <div className="mt-8 border-t border-white/10 pt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Queue History</h2>
+              <button onClick={fetchQueue} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg">
+                <RefreshCw className="w-5 h-5" />
+              </button>
             </div>
-          </div>
-        )}
-
-        {/* Queue List */}
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-white/40" />
-          </div>
-        ) : items.length === 0 ? (
-          <div className="text-center py-20 text-white/40">
-            <Camera className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No photoshoots yet</p>
-            <p className="text-sm mt-2">Click "New Photoshoot" to get started</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {items.map(item => (
-              <div key={item.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center">
-                    {item.headshot_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.headshot_url} alt="" className="object-cover w-full h-full" />
-                    ) : (
-                      <span className="text-2xl">🎨</span>
-                    )}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      {getStatusIcon(item.status)}
-                      <span className="font-semibold">{item.company_name || 'Photoshoot'}</span>
-                      {item.person_name && <span className="text-white/50">- {item.person_name}</span>}
-                    </div>
-                    <div className="text-sm text-white/50">
-                      {item.industry && <span>{item.industry} • </span>}
-                      {item.slide_count} slides
-                      {item.topic && <span className="block mt-1 text-white/40 truncate">{item.topic}</span>}
-                    </div>
-                    <div className="text-xs text-white/30 mt-1">
-                      {getStatusText(item)}
-                      {item.completed_at && ` • Completed ${new Date(item.completed_at).toLocaleString()}`}
-                    </div>
-                  </div>
-
-                  {item.slides && item.slides.length > 0 && (
-                    <div className="flex gap-1">
-                      {item.slides.slice(0, 5).filter(Boolean).map((slide, i) => (
-                        <div key={i} className="w-12 h-12 rounded overflow-hidden bg-white/5">
-                          {slide.imageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={slide.imageUrl} alt="" className="object-cover w-full h-full" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs text-white/20">{i + 1}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    {item.status === 'complete' && (
-                      <button
-                        onClick={() => downloadSlides(item)}
-                        className="p-2 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded-lg"
-                        title="Download all slides"
-                      >
-                        <Download className="w-5 h-5" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-white/40" />
               </div>
-            ))}
+            ) : items.length === 0 ? (
+              <p className="text-white/30 text-center py-8">No previous photoshoots</p>
+            ) : (
+              <div className="space-y-3">
+                {items.map(item => (
+                  <div key={item.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center">
+                        {item.headshot_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.headshot_url} alt="" className="object-cover w-full h-full" />
+                        ) : (
+                          <span className="text-xl">🎨</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {getStatusIcon(item.status)}
+                          <span className="font-semibold">{item.company_name || 'Photoshoot'}</span>
+                        </div>
+                        <div className="text-sm text-white/50">
+                          {item.industry && <span>{item.industry} • </span>}
+                          {item.slide_count} slides • {getStatusText(item)}
+                        </div>
+                        {item.slides && item.slides.length > 0 && (
+                          <div className="flex gap-1 mt-2">
+                            {item.slides.slice(0, 5).filter(Boolean).map((slide: any, i: number) => (
+                              <div key={i} className="w-10 h-10 rounded overflow-hidden bg-white/5">
+                                {slide.imageUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={slide.imageUrl} alt="" className="object-cover w-full h-full" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-xs text-white/20">{i + 1}</div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <button onClick={() => { if (confirm('Delete?')) fetch(`/api/carousel/queue?id=${item.id}`, { method: 'DELETE' }).then(fetchQueue); }} className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
