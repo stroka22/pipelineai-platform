@@ -37,10 +37,11 @@ export async function POST(request: NextRequest) {
       text: prompt || 'Generate an image that incorporates all the provided reference images exactly as they appear.',
     });
 
-    // Try with gpt-image-1 model which is specifically for image generation
-    // The image_generation tool requires the model to support it
+    // gpt-4o supports image_generation tool in the Responses API
+    // It can accept multiple input images and generate/edit based on them
     const response = await openai.responses.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
+      input: [
         {
           role: 'user',
           content: content,
@@ -55,29 +56,31 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    // Extract ALL output items for debugging
-    const outputItems = response.output?.map((item: any) => ({
-      type: item.type,
-      // For messages, include the text content
-      content: item.type === 'message' ? item.content?.map((c: any) => ({
-        type: c.type,
-        text: c.text,
-      })) : undefined,
-      // For image_generation_call, include the result
-      result: item.type === 'image_generation_call' ? item.result : undefined,
-    }));
-
     // Extract generated image from output
     let generatedImage = null;
+    const outputItems: any[] = [];
+
     if (response.output) {
       for (const item of response.output) {
+        const outputItem: any = { type: item.type };
+
+        if (item.type === 'message') {
+          const msgItem = item as any;
+          outputItem.content = msgItem.content?.map((c: any) => ({
+            type: c.type,
+            text: c.text,
+          }));
+        }
+
         if (item.type === 'image_generation_call') {
           const imgItem = item as any;
+          outputItem.result = imgItem.result ? '(base64 image data)' : null;
           if (imgItem.result) {
             generatedImage = imgItem.result;
-            break;
           }
         }
+
+        outputItems.push(outputItem);
       }
     }
 
