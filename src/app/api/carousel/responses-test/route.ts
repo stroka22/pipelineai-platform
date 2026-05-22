@@ -31,16 +31,16 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    // Add the text prompt
+    // Keep prompt simple and professional to avoid safety refusals
     content.push({
       type: 'input_text',
-      text: prompt || 'Generate an image that incorporates all the provided reference images exactly as they appear.',
+      text: prompt || 'Generate a professional image incorporating all the provided reference images.',
     });
 
-    // gpt-4o supports image_generation tool in the Responses API
-    // It can accept multiple input images and generate/edit based on them
+    // Use gpt-4o with image_generation tool
+    // action: "generate" forces image generation instead of text response
     const response = await openai.responses.create({
-      model: 'gpt-image-1',
+      model: 'gpt-4o',
       input: [
         {
           role: 'user',
@@ -50,8 +50,7 @@ export async function POST(request: NextRequest) {
       tools: [
         {
           type: 'image_generation',
-          quality: 'high',
-          size: '1024x1024',
+          action: 'generate',
         },
       ],
     });
@@ -74,7 +73,6 @@ export async function POST(request: NextRequest) {
 
         if (item.type === 'image_generation_call') {
           const imgItem = item as any;
-          outputItem.result = imgItem.result ? '(base64 image data)' : null;
           if (imgItem.result) {
             generatedImage = imgItem.result;
           }
@@ -88,14 +86,12 @@ export async function POST(request: NextRequest) {
       success: true,
       generatedImage,
       outputItems,
-      model: 'gpt-image-1',
     });
 
   } catch (error: any) {
     console.error('Responses test error:', error);
     return NextResponse.json({
       error: error.message,
-      details: error.toString(),
     }, { status: 500 });
   }
 }
