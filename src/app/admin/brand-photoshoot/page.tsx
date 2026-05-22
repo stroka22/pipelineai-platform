@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
@@ -54,10 +54,72 @@ export default function CarouselQueuePage() {
   const [headshotPreview, setHeadshotPreview] = useState('');
   const [logoPreview, setLogoPreview] = useState('');
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
-  
+  const [dragOver, setDragOver] = useState(false);
+
   const headshotInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const referenceInputRef = useRef<HTMLInputElement>(null);
+
+  const processFile = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'headshot' | 'logo') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const dataUrl = await processFile(file);
+    if (type === 'headshot') {
+      setHeadshotPreview(dataUrl);
+    } else {
+      setLogoPreview(dataUrl);
+    }
+  };
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    for (const file of files) {
+      const dataUrl = await processFile(file);
+      setReferenceImages(prev => [...prev, dataUrl]);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  }, []);
+
+  const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const files: File[] = [];
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) files.push(file);
+      }
+    }
+    for (const file of files) {
+      const dataUrl = await processFile(file);
+      setReferenceImages(prev => [...prev, dataUrl]);
+    }
+  }, []);
+
+  const removeReference = (index: number) => {
+    setReferenceImages(prev => prev.filter((_, i) => i !== index));
+  };
 
   const fetchQueue = async () => {
     try {
@@ -75,46 +137,9 @@ export default function CarouselQueuePage() {
 
   useEffect(() => {
     fetchQueue();
-    const interval = setInterval(fetchQueue, 10000); // Refresh every 10s
+    const interval = setInterval(fetchQueue, 10000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'headshot' | 'logo') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (type === 'headshot') {
-        setHeadshotPreview(e.target?.result as string);
-      } else {
-        setLogoPreview(e.target?.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleReferenceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    Array.from(files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setReferenceImages(prev => [...prev, e.target?.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
-    
-    // Reset input so same file can be selected again
-    if (referenceInputRef.current) {
-      referenceInputRef.current.value = '';
-    }
-  };
-
-  const removeReference = (index: number) => {
-    setReferenceImages(prev => prev.filter((_, i) => i !== index));
-  };
 
   const submitToQueue = async () => {
     if (!scenePrompt) {
@@ -270,7 +295,9 @@ export default function CarouselQueuePage() {
               {/* Mode indicator */}
               <div className={`mb-6 p-3 rounded-lg border ${headshotPreview ? 'bg-purple-500/10 border-purple-500/30' : 'bg-blue-500/10 border-blue-500/30'}`}>
                 <p className="text-sm">
-                  {headshotPreview ? (
+                  {headshotPreview && (logoPreview || referenceImages.length > 0) ? (
+                    <span className="text-purple-300">📸 <strong>Multi-Image Mode:</strong> AI will combine headshot + logo + references into professional scenes (Responses API)</span>
+                  ) : headshotPreview ? (
                     <span className="text-purple-300">📸 <strong>Person Mode:</strong> AI will place this person in professional scenes</span>
                   ) : (
                     <span className="text-blue-300">🎨 <strong>Graphics Mode:</strong> AI will generate images from your prompt</span>
@@ -314,37 +341,37 @@ export default function CarouselQueuePage() {
                 </div>
               </div>
 
-              {/* Reference Images */}
+              {/* Reference Images - Drag and Drop */}
               <div className="mb-4">
                 <label className="text-sm text-white/60 mb-2 block">Reference Images (optional)</label>
-                <p className="text-xs text-white/40 mb-2">Upload houses, locations, style examples - AI will analyze and incorporate them</p>
-                <input 
-                  ref={referenceInputRef} 
-                  type="file" 
-                  accept="image/*" 
-                  multiple 
-                  onChange={handleReferenceUpload} 
-                  className="hidden" 
-                />
-                <div className="flex flex-wrap gap-2">
-                  {referenceImages.map((img, i) => (
-                    <div key={i} className="relative w-20 h-20">
-                      <Image src={img} alt="" fill className="object-cover rounded-lg" />
-                      <button 
-                        onClick={() => removeReference(i)} 
-                        className="absolute -top-1 -right-1 bg-red-500 p-0.5 rounded-full text-xs w-5 h-5 flex items-center justify-center"
-                      >
-                        ✕
-                      </button>
+                <p className="text-xs text-white/40 mb-2">Drop houses, locations, style examples here - AI will incorporate them directly</p>
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onPaste={handlePaste}
+                  className={`border-2 border-dashed rounded-lg p-3 transition-colors ${
+                    dragOver ? 'border-purple-500 bg-purple-500/10' : 'border-white/20'
+                  }`}
+                >
+                  {referenceImages.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {referenceImages.map((img, i) => (
+                        <div key={i} className="relative w-20 h-20">
+                          <Image src={img} alt="" fill className="object-cover rounded-lg" />
+                          <button 
+                            onClick={() => removeReference(i)} 
+                            className="absolute -top-1 -right-1 bg-red-500 p-0.5 rounded-full text-xs w-5 h-5 flex items-center justify-center"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                  <button 
-                    onClick={() => referenceInputRef.current?.click()} 
-                    className="w-20 h-20 border-2 border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center hover:border-purple-500/50 gap-1"
-                  >
-                    <Plus className="w-5 h-5 text-white/30" />
-                    <span className="text-[10px] text-white/30">Add</span>
-                  </button>
+                  )}
+                  <p className="text-xs text-white/30 text-center">
+                    {referenceImages.length === 0 ? 'Drag images here or paste from clipboard (Cmd+V)' : 'Drop more images or paste'}
+                  </p>
                 </div>
               </div>
 

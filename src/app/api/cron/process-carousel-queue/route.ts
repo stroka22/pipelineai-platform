@@ -64,10 +64,13 @@ export async function GET(request: NextRequest) {
     console.log(`Processing carousel queue item: ${queueItem.id}`);
 
     // Determine mode: headshot (person in scenes) vs prompt-only (graphics)
+    const referenceImages: string[] = queueItem.reference_images || [];
     const hasHeadshot = !!queueItem.headshot_url;
+    const hasLogo = !!queueItem.logo_url;
+    const hasReferences = referenceImages.length > 0;
+    const useResponsesApi = hasHeadshot && (hasLogo || hasReferences); // Multi-image: use Responses API
     const slideCount = queueItem.slide_count || 5;
     const customPrompt = queueItem.scene_prompt || '';
-    const referenceImages: string[] = queueItem.reference_images || [];
 
     const slides: any[] = queueItem.slides || [];
     const startSlide = queueItem.current_slide || 0;
@@ -130,7 +133,90 @@ Be specific and detailed. This description will be used to guide AI image genera
       try {
         let imageUrl = '';
 
-        if (hasHeadshot) {
+        if (useResponsesApi) {
+          // MODE: Multi-image generation via Responses API
+          // This is the ChatGPT-style approach - passes all images to gpt-4o with image_generation tool
+          console.log(`Using Responses API (multi-image) for slide ${slideIndex + 1}`);
+
+          const content: any[] = [];
+
+          // Add headshot as reference image
+          if (hasHeadshot) {
+            content.push({
+              type: 'input_image',
+              image_url: queueItem.headshot_url,
+              detail: 'high',
+            });
+          }
+
+          // Add logo as reference image
+          if (hasLogo) {
+            content.push({
+              type: 'input_image',
+              image_url: queueItem.logo_url,
+              detail: 'high',
+            });
+          }
+
+          // Add reference images (houses, locations, etc.)
+          referenceImages.forEach((imgUrl: string) => {
+            content.push({
+              type: 'input_image',
+              image_url: imgUrl,
+              detail: 'high',
+            });
+          });
+
+          // Add text prompt with variation
+          const variations = [
+            'confident professional pose, looking at camera',
+            'reviewing documents at desk',
+            'in a meeting with a client',
+            'presenting to a small group',
+            'standing confidently in professional setting',
+            'warm, approachable expression',
+            'thoughtful expression, hand on chin',
+            'gesturing while explaining something',
+            'casual but professional stance',
+            'pointing at something off-camera',
+          ];
+          const variation = variations[slideIndex % variations.length];
+
+          content.push({
+            type: 'input_text',
+            text: `${customPrompt}\n\nVariation: ${variation}\n\nIndustry: ${queueItem.industry || 'Business Professional'}`,
+          });
+
+          const responsesResult = await openai.responses.create({
+            model: 'gpt-4o',
+            input: [
+              {
+                role: 'user',
+                content: content,
+              },
+            ],
+            tools: [
+              {
+                type: 'image_generation',
+                action: 'generate',
+              },
+            ],
+          });
+
+          // Extract generated image
+          if (responsesResult.output) {
+            for (const item of responsesResult.output) {
+              if (item.type === 'image_generation_call') {
+                const imgItem = item as any;
+                if (imgItem.result) {
+                  imageUrl = `data:image/png;base64,${imgItem.result}`;
+                  break;
+                }
+              }
+            }
+          }
+
+        } else if (hasHeadshot) {
           // MODE 1: Person in scenes - use images.edit
           const headshotBuffer = await urlToBuffer(queueItem.headshot_url);
           const headshotFile = await toFile(headshotBuffer, 'headshot.png', { type: 'image/png' });
@@ -226,7 +312,7 @@ STYLE REQUIREMENTS:
         // Add slide to results
         slides[slideIndex] = {
           slideNumber: slideIndex + 1,
-          mode: hasHeadshot ? 'person' : 'graphics',
+          mode: useResponsesApi ? 'multi-image' : hasHeadshot ? 'person' : 'graphics',
           imageUrl,
           generatedAt: new Date().toISOString(),
         };
