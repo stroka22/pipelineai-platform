@@ -14,7 +14,9 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
-  Plus
+  Plus,
+  Save,
+  ListPlus
 } from 'lucide-react';
 
 interface QueueItem {
@@ -38,25 +40,37 @@ interface GeneratedSlide {
   storageUrl: string | null;
 }
 
+type InputMode = 'fields' | 'prompt';
+
 export default function BrandPhotoshootPage() {
-  const [images, setImages] = useState<string[]>([]);
-  const [scenePrompt, setScenePrompt] = useState('');
-  const [slideCount, setSlideCount] = useState(1);
-  const [dragOver, setDragOver] = useState(false);
+  // Input mode toggle
+  const [inputMode, setInputMode] = useState<InputMode>('prompt');
   
-  // Brand details
+  // Images
+  const [images, setImages] = useState<string[]>([]);
+  const [dragOver, setDragOver] = useState(false);
+
+  // Prompt mode
+  const [openPrompt, setOpenPrompt] = useState('');
+  const [slideCount, setSlideCount] = useState(5);
+  const [title, setTitle] = useState('');
+
+  // Fields mode
   const [companyName, setCompanyName] = useState('');
   const [personName, setPersonName] = useState('');
   const [industry, setIndustry] = useState('');
   const [topic, setTopic] = useState('');
+  const [scenePrompt, setScenePrompt] = useState('');
 
   // Generation state
   const [generating, setGenerating] = useState(false);
+  const [addingToQueue, setAddingToQueue] = useState(false);
   const [generatedSlides, setGeneratedSlides] = useState<GeneratedSlide[]>([]);
   const [currentGenSlide, setCurrentGenSlide] = useState(0);
   const [genError, setGenError] = useState<string | null>(null);
+  const [progress, setProgress] = useState('');
 
-  // Queue history
+  // Queue history (collapsed by default)
   const [items, setItems] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -142,9 +156,50 @@ export default function BrandPhotoshootPage() {
     }
   };
 
-  // Generate Now - calls API directly like the test page
+  const getPrompt = (slideIndex: number): string => {
+    if (inputMode === 'prompt') {
+      // Open prompt mode - use as-is
+      let p = openPrompt || 'A professional business photograph incorporating the provided reference images.';
+      if (slideCount > 1) {
+        const variations = [
+          'confident professional pose, looking at camera',
+          'reviewing documents at desk',
+          'in a meeting with a client',
+          'presenting to a small group',
+          'standing confidently in professional setting',
+          'warm, approachable expression',
+          'thoughtful expression, hand on chin',
+          'gesturing while explaining something',
+          'casual but professional stance',
+          'pointing at something off-camera',
+        ];
+        p += `\nVariation ${slideIndex + 1}: ${variations[slideIndex % variations.length]}`;
+      }
+      return p;
+    } else {
+      // Fields mode - construct from individual fields
+      let p = scenePrompt || 'A professional business photograph';
+      if (personName) p += ` featuring ${personName}`;
+      if (companyName) p += ` for ${companyName}`;
+      if (industry) p += ` in the ${industry} industry`;
+      if (topic) p += `. Topic: ${topic}`;
+      if (slideCount > 1) {
+        const variations = [
+          'confident professional pose',
+          'at a desk reviewing documents',
+          'meeting with a client',
+          'presenting to a group',
+          'standing in a professional setting',
+        ];
+        p += `. Scene variation: ${variations[slideIndex % variations.length]}`;
+      }
+      return p;
+    }
+  };
+
+  // Generate Now - immediate, direct API call
   const generateNow = async () => {
-    if (images.length === 0 && !scenePrompt) {
+    if (images.length === 0 && (inputMode === 'prompt' ? !openPrompt : !scenePrompt)) {
       setGenError('Add at least one image or a prompt');
       return;
     }
@@ -158,44 +213,26 @@ export default function BrandPhotoshootPage() {
 
     for (let i = 0; i < slideCount; i++) {
       setCurrentGenSlide(i + 1);
+      setProgress(`Generating slide ${i + 1} of ${slideCount}...`);
       try {
-        // Keep prompt simple like the test page - long prompts cause text responses instead of images
-        let fullPrompt = scenePrompt || 'Generate a professional image incorporating all the provided reference images.';
-        if (slideCount > 1) {
-          const variations = [
-            'confident professional pose, looking at camera',
-            'reviewing documents at desk',
-            'in a meeting with a client',
-            'presenting to a small group',
-            'standing confidently in professional setting',
-            'warm, approachable expression',
-            'thoughtful expression, hand on chin',
-            'gesturing while explaining something',
-            'casual but professional stance',
-            'pointing at something off-camera',
-          ];
-          fullPrompt += `\nVariation: ${variations[i % variations.length]}`;
-        }
-
+        const prompt = getPrompt(i);
         const res = await fetch('/api/carousel/generate-now', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             images,
-            prompt: fullPrompt,
+            prompt,
             slide_number: i + 1,
             total_slides: slideCount,
-            company_name: companyName,
-            industry,
-            topic,
+            company_name: inputMode === 'fields' ? companyName : title,
+            industry: inputMode === 'fields' ? industry : undefined,
+            topic: inputMode === 'fields' ? topic : undefined,
           }),
         });
 
         const data = await res.json();
         if (!res.ok) {
-          const errMsg = data.error || 'Generation failed';
-          const debugInfo = data.debug ? `\n\nDebug: ${JSON.stringify(data.debug)}` : '';
-          throw new Error(errMsg + debugInfo);
+          throw new Error(data.error || 'Generation failed');
         }
 
         if (data.imageUrl) {
@@ -211,8 +248,9 @@ export default function BrandPhotoshootPage() {
     }
 
     setGenerating(false);
+    setProgress('');
 
-    // Also save to library via the API
+    // Save to library
     if (newSlides.length > 0) {
       try {
         await fetch('/api/carousel/save-to-library', {
@@ -221,8 +259,8 @@ export default function BrandPhotoshootPage() {
           body: JSON.stringify({
             slides: newSlides.map((s, i) => ({
               imageUrl: s.storageUrl || s.imageUrl,
-              prompt: scenePrompt,
-              niche: industry || 'General',
+              prompt: getPrompt(i),
+              niche: inputMode === 'fields' ? industry || 'General' : 'General',
               category: 'tips',
               slide_number: i + 1,
               source: 'brand_photoshoot',
@@ -235,10 +273,66 @@ export default function BrandPhotoshootPage() {
     }
   };
 
+  // Add to Queue
+  const addToQueue = async () => {
+    if (images.length === 0 && (inputMode === 'prompt' ? !openPrompt : !scenePrompt)) {
+      setGenError('Add at least one image or a prompt');
+      return;
+    }
+
+    setAddingToQueue(true);
+    setGenError(null);
+    setProgress('Adding to queue...');
+
+    try {
+      const body: any = {
+        slide_count: slideCount,
+        all_images: images,
+        headshot_url: images[0] || null,
+        logo_url: images[1] || null,
+        reference_images: images.length > 2 ? images.slice(2) : null,
+      };
+
+      if (inputMode === 'prompt') {
+        body.company_name = title || null;
+        body.scene_prompt = openPrompt;
+        body.industry = 'General';
+      } else {
+        body.company_name = companyName || null;
+        body.person_name = personName || null;
+        body.industry = industry || null;
+        body.topic = topic || null;
+        body.scene_prompt = scenePrompt || null;
+      }
+
+      const response = await fetch('/api/carousel/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setProgress('Added to queue!');
+        setTimeout(() => {
+          setAddingToQueue(false);
+          setProgress('');
+        }, 1500);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      setGenError(err.message);
+      setAddingToQueue(false);
+      setProgress('');
+    }
+  };
+
   const downloadSlide = (url: string, index: number) => {
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${(companyName || 'photoshoot').replace(/\s+/g, '-')}-slide-${index + 1}.png`;
+    const name = inputMode === 'fields' ? companyName : title;
+    link.download = `${(name || 'photoshoot').replace(/\s+/g, '-')}-slide-${index + 1}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -284,28 +378,50 @@ export default function BrandPhotoshootPage() {
                 <Camera className="w-6 h-6 text-purple-400" />
                 Brand Photoshoot
               </h1>
-              <p className="text-white/50 text-sm">Upload images, tell AI what to do, get results instantly</p>
+              <p className="text-white/50 text-sm">Describe what you want + attach reference images</p>
             </div>
           </div>
 
           <button
             onClick={() => { fetchQueue(); setShowHistory(!showHistory); }}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 ${showHistory ? 'bg-white/10 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${showHistory ? 'bg-white/10 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
           >
-            <Clock className="w-5 h-5" />
-            History
+            <Clock className="w-4 h-4" />
+            Queue
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-2 gap-8">
           {/* Left: Input */}
-          <div>
+          <div className="space-y-6">
+            {/* Input mode toggle */}
+            <div className="flex rounded-xl bg-white/5 p-1">
+              <button
+                onClick={() => setInputMode('prompt')}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  inputMode === 'prompt' ? 'bg-purple-600 text-white' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                <Sparkles className="w-4 h-4 inline mr-1" />
+                Open Prompt
+              </button>
+              <button
+                onClick={() => setInputMode('fields')}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  inputMode === 'fields' ? 'bg-purple-600 text-white' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                <ListPlus className="w-4 h-4 inline mr-1" />
+                Fill in Fields
+              </button>
+            </div>
+
             {/* Image Upload */}
             <div
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              className={`mb-6 border-2 border-dashed rounded-xl p-6 transition-colors ${
+              className={`border-2 border-dashed rounded-xl p-6 transition-colors ${
                 dragOver ? 'border-purple-500 bg-purple-500/10' : 'border-white/20 hover:border-white/30'
               }`}
             >
@@ -337,31 +453,65 @@ export default function BrandPhotoshootPage() {
               )}
             </div>
 
-            {/* Prompt */}
-            <div className="mb-4">
-              <label className="text-sm text-white/60 mb-2 block">What do you want? *</label>
-              <textarea
-                value={scenePrompt}
-                onChange={e => setScenePrompt(e.target.value)}
-                placeholder="Tell the AI what to do... e.g., 'Put this person in front of this house with this logo in the corner. Professional real estate photography style.'"
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 h-32 resize-none focus:outline-none focus:border-purple-500"
+            {/* Title (shared) */}
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-2">
+                Project Title <span className="text-white/40">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={inputMode === 'prompt' ? title : companyName}
+                onChange={e => inputMode === 'prompt' ? setTitle(e.target.value) : setCompanyName(e.target.value)}
+                placeholder={inputMode === 'prompt' ? 'e.g., Craig Pitts Business Funding Carousel' : 'e.g., Craig Pitts Financial'}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
               />
             </div>
 
-            {/* Brand details */}
-            <details className="mb-4">
-              <summary className="text-sm text-white/60 cursor-pointer hover:text-white/80">+ Brand details (optional)</summary>
-              <div className="grid grid-cols-2 gap-3 mt-3">
-                <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Company Name" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm" />
-                <input type="text" value={personName} onChange={e => setPersonName(e.target.value)} placeholder="Person Name" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm" />
-                <input type="text" value={industry} onChange={e => setIndustry(e.target.value)} placeholder="Industry" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm" />
-                <input type="text" value={topic} onChange={e => setTopic(e.target.value)} placeholder="Topic/Focus" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm" />
+            {/* Prompt mode */}
+            {inputMode === 'prompt' && (
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-2">Describe what you want</label>
+                <textarea
+                  value={openPrompt}
+                  onChange={e => setOpenPrompt(e.target.value)}
+                  placeholder="Example: Craig Pitts (513) 264-3318 - 15 years helping businesses get funds. Create a convincing 5-slide carousel. Logo and professional picture attached. Show him as an authority in business funding."
+                  className="w-full h-40 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none"
+                />
               </div>
-            </details>
+            )}
+
+            {/* Fields mode */}
+            {inputMode === 'fields' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-2">Scene Instructions</label>
+                  <textarea
+                    value={scenePrompt}
+                    onChange={e => setScenePrompt(e.target.value)}
+                    placeholder="Tell the AI what to do... e.g., 'Put this person in front of this house with this logo in the corner. Professional real estate photography style.'"
+                    className="w-full h-24 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-white/50 mb-1">Person Name</label>
+                    <input type="text" value={personName} onChange={e => setPersonName(e.target.value)} placeholder="e.g., Craig Pitts" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-white/50 mb-1">Industry</label>
+                    <input type="text" value={industry} onChange={e => setIndustry(e.target.value)} placeholder="e.g., Business Funding" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs text-white/50 mb-1">Topic / Focus</label>
+                    <input type="text" value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g., Help businesses get funding" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Slide count */}
-            <div className="flex items-center gap-4 mb-6">
-              <label className="text-sm text-white/60">Images to generate:</label>
+            <div className="flex items-center gap-4">
+              <label className="text-sm text-white/60">Slides:</label>
               <div className="flex gap-2">
                 {[1, 3, 5, 7, 10].map(n => (
                   <button
@@ -377,27 +527,49 @@ export default function BrandPhotoshootPage() {
               </div>
             </div>
 
-            {/* Generate button */}
-            <button
-              onClick={generateNow}
-              disabled={generating || (images.length === 0 && !scenePrompt)}
-              className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 px-6 py-3 rounded-lg flex items-center justify-center gap-2 font-semibold text-lg"
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                  Generating slide {currentGenSlide}/{slideCount}...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-6 h-6" />
-                  Generate {slideCount} Image{slideCount > 1 ? 's' : ''}
-                </>
-              )}
-            </button>
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={generateNow}
+                disabled={generating || addingToQueue || (images.length === 0 && (inputMode === 'prompt' ? !openPrompt : !scenePrompt))}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:from-gray-600 disabled:to-gray-600 text-white px-6 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    {progress || `Generating slide ${currentGenSlide}/${slideCount}...`}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    Generate Now
+                  </>
+                )}
+              </button>
+              <button
+                onClick={addToQueue}
+                disabled={generating || addingToQueue || (images.length === 0 && (inputMode === 'prompt' ? !openPrompt : !scenePrompt))}
+                className="flex-1 bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 disabled:from-gray-600 disabled:to-gray-600 text-white px-6 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all"
+              >
+                {addingToQueue ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    {progress || 'Adding...'}
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5" />
+                    Add to Queue
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-white/40 text-xs text-center">
+              &quot;Generate Now&quot; creates immediately. &quot;Add to Queue&quot; processes in the background via cron.
+            </p>
 
             {genError && (
-              <div className="mt-3 p-3 bg-red-900/30 border border-red-500/30 rounded-lg text-red-400 text-sm">
+              <div className="p-3 bg-red-900/30 border border-red-500/30 rounded-lg text-red-400 text-sm break-words">
                 {genError}
               </div>
             )}
@@ -405,62 +577,89 @@ export default function BrandPhotoshootPage() {
 
           {/* Right: Results */}
           <div>
-            {generatedSlides.length > 0 ? (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold">
-                    Results ({generatedSlides.length} image{generatedSlides.length > 1 ? 's' : ''})
-                  </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Generated Content</h2>
+              {generatedSlides.length > 0 && (
+                <div className="flex gap-2">
                   <button
                     onClick={downloadAll}
-                    className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
+                    className="text-sm text-white/60 hover:text-white flex items-center gap-1"
                   >
                     <Download className="w-4 h-4" />
                     Download All
                   </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/carousel/save-to-library', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            slides: generatedSlides.map((s, i) => ({
+                              imageUrl: s.storageUrl || s.imageUrl,
+                              prompt: getPrompt(i),
+                              niche: inputMode === 'fields' ? industry || 'General' : 'General',
+                              category: 'tips',
+                              slide_number: i + 1,
+                              source: 'brand_photoshoot',
+                            })),
+                          }),
+                        });
+                        const data = await res.json();
+                        if (data.success) alert(`Saved ${data.saved} to library!`);
+                      } catch { alert('Failed to save'); }
+                    }}
+                    className="text-sm text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                  >
+                    <Save className="w-4 h-4" />
+                    Save to Library
+                  </button>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  {generatedSlides.map((slide, i) => (
-                    <div key={i} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden group relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={slide.imageUrl} alt={`Slide ${i + 1}`} className="w-full aspect-square object-cover" />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => downloadSlide(slide.imageUrl, i)}
-                          className="bg-white/20 hover:bg-white/30 p-2 rounded-lg"
-                        >
-                          <Download className="w-5 h-5" />
-                        </button>
-                      </div>
-                      <div className="absolute bottom-2 right-2 bg-black/60 px-2 py-1 rounded text-xs">
-                        {i + 1}/{generatedSlides.length}
-                      </div>
+              )}
+            </div>
+
+            {generatedSlides.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4">
+                {generatedSlides.map((slide, i) => (
+                  <div key={i} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden group relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={slide.imageUrl} alt={`Slide ${i + 1}`} className="w-full aspect-square object-cover" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => downloadSlide(slide.imageUrl, i)}
+                        className="bg-white/20 hover:bg-white/30 p-2 rounded-lg"
+                      >
+                        <Download className="w-5 h-5" />
+                      </button>
                     </div>
-                  ))}
-                </div>
+                    <div className="absolute bottom-2 right-2 bg-black/60 px-2 py-1 rounded text-xs">
+                      {i + 1}/{generatedSlides.length}
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : generating ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <Loader2 className="w-12 h-12 animate-spin text-purple-400" />
-                <p className="text-white/60">Generating slide {currentGenSlide} of {slideCount}...</p>
+                <p className="text-white/60">{progress}</p>
                 <p className="text-xs text-white/30">This may take 30-60 seconds per image</p>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-white/30">
-                <Sparkles className="w-12 h-12 mb-4 opacity-30" />
-                <p>Generated images will appear here</p>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-12 text-center">
+                <Camera className="w-16 h-16 text-white/20 mx-auto mb-4" />
+                <p className="text-white/40">Generated images will appear here</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* History Section */}
+        {/* Queue History */}
         {showHistory && (
           <div className="mt-8 border-t border-white/10 pt-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Queue History</h2>
               <button onClick={fetchQueue} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg">
-                <RefreshCw className="w-5 h-5" />
+                <RefreshCw className="w-4 h-4" />
               </button>
             </div>
             {loading ? (
@@ -468,7 +667,7 @@ export default function BrandPhotoshootPage() {
                 <Loader2 className="w-6 h-6 animate-spin text-white/40" />
               </div>
             ) : items.length === 0 ? (
-              <p className="text-white/30 text-center py-8">No previous photoshoots</p>
+              <p className="text-white/30 text-center py-8">No items in queue</p>
             ) : (
               <div className="space-y-3">
                 {items.map(item => (
@@ -506,7 +705,10 @@ export default function BrandPhotoshootPage() {
                           </div>
                         )}
                       </div>
-                      <button onClick={() => { if (confirm('Delete?')) fetch(`/api/carousel/queue?id=${item.id}`, { method: 'DELETE' }).then(fetchQueue); }} className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg">
+                      <button
+                        onClick={() => { if (confirm('Delete?')) fetch(`/api/carousel/queue?id=${item.id}`, { method: 'DELETE' }).then(fetchQueue); }}
+                        className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>

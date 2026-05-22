@@ -38,13 +38,13 @@ export async function POST(request: NextRequest) {
   const openai = getOpenAI();
 
   try {
-    const { images, prompt, slide_number, total_slides, company_name, industry, topic } = await request.json();
+    const { images, prompt, slide_number, total_slides, company_name, industry, topic, mode } = await request.json();
 
     if (!images || images.length === 0) {
       return NextResponse.json({ error: 'At least one image required' }, { status: 400 });
     }
 
-    console.log(`Generate Now: slide ${slide_number}/${total_slides} with ${images.length} images`);
+    console.log(`Generate Now: slide ${slide_number}/${total_slides}, mode: ${mode}, ${images.length} images`);
 
     // Build message content - images + text
     const content: any[] = [];
@@ -57,14 +57,16 @@ export async function POST(request: NextRequest) {
       });
     });
 
+    // CRITICAL: Prefix prompt to force IMAGE generation, not text
+    // The API defaults to text responses when the prompt sounds like a content/copy request
+    const imagePrompt = `GENERATE AN IMAGE: ${prompt || 'A professional business photograph incorporating the provided reference images.'}`;
+
     content.push({
       type: 'input_text',
-      text: prompt || 'Generate a professional image incorporating all the provided reference images.',
+      text: imagePrompt,
     });
 
-    console.log(`Sending to Responses API: ${content.length} content items, prompt length: ${(prompt || '').length}`);
-
-    // Use gpt-4o with image_generation tool - same approach as test page
+    // Use gpt-4o with image_generation tool
     const response = await openai.responses.create({
       model: 'gpt-4o',
       input: [
@@ -83,7 +85,6 @@ export async function POST(request: NextRequest) {
 
     // Extract generated image
     let generatedImageBase64 = null;
-    console.log('Response output:', JSON.stringify(response.output?.map((o: any) => ({ type: o.type, hasResult: !!(o as any).result }))));
     
     if (response.output) {
       for (const item of response.output) {
@@ -94,32 +95,20 @@ export async function POST(request: NextRequest) {
             break;
           }
         }
-        // Also check for message content that might contain refusal
-        if (item.type === 'message') {
-          const msgItem = item as any;
-          const textContent = msgItem.content?.find((c: any) => c.type === 'output_text');
-          if (textContent) {
-            console.log('API returned text instead of image:', textContent.text?.substring(0, 300));
-          }
-        }
       }
     }
 
     if (!generatedImageBase64) {
-      // Return full output for debugging
-      const outputDebug = response.output?.map((o: any) => {
-        const debug: any = { type: o.type };
-        if (o.type === 'message') {
-          debug.text = o.content?.map((c: any) => c.text?.substring(0, 300)).join(' | ');
-        }
-        if (o.type === 'image_generation_call') {
-          debug.hasResult = !!o.result;
-        }
-        return debug;
-      });
+      const textResponse = response.output
+        ?.filter((o: any) => o.type === 'message')
+        .flatMap((o: any) => o.content?.map((c: any) => c.text) || [])
+        .join(' ')
+        .substring(0, 200);
+      
       return NextResponse.json({ 
-        error: 'No image was generated - API returned text instead', 
-        debug: outputDebug,
+        error: textResponse 
+          ? `AI responded with text instead of an image: "${textResponse}"` 
+          : 'No image was generated',
       }, { status: 500 });
     }
 
@@ -130,7 +119,6 @@ export async function POST(request: NextRequest) {
     const filename = `${safeName}-${timestamp}-slide-${slide_number}.png`;
     const storageUrl = await uploadToStorage(imageBuffer, filename);
 
-    // Return base64 for immediate display + storage URL for downloads
     const imageUrl = `data:image/png;base64,${generatedImageBase64}`;
 
     return NextResponse.json({
