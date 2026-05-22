@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     // gpt-4o supports image_generation tool in the Responses API
     // It can accept multiple input images and generate/edit based on them
     const response = await openai.responses.create({
-      model: 'gpt-4o',
+      model: 'gpt-image-1',
       input: [
         {
           role: 'user',
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       success: true,
       generatedImage,
       outputItems,
-      model: 'gpt-4o',
+      model: 'gpt-image-1',
     });
 
   } catch (error: any) {
