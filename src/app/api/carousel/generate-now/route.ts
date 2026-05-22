@@ -81,6 +81,8 @@ export async function POST(request: NextRequest) {
 
     // Extract generated image
     let generatedImageBase64 = null;
+    console.log('Response output types:', response.output?.map((o: any) => o.type));
+    
     if (response.output) {
       for (const item of response.output) {
         if (item.type === 'image_generation_call') {
@@ -94,7 +96,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (!generatedImageBase64) {
-      return NextResponse.json({ error: 'No image was generated' }, { status: 500 });
+      // Return full output for debugging
+      const outputDebug = response.output?.map((o: any) => ({
+        type: o.type,
+        hasResult: !!o.result,
+        content: o.type === 'message' ? o.content?.map((c: any) => ({ type: c.type, text: c.text?.substring(0, 200) })) : undefined,
+      }));
+      return NextResponse.json({ 
+        error: 'No image was generated', 
+        debug: outputDebug,
+        outputCount: response.output?.length,
+      }, { status: 500 });
     }
 
     // Upload to Supabase Storage
