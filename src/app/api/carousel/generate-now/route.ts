@@ -34,18 +34,18 @@ async function uploadToStorage(buffer: Buffer, filename: string): Promise<string
   return urlData.publicUrl;
 }
 
-// Convert marketing brief into visual scene description for the image API
+// Convert marketing brief into a visual scene description
+// IMPORTANT: Preserve gender pronouns (he/she) so the model generates the right person
 async function buildScenePrompt(openai: OpenAI, userPrompt: string, industry?: string, topic?: string): Promise<string> {
-  // If already a visual description, use as-is
+  // If already a short visual description, use as-is
   if (userPrompt.length < 150 && !userPrompt.match(/\d{3}[-.)]\d{3,4}[-.)]\d{4}/)) {
     return userPrompt;
   }
 
-  // Convert marketing brief to visual scene description
   const conversionPrompt = `Convert this request into a brief VISUAL SCENE description for an AI image generator.
 RULES:
-- Describe ONLY what the image should look like visually (setting, pose, lighting, mood)
-- Do NOT mention any person by name - say "a professional" or "the professional"
+- Describe ONLY what the image should look like visually (setting, pose, lighting, mood, composition)
+- Do NOT mention any person by name - but DO preserve gender (use "a professional woman" or "a professional man" based on context clues like he/she/his/her)
 - Do NOT include phone numbers, emails, or contact info
 - Do NOT ask for text overlays or words in the image
 - Keep it under 80 words
@@ -85,21 +85,22 @@ export async function POST(request: NextRequest) {
 
     console.log(`Generate Now: slide ${slide_number}/${total_slides}, ${images.length} images`);
 
-    // Convert the user prompt to a visual scene description
+    // Convert the user prompt to a visual scene description (preserves gender)
     const scenePrompt = await buildScenePrompt(openai, prompt || '', industry, topic);
     console.log(`Scene prompt: "${scenePrompt.substring(0, 100)}"`);
 
     let imageBuffer: Buffer;
 
     if (images.length > 0) {
-      // MODE 1: images.edit - ALWAYS returns an image, preserves likeness perfectly
+      // MODE: images.edit - takes the actual photo, preserves likeness
+      // Use the FIRST image as the primary reference (headshot)
       const headshotBuffer = await urlToBuffer(images[0]);
       const headshotFile = await toFile(headshotBuffer, 'headshot.png', { type: 'image/png' });
 
-      // Add variation for multi-slide sets
+      // Add scene variation for multi-slide sets
       const variations = [
         'looking directly at camera with confidence',
-        'slightly turned, engaged expression',
+        'slightly turned, warm engaged expression',
         'gesturing while explaining something',
         'reviewing documents or materials',
         'warm, approachable smile',
@@ -111,13 +112,29 @@ export async function POST(request: NextRequest) {
       ];
       const variation = total_slides > 1 ? `\n\nPose variation: ${variations[(slide_number - 1) % variations.length]}` : '';
 
+      // If additional images provided (logo, house, etc.), mention them in the prompt
+      let extraContext = '';
+      if (images.length > 1) {
+        const imageCount = images.length;
+        if (imageCount === 2) {
+          extraContext = '\n\nAlso incorporate the logo/branding from the second reference image into the composition.';
+        } else if (imageCount >= 3) {
+          extraContext = `\n\nAlso incorporate elements from the ${imageCount - 1} additional reference images (logo, property, location) into the composition.`;
+        }
+      }
+
       const editPrompt = `Transform this photo into a professional business scene.
 
-SCENE: ${scenePrompt}${variation}
+SCENE: ${scenePrompt}${variation}${extraContext}
 
-CRITICAL: Keep the EXACT same person - same face, features, hair, appearance. Only change the setting/scene/background around them. Professional corporate photography, premium quality, excellent lighting, photorealistic.`;
+CRITICAL REQUIREMENTS:
+- Keep the EXACT same person - same face, same features, same hair, same appearance, same gender
+- Only change the setting/scene/background around them
+- Professional corporate photography style
+- Premium quality, excellent lighting
+- Photorealistic, not illustrated or cartoonish`;
 
-      console.log(`Using images.edit with prompt length: ${editPrompt.length}`);
+      console.log(`Using images.edit, prompt: "${editPrompt.substring(0, 120)}..."`);
 
       const imageResponse = await openai.images.edit({
         model: 'gpt-image-2',
@@ -135,7 +152,7 @@ CRITICAL: Keep the EXACT same person - same face, features, hair, appearance. On
         return NextResponse.json({ error: 'Image generation returned no data' }, { status: 500 });
       }
     } else {
-      // MODE 2: images.generate - for prompts without reference images
+      // MODE: images.generate - no reference images, prompt only
       const generatePrompt = `Professional social media image. ${scenePrompt}. Clean, premium aesthetic, bold and eye-catching. Square format. No text or words in the image - just visuals. Photorealistic or high-quality graphic design style.`;
 
       const imageResponse = await openai.images.generate({
@@ -160,7 +177,6 @@ CRITICAL: Keep the EXACT same person - same face, features, hair, appearance. On
     const filename = `${safeName}-${timestamp}-slide-${slide_number}.png`;
     const storageUrl = await uploadToStorage(imageBuffer, filename);
 
-    // Return base64 for immediate display + storage URL for downloads
     const imageUrl = `data:image/png;base64,${imageBuffer.toString('base64')}`;
 
     return NextResponse.json({
