@@ -35,21 +35,23 @@ async function uploadToStorage(buffer: Buffer, filename: string): Promise<string
 }
 
 // Convert marketing brief into a visual scene description
-// IMPORTANT: Preserve gender pronouns (he/she) so the model generates the right person
+// Preserves gender but strips names/numbers that trigger safety refusals
 async function buildScenePrompt(openai: OpenAI, userPrompt: string, industry?: string, topic?: string): Promise<string> {
   // If already a short visual description, use as-is
-  if (userPrompt.length < 150 && !userPrompt.match(/\d{3}[-.)]\d{3,4}[-.)]\d{4}/)) {
+  if (userPrompt.length < 100 && !userPrompt.match(/\d{3}[-.)]\d{3,4}[-.)]\d{4}/)) {
     return userPrompt;
   }
 
-  const conversionPrompt = `Convert this request into a brief VISUAL SCENE description for an AI image generator.
+  const conversionPrompt = `Convert this marketing request into a specific, detailed VISUAL SCENE description for an AI IMAGE generator. The AI will generate a PHOTOGRAPH based on your description.
+
 RULES:
-- Describe ONLY what the image should look like visually (setting, pose, lighting, mood, composition)
-- Do NOT mention any person by name - but DO preserve gender (use "a professional woman" or "a professional man" based on context clues like he/she/his/her)
-- Do NOT include phone numbers, emails, or contact info
-- Do NOT ask for text overlays or words in the image
-- Keep it under 80 words
-- End with: "Professional corporate photography style, photorealistic, natural lighting"
+- Describe the EXACT visual scene to create: specific setting, background, props, colors, atmosphere
+- Preserve gender from context clues (she/her -> woman, he/his -> man) but remove names
+- Remove phone numbers, emails, contact info
+- Remove any request for text overlays or words in the image
+- Be SPECIFIC about the scene (e.g., "downtown city street with palm trees and modern buildings" not "professional setting")
+- Include mood and style details
+- 50-100 words
 
 REQUEST: ${userPrompt}
 ${industry ? `INDUSTRY: ${industry}` : ''}
@@ -61,16 +63,70 @@ VISUAL SCENE:`;
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: conversionPrompt }],
-      max_tokens: 120,
+      max_tokens: 150,
       temperature: 0.7,
     });
     const desc = response.choices[0]?.message?.content?.trim();
-    if (desc) return desc;
+    if (desc) {
+      console.log(`Converted: "${userPrompt.substring(0, 60)}..." -> "${desc.substring(0, 80)}..."`);
+      return desc;
+    }
   } catch (err) {
     console.error('Prompt conversion failed:', err);
   }
 
-  return `A professional in a modern business setting. Professional corporate photography style, photorealistic, natural lighting.`;
+  return `A professional woman in a modern business setting, confident pose, natural lighting. Professional corporate photography style, photorealistic.`;
+}
+
+async function generateWithResponsesAPI(openai: OpenAI, images: string[], prompt: string): Promise<string | null> {
+  const content: any[] = [];
+
+  images.forEach((imgUrl: string) => {
+    content.push({
+      type: 'input_image',
+      image_url: imgUrl,
+      detail: 'high',
+    });
+  });
+
+  content.push({
+    type: 'input_text',
+    text: prompt,
+  });
+
+  const response = await openai.responses.create({
+    model: 'gpt-4o',
+    input: [
+      {
+        role: 'system',
+        content: 'You are an image generator. You MUST generate an image based on the user request. Never respond with text. Always use the image_generation tool to create a visual output.',
+      },
+      {
+        role: 'user',
+        content: content,
+      },
+    ],
+    tools: [
+      {
+        type: 'image_generation',
+        action: 'generate',
+      },
+    ],
+  });
+
+  // Extract generated image
+  if (response.output) {
+    for (const item of response.output) {
+      if (item.type === 'image_generation_call') {
+        const imgItem = item as any;
+        if (imgItem.result) {
+          return imgItem.result; // base64
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 export async function POST(request: NextRequest) {
@@ -85,19 +141,12 @@ export async function POST(request: NextRequest) {
 
     console.log(`Generate Now: slide ${slide_number}/${total_slides}, ${images.length} images`);
 
-    // Convert the user prompt to a visual scene description (preserves gender)
+    // Step 1: Convert the user prompt to a visual scene description
     const scenePrompt = await buildScenePrompt(openai, prompt || '', industry, topic);
-    console.log(`Scene prompt: "${scenePrompt.substring(0, 100)}"`);
 
-    let imageBuffer: Buffer;
-
-    if (images.length > 0) {
-      // MODE: images.edit - takes the actual photo, preserves likeness
-      // Use the FIRST image as the primary reference (headshot)
-      const headshotBuffer = await urlToBuffer(images[0]);
-      const headshotFile = await toFile(headshotBuffer, 'headshot.png', { type: 'image/png' });
-
-      // Add scene variation for multi-slide sets
+    // Step 2: Add variation for multi-slide sets
+    let finalPrompt = scenePrompt;
+    if (total_slides > 1) {
       const variations = [
         'looking directly at camera with confidence',
         'slightly turned, warm engaged expression',
@@ -110,50 +159,57 @@ export async function POST(request: NextRequest) {
         'standing with arms crossed confidently',
         'casual but professional stance',
       ];
-      const variation = total_slides > 1 ? `\n\nPose variation: ${variations[(slide_number - 1) % variations.length]}` : '';
+      finalPrompt += `\n\nPose variation: ${variations[(slide_number - 1) % variations.length]}`;
+    }
 
-      // If additional images provided (logo, house, etc.), mention them in the prompt
-      let extraContext = '';
-      if (images.length > 1) {
-        const imageCount = images.length;
-        if (imageCount === 2) {
-          extraContext = '\n\nAlso incorporate the logo/branding from the second reference image into the composition.';
-        } else if (imageCount >= 3) {
-          extraContext = `\n\nAlso incorporate elements from the ${imageCount - 1} additional reference images (logo, property, location) into the composition.`;
+    console.log(`Final prompt: "${finalPrompt.substring(0, 120)}"`);
+
+    let imageBuffer: Buffer;
+
+    if (images.length > 0) {
+      // MODE: Responses API - produces the best quality images
+      // Try with the converted prompt first
+      let generatedBase64 = await generateWithResponsesAPI(openai, images, finalPrompt);
+
+      // If API returned text instead of image, retry with a simpler prompt
+      if (!generatedBase64) {
+        console.log('First attempt returned text. Retrying with simpler prompt...');
+        const simplePrompt = `Create a photorealistic professional business photograph. ${images.length} reference images provided for visual context. Professional lighting, high quality, natural composition.`;
+        generatedBase64 = await generateWithResponsesAPI(openai, images, simplePrompt);
+      }
+
+      // If still no image, fall back to images.edit (lower quality but always works)
+      if (!generatedBase64) {
+        console.log('Responses API failed twice. Falling back to images.edit...');
+        const headshotBuffer = await urlToBuffer(images[0]);
+        const headshotFile = await toFile(headshotBuffer, 'headshot.png', { type: 'image/png' });
+
+        const editPrompt = `Transform this photo into a professional business scene. Keep the EXACT same person - same face, features, hair, appearance. Only change the background/setting. Professional corporate photography, premium quality, excellent lighting, photorealistic.`;
+
+        const imageResponse = await openai.images.edit({
+          model: 'gpt-image-2',
+          image: headshotFile,
+          prompt: editPrompt,
+          n: 1,
+          size: '1024x1024',
+        });
+
+        if (imageResponse.data?.[0]?.b64_json) {
+          generatedBase64 = imageResponse.data[0].b64_json;
+        } else if (imageResponse.data?.[0]?.url) {
+          const buf = await urlToBuffer(imageResponse.data[0].url);
+          generatedBase64 = buf.toString('base64');
         }
       }
 
-      const editPrompt = `Transform this photo into a professional business scene.
-
-SCENE: ${scenePrompt}${variation}${extraContext}
-
-CRITICAL REQUIREMENTS:
-- Keep the EXACT same person - same face, same features, same hair, same appearance, same gender
-- Only change the setting/scene/background around them
-- Professional corporate photography style
-- Premium quality, excellent lighting
-- Photorealistic, not illustrated or cartoonish`;
-
-      console.log(`Using images.edit, prompt: "${editPrompt.substring(0, 120)}..."`);
-
-      const imageResponse = await openai.images.edit({
-        model: 'gpt-image-2',
-        image: headshotFile,
-        prompt: editPrompt,
-        n: 1,
-        size: '1024x1024',
-      });
-
-      if (imageResponse.data?.[0]?.b64_json) {
-        imageBuffer = Buffer.from(imageResponse.data[0].b64_json, 'base64');
-      } else if (imageResponse.data?.[0]?.url) {
-        imageBuffer = await urlToBuffer(imageResponse.data[0].url);
-      } else {
-        return NextResponse.json({ error: 'Image generation returned no data' }, { status: 500 });
+      if (!generatedBase64) {
+        return NextResponse.json({ error: 'All generation methods failed. Try a simpler prompt.' }, { status: 500 });
       }
+
+      imageBuffer = Buffer.from(generatedBase64, 'base64');
     } else {
       // MODE: images.generate - no reference images, prompt only
-      const generatePrompt = `Professional social media image. ${scenePrompt}. Clean, premium aesthetic, bold and eye-catching. Square format. No text or words in the image - just visuals. Photorealistic or high-quality graphic design style.`;
+      const generatePrompt = `Professional social media image. ${finalPrompt}. Clean, premium aesthetic, bold and eye-catching. Square format. No text or words - just visuals. Photorealistic or high-quality graphic design style.`;
 
       const imageResponse = await openai.images.generate({
         model: 'gpt-image-2',
