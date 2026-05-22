@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { 
   ArrowLeft, 
   Plus, 
@@ -290,11 +289,10 @@ export default function BrandPhotoshootPage() {
                     <div className="flex flex-wrap gap-3 mb-3">
                       {images.map((img, i) => (
                         <div key={i} className="relative">
-                          <Image
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
                             src={img}
                             alt=""
-                            width={80}
-                            height={80}
                             className="object-cover rounded-lg border border-white/10 w-20 h-20"
                           />
                           <button
@@ -428,7 +426,8 @@ export default function BrandPhotoshootPage() {
                 <div className="flex items-start gap-4">
                   <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center">
                     {item.headshot_url ? (
-                      <Image src={item.headshot_url} alt="" width={64} height={64} className="object-cover w-full h-full" />
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.headshot_url} alt="" className="object-cover w-full h-full" />
                     ) : (
                       <span className="text-2xl">🎨</span>
                     )}
@@ -456,7 +455,8 @@ export default function BrandPhotoshootPage() {
                       {item.slides.slice(0, 5).filter(Boolean).map((slide, i) => (
                         <div key={i} className="w-12 h-12 rounded overflow-hidden bg-white/5">
                           {slide.imageUrl ? (
-                            <Image src={slide.imageUrl} alt="" width={48} height={48} className="object-cover w-full h-full" />
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={slide.imageUrl} alt="" className="object-cover w-full h-full" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-xs text-white/20">{i + 1}</div>
                           )}

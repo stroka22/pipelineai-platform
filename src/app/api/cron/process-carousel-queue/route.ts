@@ -28,6 +28,40 @@ async function urlToBuffer(url: string): Promise<Buffer> {
   return Buffer.from(arrayBuffer);
 }
 
+async function uploadToStorage(buffer: Buffer, folder: string, filename: string): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from('vault')
+    .upload(`${folder}/${filename}`, buffer, {
+      contentType: 'image/png',
+      upsert: true,
+    });
+  if (error) {
+    console.error('Storage upload error:', error);
+    return null;
+  }
+  const { data: urlData } = supabase.storage.from('vault').getPublicUrl(`${folder}/${filename}`);
+  return urlData.publicUrl;
+}
+
+async function saveToLibrary(imageUrl: string, queueItem: any, slideIndex: number): Promise<void> {
+  try {
+    await supabase.from('generated_images').insert({
+      image_url: imageUrl,
+      prompt: queueItem.scene_prompt || queueItem.open_prompt || '',
+      niche: queueItem.niche || queueItem.industry || 'General',
+      category: queueItem.category || 'tips',
+      source: 'brand_photoshoot',
+      metadata: {
+        queue_id: queueItem.id,
+        slide_number: slideIndex + 1,
+        mode: queueItem.headshot_url ? 'person' : 'graphics',
+      },
+    });
+  } catch (err) {
+    console.error('Failed to save to library:', err);
+  }
+}
+
 export async function GET(request: NextRequest) {
   // Verify cron secret
   const authHeader = request.headers.get('authorization');
@@ -305,12 +339,22 @@ STYLE REQUIREMENTS:
         }
 
         // Add slide to results
+        // Upload to Supabase Storage instead of storing base64
+        const imageBuffer = await urlToBuffer(imageUrl);
+        const storageFilename = `queue-${queueItem.id}-slide-${slideIndex + 1}.png`;
+        const storageUrl = await uploadToStorage(imageBuffer, 'generated', storageFilename);
+
         slides[slideIndex] = {
           slideNumber: slideIndex + 1,
           mode: useResponsesApi ? 'multi-image' : hasHeadshot ? 'person' : 'graphics',
-          imageUrl,
+          imageUrl: storageUrl || imageUrl,
           generatedAt: new Date().toISOString(),
         };
+
+        // Auto-save to library
+        if (storageUrl) {
+          await saveToLibrary(storageUrl, queueItem, slideIndex);
+        }
 
         // Update progress
         await supabase
