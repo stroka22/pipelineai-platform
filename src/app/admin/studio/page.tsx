@@ -73,6 +73,13 @@ export default function StudioDashboard() {
       badge: stats.queueItems > 0 ? `${stats.queueItems} in queue` : null,
     },
     {
+      title: 'Carousel Creator',
+      description: 'Structured carousel builder with categories',
+      icon: Layers,
+      href: '/admin/studio/carousel',
+      color: 'from-blue-500 to-indigo-600',
+    },
+    {
       title: 'Generate Image',
       description: 'Create a single AI image from prompt',
       icon: Wand2,
@@ -82,7 +89,7 @@ export default function StudioDashboard() {
     {
       title: 'Pro Create',
       description: 'Composite headshots & logos on templates',
-      icon: Layers,
+      icon: Sparkles,
       href: '/admin/studio/pro-create',
       color: 'from-amber-500 to-orange-600',
     },
@@ -176,7 +183,7 @@ export default function StudioDashboard() {
             <Sparkles className="w-5 h-5 text-purple-400" />
             Create
           </h2>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {createTools.map((tool) => (
               <Link
                 key={tool.title}
