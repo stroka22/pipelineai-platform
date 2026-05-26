@@ -333,6 +333,26 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Quick Links */}
+      <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
+        <h2 className="text-lg font-semibold text-[#081F33] mb-4">Quick Links</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {[
+            { name: 'Vault Items', href: '/admin/vault', icon: '📦' },
+            { name: 'Gallery', href: '/admin/gallery', icon: '🖼️' },
+            { name: 'Niches', href: '/admin/niches', icon: '🏷️' },
+            { name: 'Categories', href: '/admin/categories', icon: '📂' },
+            { name: 'AI Studio', href: '/admin/studio', icon: '✨' },
+            { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
+          ].map(link => (
+            <Link key={link.href} href={link.href} className="flex items-center gap-2 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#C96A2B] hover:bg-[#C96A2B]/5 transition-colors">
+              <span className="text-lg">{link.icon}</span>
+              <span className="text-sm font-medium text-[#081F33]">{link.name}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
