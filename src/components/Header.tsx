@@ -99,6 +99,9 @@ export default function Header({ currentNiche }: HeaderProps) {
               </div>
             )}
           </div>
+          <Link href="/gallery/real-estate" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
+            Galleries
+          </Link>
           <Link href="/#vaults" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
             Vaults
           </Link>
@@ -200,6 +203,13 @@ export default function Header({ currentNiche }: HeaderProps) {
             >
               <ShoppingCart className="w-5 h-5" />
               Cart {itemCount > 0 && `(${itemCount})`}
+            </Link>
+            <Link 
+              href="/gallery/real-estate" 
+              className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-base font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Galleries
             </Link>
             <Link 
               href="/#how-it-works" 
