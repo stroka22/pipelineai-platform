@@ -2,6 +2,8 @@ import { supabase } from '@/lib/supabase';
 import { Metadata } from 'next';
 import NicheGalleryClient from './NicheGalleryClient';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: Promise<{ niche: string }>;
 }
@@ -21,16 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export async function generateStaticParams() {
-  const { data } = await supabase
-    .from('niches')
-    .select('gallery_slug')
-    .eq('has_gallery_page', true);
-  
-  return (data || [])
-    .filter(n => n.gallery_slug)
-    .map(n => ({ niche: n.gallery_slug }));
-}
+// Dynamic - always fetches fresh data from Supabase
 
 async function getNicheData(niche: string) {
   const [nicheRes, singlesRes, carouselsRes, packagesRes] = await Promise.all([
