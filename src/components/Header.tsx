@@ -13,6 +13,7 @@ interface HeaderProps {
 export default function Header({ currentNiche }: HeaderProps) {
   const [niches, setNiches] = useState<Niche[]>([]);
   const [showNicheMenu, setShowNicheMenu] = useState(false);
+  const [showGalleryMenu, setShowGalleryMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { itemCount } = useCart();
 
@@ -67,22 +68,6 @@ export default function Header({ currentNiche }: HeaderProps) {
             {showNicheMenu && (
               <div className="absolute top-full left-0 pt-2">
                 <div className="bg-[#1a1a1a] border border-white/10 rounded-lg py-2 min-w-[200px] shadow-xl">
-                {niches.filter(n => n.has_gallery_page).length > 0 && (
-                  <>
-                    <div className="px-4 py-1.5 text-white/30 text-xs uppercase tracking-wider">Gallery Pages</div>
-                    {niches.filter(n => n.has_gallery_page).map(niche => (
-                      <Link
-                        key={`gallery-${niche.slug}`}
-                        href={`/gallery/${niche.gallery_slug || niche.slug}`}
-                        className="block px-4 py-2 text-blue-400 hover:text-blue-300 hover:bg-white/5 text-sm"
-                      >
-                        ✦ {niche.name}
-                      </Link>
-                    ))}
-                    <div className="my-1 border-t border-white/5" />
-                  </>
-                )}
-                <div className="px-4 py-1.5 text-white/30 text-xs uppercase tracking-wider">All Niches</div>
                 {niches.map(niche => (
                   <Link
                     key={niche.slug}
@@ -99,9 +84,35 @@ export default function Header({ currentNiche }: HeaderProps) {
               </div>
             )}
           </div>
-          <Link href="/gallery/real-estate" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
-            Galleries
-          </Link>
+          {niches.filter(n => n.has_gallery_page).length > 0 && (
+          <div 
+            className="relative"
+            onMouseEnter={() => setShowGalleryMenu(true)}
+            onMouseLeave={() => setShowGalleryMenu(false)}
+          >
+            <button 
+              className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-medium flex items-center gap-1"
+            >
+              Galleries
+              <ChevronDown className={`w-4 h-4 transition-transform ${showGalleryMenu ? 'rotate-180' : ''}`} />
+            </button>
+            {showGalleryMenu && (
+              <div className="absolute top-full left-0 pt-2">
+                <div className="bg-[#1a1a1a] border border-blue-500/20 rounded-lg py-2 min-w-[200px] shadow-xl">
+                {niches.filter(n => n.has_gallery_page).map(niche => (
+                  <Link
+                    key={`gallery-${niche.slug}`}
+                    href={`/gallery/${niche.gallery_slug || niche.slug}`}
+                    className="block px-4 py-2 text-white/70 hover:text-white hover:bg-white/5 text-sm"
+                  >
+                    {niche.icon || '✦'} {niche.name}
+                  </Link>
+                ))}
+                </div>
+              </div>
+            )}
+          </div>
+          )}
           <Link href="/#vaults" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
             Vaults
           </Link>
@@ -204,13 +215,21 @@ export default function Header({ currentNiche }: HeaderProps) {
               <ShoppingCart className="w-5 h-5" />
               Cart {itemCount > 0 && `(${itemCount})`}
             </Link>
-            <Link 
-              href="/gallery/real-estate" 
-              className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-base font-medium"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Galleries
-            </Link>
+            {niches.filter(n => n.has_gallery_page).length > 0 && (
+              <>
+                <div className="px-4 py-2 text-white/30 text-xs uppercase tracking-wider">Galleries</div>
+                {niches.filter(n => n.has_gallery_page).map(niche => (
+                  <Link 
+                    key={`mobile-gallery-${niche.slug}`}
+                    href={`/gallery/${niche.gallery_slug || niche.slug}`} 
+                    className="block px-4 py-2 text-blue-400 hover:text-blue-300 hover:bg-white/5 rounded-lg text-sm font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {niche.icon || '✦'} {niche.name}
+                  </Link>
+                ))}
+              </>
+            )}
             <Link 
               href="/#how-it-works" 
               className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-base font-medium"
