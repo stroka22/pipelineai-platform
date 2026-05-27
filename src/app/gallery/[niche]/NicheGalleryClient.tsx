@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Header from '@/components/Header';
 import { Calendar, ArrowRight, Check, ChevronLeft, ChevronRight, Star, Crown, Zap, Camera, Layers } from 'lucide-react';
 
 interface NicheData {
@@ -86,6 +87,7 @@ export default function NicheGalleryClient({
 
   return (
     <div className="min-h-screen bg-[#050a14]">
+      <Header />
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#0a1628] via-[#0d1f3c] to-[#050a14]" />
