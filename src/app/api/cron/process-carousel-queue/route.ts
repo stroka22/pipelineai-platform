@@ -30,7 +30,7 @@ async function urlToBuffer(url: string): Promise<Buffer> {
 
 async function uploadToStorage(buffer: Buffer, folder: string, filename: string): Promise<string | null> {
   const { data, error } = await supabase.storage
-    .from('vault')
+    .from('Vault')
     .upload(`${folder}/${filename}`, buffer, {
       contentType: 'image/png',
       upsert: true,

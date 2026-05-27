@@ -60,9 +60,9 @@ export default function AdminGalleryPage() {
   const uploadFile = async (file: File): Promise<string> => {
     const ext = file.name.split('.').pop() || 'png';
     const filename = `gallery/${selectedNiche}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const { error } = await supabase.storage.from('vault').upload(filename, file, { upsert: true });
+    const { error } = await supabase.storage.from('Vault').upload(filename, file, { upsert: true });
     if (error) throw error;
-    const { data } = supabase.storage.from('vault').getPublicUrl(filename);
+    const { data } = supabase.storage.from('Vault').getPublicUrl(filename);
     return data.publicUrl;
   };
 
