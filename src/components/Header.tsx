@@ -67,6 +67,22 @@ export default function Header({ currentNiche }: HeaderProps) {
             {showNicheMenu && (
               <div className="absolute top-full left-0 pt-2">
                 <div className="bg-[#1a1a1a] border border-white/10 rounded-lg py-2 min-w-[200px] shadow-xl">
+                {niches.filter(n => n.has_gallery_page).length > 0 && (
+                  <>
+                    <div className="px-4 py-1.5 text-white/30 text-xs uppercase tracking-wider">Gallery Pages</div>
+                    {niches.filter(n => n.has_gallery_page).map(niche => (
+                      <Link
+                        key={`gallery-${niche.slug}`}
+                        href={`/gallery/${niche.gallery_slug || niche.slug}`}
+                        className="block px-4 py-2 text-blue-400 hover:text-blue-300 hover:bg-white/5 text-sm"
+                      >
+                        ✦ {niche.name}
+                      </Link>
+                    ))}
+                    <div className="my-1 border-t border-white/5" />
+                  </>
+                )}
+                <div className="px-4 py-1.5 text-white/30 text-xs uppercase tracking-wider">All Niches</div>
                 {niches.map(niche => (
                   <Link
                     key={niche.slug}

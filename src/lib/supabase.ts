@@ -157,4 +157,9 @@ export interface Niche {
   is_active: boolean;
   display_order: number;
   created_at: string;
+  has_gallery_page?: boolean;
+  gallery_slug?: string;
+  hero_headline?: string;
+  hero_subtitle?: string;
+  accent_color?: string;
 }

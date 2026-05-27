@@ -340,7 +340,8 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {[
             { name: 'Vault Items', href: '/admin/vault', icon: '📦' },
-            { name: 'Gallery', href: '/admin/gallery', icon: '🖼️' },
+            { name: 'Gallery Items', href: '/admin/gallery', icon: '🖼️' },
+            { name: 'Gallery Pages', href: '/admin/gallery-pages', icon: '🌐' },
             { name: 'Niches', href: '/admin/niches', icon: '🏷️' },
             { name: 'Categories', href: '/admin/categories', icon: '📂' },
             { name: 'AI Studio', href: '/admin/studio', icon: '✨' },
