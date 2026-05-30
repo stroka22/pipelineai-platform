@@ -7,6 +7,7 @@ import {
   Sparkles, 
   Image as ImageIcon, 
   Camera,
+  Video,
   Building2, 
   FileText, 
   FolderOpen,
@@ -71,6 +72,13 @@ export default function StudioDashboard() {
       href: '/admin/brand-photoshoot',
       color: 'from-purple-500 to-pink-600',
       badge: stats.queueItems > 0 ? `${stats.queueItems} in queue` : null,
+    },
+    {
+      title: 'Video Creator',
+      description: 'Generate branded videos with Veo 3.1',
+      icon: Video,
+      href: '/admin/video-creator',
+      color: 'from-red-500 to-orange-600',
     },
     {
       title: 'Carousel Creator',

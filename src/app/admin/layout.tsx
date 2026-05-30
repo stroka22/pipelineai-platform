@@ -16,7 +16,8 @@ import {
   Tags,
   Layers,
   Globe,
-  ImageIcon
+  ImageIcon,
+  Video
 } from 'lucide-react';
 
 const navItems = [
@@ -24,6 +25,7 @@ const navItems = [
   { name: 'Vault', href: '/admin/vault', icon: FolderLock },
   { name: 'Gallery Pages', href: '/admin/gallery-pages', icon: Globe },
   { name: 'Gallery Items', href: '/admin/gallery', icon: ImageIcon },
+  { name: 'Video Creator', href: '/admin/video-creator', icon: Video },
   { name: 'Niches', href: '/admin/niches', icon: Layers },
   { name: 'Categories', href: '/admin/categories', icon: Tags },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
