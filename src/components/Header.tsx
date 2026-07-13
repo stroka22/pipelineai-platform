@@ -119,8 +119,8 @@ export default function Header({ currentNiche }: HeaderProps) {
           <Link href="/#vaults" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
             Vaults
           </Link>
-          <Link href="/#how-it-works" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
-            How It Works
+          <Link href="/websites" className="text-cyan-400 hover:text-cyan-300 transition-colors text-sm font-medium">
+            Websites
           </Link>
           <a 
             href="https://calendly.com/getpipelineai-support/30min"
@@ -234,11 +234,11 @@ export default function Header({ currentNiche }: HeaderProps) {
               </>
             )}
             <Link 
-              href="/#how-it-works" 
-              className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-base font-medium"
+              href="/websites" 
+              className="block px-4 py-3 text-cyan-400 hover:text-cyan-300 hover:bg-white/5 rounded-lg text-base font-medium"
               onClick={() => setMobileMenuOpen(false)}
             >
-              How It Works
+              🌐 Websites
             </Link>
             <a 
               href="https://calendly.com/getpipelineai-support/30min"

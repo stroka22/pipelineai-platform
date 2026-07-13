@@ -230,14 +230,14 @@ export default function HomePage() {
           </div>
           
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 leading-tight tracking-tight">
-            Build Smarter. Post Strategically.{' '}
+            Content & Websites{' '}
             <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
-              Grow Consistently.
+              That Grow Your Business
             </span>
           </h1>
           
           <p className="text-xl md:text-2xl text-white/50 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Premium AI-powered content systems for modern businesses, agencies, and local brands.
+            AI-powered social media content and professional websites for local businesses. Everything you need to get found and win customers.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -248,15 +248,13 @@ export default function HomePage() {
               Explore Content Vaults
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-{/* Branding Tool - Hidden until perfected
             <Link 
-              href="/brand"
-              className="group bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 hover:border-white/20 transition-all inline-flex items-center justify-center gap-2 backdrop-blur-sm"
+              href="/websites"
+              className="group bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-cyan-500 hover:to-blue-500 transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25"
             >
-              <Sparkles className="w-5 h-5 text-purple-400" />
-              Try the Free Branding Tool
+              <Building2 className="w-5 h-5" />
+              Get a Website - $497
             </Link>
-*/}
           </div>
           
           <div className="flex items-center justify-center gap-8 text-white/40 text-sm flex-wrap">
