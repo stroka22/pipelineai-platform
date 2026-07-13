@@ -495,8 +495,84 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Website Services Section */}
+      <section className="py-20 bg-[#030712] relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-cyan-500/5 rounded-full blur-[100px]" />
+        
+        <div className="max-w-6xl mx-auto px-6 relative z-10">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-4 py-2 rounded-full text-sm font-semibold mb-6">
+                <Building2 className="w-4 h-4" />
+                Professional Websites
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                Need a Website for Your Business?
+              </h2>
+              <p className="text-white/50 text-lg mb-6">
+                We build stunning, mobile-friendly websites that turn visitors into customers. Launch in 7 days with zero hassle.
+              </p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  'Custom design for your industry',
+                  'Mobile-responsive on all devices',
+                  'SEO optimized for local search',
+                  'Contact forms & click-to-call',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-white/70">
+                    <CheckCircle className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link 
+                  href="/websites"
+                  className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-cyan-500 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/25"
+                >
+                  Get a Website - $497
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link 
+                  href="/websites#examples"
+                  className="inline-flex items-center justify-center gap-2 text-white/60 hover:text-white font-medium transition-colors"
+                >
+                  See Examples
+                  <Eye className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="bg-[#1a1a1a] rounded-xl border border-white/10 overflow-hidden shadow-2xl">
+                <div className="bg-[#252525] p-2 flex items-center gap-2">
+                  <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/60"></div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60"></div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/60"></div>
+                  </div>
+                  <div className="flex-1 bg-[#1a1a1a] rounded px-3 py-1 text-white/30 text-xs text-center">
+                    yourbusiness.com
+                  </div>
+                </div>
+                <Image
+                  src="https://sites.getpipelineai.com/images/screenshots/garcia-sons-roofing.png"
+                  alt="Website Example"
+                  width={600}
+                  height={400}
+                  className="w-full"
+                />
+              </div>
+              <div className="absolute -bottom-4 -right-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">
+                + $47/mo hosting
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Download Growth Vaults Section */}
-      <section className="py-20 bg-[#030712] relative">
+      <section className="py-20 bg-[#0a0f1a] relative">
         <div className="max-w-4xl mx-auto px-6">
           <div className="relative bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-8 md:p-12 text-center overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
