@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 
 export const metadata: Metadata = {
   title: 'Professional Websites for Local Businesses | Pipeline AI',
@@ -59,10 +58,10 @@ export default function WebsitesPage() {
               </div>
             </div>
             <div className="bg-white border-x border-b border-gray-200 rounded-b-xl overflow-hidden shadow-2xl">
-              <iframe 
-                src="https://sites.getpipelineai.com/previews/garcia-sons-roofing.html" 
-                className="w-full h-[500px] pointer-events-none"
-                title="Website Preview"
+              <img 
+                src="https://sites.getpipelineai.com/images/screenshots/garcia-sons-roofing.png" 
+                alt="Website Preview - Garcia & Sons Roofing"
+                className="w-full"
               />
             </div>
             <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-white px-6 py-2 rounded-full shadow-lg border border-gray-100 text-sm text-gray-600">
@@ -151,9 +150,9 @@ export default function WebsitesPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { name: 'Garcia & Sons Roofing', location: 'Orlando, FL', url: 'https://sites.getpipelineai.com/previews/garcia-sons-roofing.html' },
-              { name: 'Cowboy Roofing', location: 'Immokalee, FL', url: 'https://sites.getpipelineai.com/previews/cowboy-roofing-construction.html' },
-              { name: 'Pulido Contractors', location: 'Miami, FL', url: 'https://sites.getpipelineai.com/previews/pulido-contractors.html' },
+              { name: 'Garcia & Sons Roofing', location: 'Orlando, FL', url: 'https://sites.getpipelineai.com/previews/garcia-sons-roofing.html', img: 'garcia-sons-roofing' },
+              { name: 'Cowboy Roofing', location: 'Immokalee, FL', url: 'https://sites.getpipelineai.com/previews/cowboy-roofing-construction.html', img: 'cowboy-roofing' },
+              { name: 'Pulido Contractors', location: 'Miami, FL', url: 'https://sites.getpipelineai.com/previews/pulido-contractors.html', img: 'pulido-contractors' },
             ].map((site, i) => (
               <a key={i} href={site.url} target="_blank" rel="noopener noreferrer" className="group">
                 <div className="bg-gray-800 rounded-xl overflow-hidden transition group-hover:ring-2 group-hover:ring-emerald-500">
@@ -164,12 +163,13 @@ export default function WebsitesPage() {
                       <div className="w-2 h-2 rounded-full bg-gray-600"></div>
                     </div>
                   </div>
-                  <iframe 
-                    src={site.url}
-                    className="w-full h-48 pointer-events-none scale-[0.5] origin-top-left"
-                    style={{ width: '200%', height: '400px' }}
-                    title={site.name}
-                  />
+                  <div className="h-48 overflow-hidden">
+                    <img 
+                      src={`https://sites.getpipelineai.com/images/screenshots/${site.img}.png`}
+                      alt={site.name}
+                      className="w-full object-cover object-top"
+                    />
+                  </div>
                 </div>
                 <div className="mt-3 text-center">
                   <div className="text-white font-semibold">{site.name}</div>
