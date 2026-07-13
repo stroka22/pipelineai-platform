@@ -59,13 +59,13 @@ export default function WebsitesPage() {
             </div>
             <div className="bg-white border-x border-b border-gray-200 rounded-b-xl overflow-hidden shadow-2xl">
               <img 
-                src="https://sites.getpipelineai.com/images/screenshots/garcia-sons-roofing.png" 
-                alt="Website Preview - Garcia & Sons Roofing"
+                src="https://sites.getpipelineai.com/images/screenshots/sunshine-hvac-services.png" 
+                alt="Website Preview - Sunshine HVAC Services"
                 className="w-full"
               />
             </div>
             <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-white px-6 py-2 rounded-full shadow-lg border border-gray-100 text-sm text-gray-600">
-              ✨ Real website we built for a local roofing company
+              ✨ Real website we built for a local HVAC company
             </div>
           </div>
         </div>
@@ -150,9 +150,9 @@ export default function WebsitesPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { name: 'Garcia & Sons Roofing', location: 'Orlando, FL', url: 'https://sites.getpipelineai.com/previews/garcia-sons-roofing.html', img: 'garcia-sons-roofing' },
-              { name: 'Cowboy Roofing', location: 'Immokalee, FL', url: 'https://sites.getpipelineai.com/previews/cowboy-roofing-construction.html', img: 'cowboy-roofing' },
-              { name: 'Pulido Contractors', location: 'Miami, FL', url: 'https://sites.getpipelineai.com/previews/pulido-contractors.html', img: 'pulido-contractors' },
+              { name: 'Sunshine HVAC Services', location: 'Tampa, FL', url: 'https://sites.getpipelineai.com/previews/sunshine-hvac-services.html', img: 'sunshine-hvac-services' },
+              { name: 'Pro Pipe Plumbing', location: 'Jacksonville, FL', url: 'https://sites.getpipelineai.com/previews/pro-pipe-plumbing.html', img: 'pro-pipe-plumbing' },
+              { name: 'Green Thumb Landscaping', location: 'Sarasota, FL', url: 'https://sites.getpipelineai.com/previews/green-thumb-landscaping.html', img: 'green-thumb-landscaping' },
             ].map((site, i) => (
               <a key={i} href={site.url} target="_blank" rel="noopener noreferrer" className="group">
                 <div className="bg-gray-800 rounded-xl overflow-hidden transition group-hover:ring-2 group-hover:ring-emerald-500">
