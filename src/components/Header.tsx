@@ -44,9 +44,12 @@ export default function Header({ currentNiche }: HeaderProps) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#030712]/95 backdrop-blur-md border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
-        <Link href="/" className="text-xl md:text-2xl font-bold text-white flex items-center gap-1">
-          <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">PIPELINE</span>
-          <span className="text-white">AI</span>
+        <Link href="/" className="flex items-center gap-3">
+          <img src="/logo-icon.png" alt="Pipeline AI" className="h-9 w-9 rounded-xl" />
+          <span className="text-xl md:text-2xl font-bold flex items-center gap-1">
+            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">PIPELINE</span>
+            <span className="text-white">AI</span>
+          </span>
         </Link>
         
         {/* Desktop Nav */}

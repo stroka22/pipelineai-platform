@@ -38,19 +38,19 @@ export default function HeroCarousel() {
   return (
     <div className="relative max-w-4xl mx-auto">
       {/* Browser Chrome */}
-      <div className="bg-gray-900 rounded-t-xl p-3 flex items-center gap-2">
+      <div className="bg-[#1a1a1a] rounded-t-xl p-3 flex items-center gap-2 border border-white/10 border-b-0">
         <div className="flex gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+          <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+          <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+          <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
         </div>
-        <div className="flex-1 bg-gray-800 rounded-md px-4 py-1.5 text-gray-400 text-sm text-center">
+        <div className="flex-1 bg-[#252525] rounded-md px-4 py-1.5 text-white/40 text-sm text-center">
           yourbusiness.com
         </div>
       </div>
 
       {/* Screenshot Container */}
-      <div className="bg-white border-x border-b border-gray-200 rounded-b-xl overflow-hidden shadow-2xl relative">
+      <div className="bg-[#1a1a1a] border border-white/10 border-t-0 rounded-b-xl overflow-hidden relative">
         {heroSlides.map((slide, index) => (
           <img
             key={slide.name}
@@ -64,8 +64,8 @@ export default function HeroCarousel() {
       </div>
 
       {/* Caption */}
-      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-white px-6 py-2 rounded-full shadow-lg border border-gray-100 text-sm text-gray-600 whitespace-nowrap">
-        ✨ {heroSlides[current].name} <span className="text-gray-400">({heroSlides[current].industry})</span>
+      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-[#1a1a1a] px-6 py-2 rounded-full border border-white/10 text-sm text-white/70 whitespace-nowrap">
+        ✨ {heroSlides[current].name} <span className="text-white/40">({heroSlides[current].industry})</span>
       </div>
 
       {/* Dots */}
@@ -75,7 +75,7 @@ export default function HeroCarousel() {
             key={index}
             onClick={() => setCurrent(index)}
             className={`w-2 h-2 rounded-full transition-all ${
-              index === current ? 'bg-emerald-500 w-6' : 'bg-gray-300 hover:bg-gray-400'
+              index === current ? 'bg-blue-500 w-6' : 'bg-white/20 hover:bg-white/40'
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />
