@@ -12,8 +12,12 @@ export default function WebsitesPage() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-100 py-4 z-50">
         <div className="max-w-6xl mx-auto px-6 flex justify-between items-center">
-          <a href="/" className="flex items-center">
-            <img src="/logo.png" alt="Pipeline AI" className="h-10" />
+          <a href="/" className="flex items-center gap-2">
+            <img src="/logo-icon.png" alt="Pipeline AI" className="h-9 w-9 rounded-lg" />
+            <span className="text-xl font-bold">
+              <span className="text-gray-900">Pipeline</span>
+              <span className="text-blue-500">AI</span>
+            </span>
           </a>
           <a href="#pricing" className="bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-emerald-600 transition shadow-lg shadow-emerald-500/25">
             Get Started
