@@ -277,7 +277,7 @@ export default function HomePage() {
                   <Building2 className="w-7 h-7 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">Professional Websites</h3>
-                <p className="text-white/60 mb-4">Custom, mobile-friendly websites that convert visitors into customers. Live in 7 days.</p>
+                <p className="text-white/60 mb-4">Custom, mobile-friendly websites that convert visitors into customers. Live in 3 days.</p>
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold text-white">$497 <span className="text-sm font-normal text-white/40">one-time</span></span>
                   <ArrowRight className="w-5 h-5 text-cyan-400 group-hover:translate-x-1 transition-transform" />
@@ -320,7 +320,7 @@ export default function HomePage() {
               <div className="text-white/40 text-sm">Industries Served</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-white mb-1">7 Days</div>
+              <div className="text-3xl md:text-4xl font-bold text-white mb-1">3 Days</div>
               <div className="text-white/40 text-sm">Average Launch Time</div>
             </div>
           </div>
@@ -587,7 +587,7 @@ export default function HomePage() {
               Professional Websites That Convert
             </h2>
             <p className="text-white/50 max-w-xl mx-auto">
-              Custom-designed, mobile-friendly websites built specifically for your industry. Live in 7 days.
+              Custom-designed, mobile-friendly websites built specifically for your industry. Live in 3 days.
             </p>
           </div>
           

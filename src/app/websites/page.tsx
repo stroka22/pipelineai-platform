@@ -17,7 +17,7 @@ export default function WebsitesPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
             <div className="inline-block bg-blue-500/10 text-blue-400 text-sm font-semibold px-4 py-1.5 rounded-full mb-6 border border-blue-500/20">
-              🚀 Launch Your Website in 7 Days
+              🚀 Launch Your Website in 3 Days
             </div>
             <h1 className="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-6">
               Your Business Deserves<br />
@@ -56,7 +56,7 @@ export default function WebsitesPage() {
             </div>
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-              Live in 7 days
+              Live in 3 days
             </div>
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
@@ -203,13 +203,23 @@ export default function WebsitesPage() {
             </div>
             
             {/* Monthly */}
-            <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden">
+            <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden relative">
+              <div className="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                LAUNCH BONUS
+              </div>
               <div className="bg-[#252525] text-white p-8">
                 <div className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-1">Monthly Hosting</div>
                 <div className="text-5xl font-extrabold mb-1">$47<span className="text-xl font-medium text-gray-400">/mo</span></div>
                 <div className="text-gray-400">After your site is built</div>
               </div>
               <div className="p-8">
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-6">
+                  <div className="text-green-400 font-semibold text-sm mb-2">🎁 First 30 Days Bonus:</div>
+                  <ul className="text-green-300/80 text-sm space-y-1">
+                    <li>• Custom logo design for your business</li>
+                    <li>• Full social media image pack (30+ graphics)</li>
+                  </ul>
+                </div>
                 <ul className="space-y-4 mb-8">
                   {[
                     'Premium cloud hosting',
@@ -268,7 +278,7 @@ export default function WebsitesPage() {
           <div className="grid md:grid-cols-4 gap-8">
             {[
               { num: '1', title: 'Sign Up', desc: 'Complete your order and tell us about your business' },
-              { num: '2', title: 'We Build', desc: 'Our team creates your custom website in 5-7 days' },
+              { num: '2', title: 'We Build', desc: 'Our team creates your custom website in 2-3 days' },
               { num: '3', title: 'Review', desc: 'You review and request any changes you want' },
               { num: '4', title: 'Launch', desc: 'We connect your domain and your site goes live' },
             ].map((item, i) => (
@@ -294,7 +304,7 @@ export default function WebsitesPage() {
               { q: 'Can I cancel the monthly plan anytime?', a: "Yes! There are no contracts or commitments. You can cancel your $47/month hosting plan anytime." },
               { q: 'What if I need changes after the site is built?', a: 'Your $47/month plan includes 2 free content updates per month. For larger changes, we offer affordable add-on services.' },
               { q: 'Do I own my website?', a: "Yes! You own your website content and design. We simply host and maintain it for you." },
-              { q: 'How long does it take to build my site?', a: 'Most websites are completed within 5-7 business days.' },
+              { q: 'How long does it take to build my site?', a: 'Most websites are completed within 2-3 business days.' },
               { q: 'What do you need from me to get started?', a: "Just your business info, logo (if you have one), any photos you want to use, and a description of your services." },
             ].map((item, i) => (
               <div key={i} className="border-b border-white/10 py-6">
