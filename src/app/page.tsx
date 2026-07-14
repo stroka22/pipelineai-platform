@@ -666,7 +666,7 @@ export default function HomePage() {
                 </p>
                 <p className="text-white/40 text-sm flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
-                  Or text <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-emerald-400">WEBSITE</span> to <span className="font-semibold text-white">(XXX) XXX-XXXX</span>
+                  Or text <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-emerald-400">WEBSITE</span> to <span className="font-semibold text-white">1-888-247-7818</span>
                 </p>
               </div>
               <form className="space-y-4" id="previewForm">
