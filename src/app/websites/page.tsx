@@ -217,7 +217,7 @@ export default function WebsitesPage() {
                   <div className="text-green-400 font-semibold text-sm mb-2">🎁 First 30 Days Bonus:</div>
                   <ul className="text-green-300/80 text-sm space-y-1">
                     <li>• Custom logo design for your business</li>
-                    <li>• Full social media image pack (30+ graphics)</li>
+                    <li>• Social media profile & cover images</li>
                   </ul>
                 </div>
                 <ul className="space-y-4 mb-8">
