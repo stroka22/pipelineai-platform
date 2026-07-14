@@ -216,75 +216,157 @@ export default function HomePage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 md:pt-44 md:pb-28 relative overflow-hidden">
+      <section className="pt-32 pb-16 md:pt-40 md:pb-20 relative overflow-hidden">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-b from-blue-950/20 via-transparent to-transparent" />
         <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px]" />
         <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
         
         <div className="max-w-6xl mx-auto px-6 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-full text-sm font-semibold mb-8 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-full text-sm font-semibold mb-6 backdrop-blur-sm">
             <Sparkles className="w-4 h-4" />
-            AI-Powered Content Systems for Modern Businesses
+            The Complete Marketing Solution for Local Businesses
           </div>
           
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 leading-tight tracking-tight">
-            Content & Websites{' '}
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight tracking-tight">
+            Stop Losing Customers to<br />
             <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
-              That Grow Your Business
+              Competitors With Better Marketing
             </span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-white/50 mb-10 max-w-3xl mx-auto leading-relaxed">
-            AI-powered social media content and professional websites for local businesses. Everything you need to get found and win customers.
+          <p className="text-lg md:text-xl text-white/60 mb-8 max-w-2xl mx-auto leading-relaxed">
+            Get a professional website and scroll-stopping social content that makes your business the obvious choice. Launch in days, not months.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link 
-              href="#vaults"
-              className="group bg-gradient-to-r from-blue-600 to-blue-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-500 hover:to-blue-400 transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25"
-            >
-              Explore Content Vaults
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
             <Link 
               href="/websites"
-              className="group bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-cyan-500 hover:to-blue-500 transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25"
+              className="group bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-cyan-400 hover:to-blue-400 transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25"
             >
               <Building2 className="w-5 h-5" />
               Get a Website - $497
             </Link>
+            <Link 
+              href="#vaults"
+              className="group bg-white/5 border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all inline-flex items-center justify-center gap-2"
+            >
+              Browse Content Vaults
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* What We Offer - Two Columns */}
+      <section className="py-16 bg-[#030712] relative">
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              Two Ways We Help You Win More Customers
+            </h2>
+            <p className="text-white/50">Everything you need to dominate your local market</p>
           </div>
           
-          <div className="flex items-center justify-center gap-8 text-white/40 text-sm flex-wrap">
-            <span className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-blue-400" />
-              Instant Download
-            </span>
-            <span className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-blue-400" />
-              Commercial License
-            </span>
-            <span className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-blue-400" />
-              AI-Powered Customization
-            </span>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Websites Card */}
+            <Link href="/websites" className="group">
+              <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-2xl p-6 md:p-8 h-full hover:border-cyan-500/50 transition-all">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mb-4">
+                  <Building2 className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">Professional Websites</h3>
+                <p className="text-white/60 mb-4">Custom, mobile-friendly websites that convert visitors into customers. Live in 7 days.</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-white">$497 <span className="text-sm font-normal text-white/40">one-time</span></span>
+                  <ArrowRight className="w-5 h-5 text-cyan-400 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </Link>
+            
+            {/* Content Card */}
+            <Link href="#vaults" className="group">
+              <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-2xl p-6 md:p-8 h-full hover:border-purple-500/50 transition-all">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mb-4">
+                  <Sparkles className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">Social Media Content</h3>
+                <p className="text-white/60 mb-4">Done-for-you posts, carousels, and graphics that build authority and drive engagement.</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-white">From $47 <span className="text-sm font-normal text-white/40">per pack</span></span>
+                  <ArrowRight className="w-5 h-5 text-purple-400 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Social Proof / Stats */}
+      <section className="py-12 bg-[#0a0f1a] border-y border-white/5">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div>
+              <div className="text-3xl md:text-4xl font-bold text-white mb-1">500+</div>
+              <div className="text-white/40 text-sm">Websites Launched</div>
+            </div>
+            <div>
+              <div className="text-3xl md:text-4xl font-bold text-white mb-1">10K+</div>
+              <div className="text-white/40 text-sm">Content Pieces Created</div>
+            </div>
+            <div>
+              <div className="text-3xl md:text-4xl font-bold text-white mb-1">11</div>
+              <div className="text-white/40 text-sm">Industries Served</div>
+            </div>
+            <div>
+              <div className="text-3xl md:text-4xl font-bold text-white mb-1">7 Days</div>
+              <div className="text-white/40 text-sm">Average Launch Time</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-16 bg-[#030712]">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              Trusted by Local Business Owners
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { name: 'Mike R.', business: 'Roofing Company', quote: 'Had my website up in 5 days. Already getting calls from it. Best $497 I ever spent on marketing.' },
+              { name: 'Sarah L.', business: 'Med Spa Owner', quote: 'The content packs saved me hours every week. My Instagram finally looks professional and consistent.' },
+              { name: 'Carlos M.', business: 'HVAC Business', quote: 'I went from no online presence to showing up on Google and getting leads. Game changer for my business.' },
+            ].map((testimonial, i) => (
+              <div key={i} className="bg-[#0a0f1a] border border-white/10 rounded-xl p-6">
+                <div className="flex gap-1 mb-4">
+                  {[1,2,3,4,5].map(s => <Star key={s} className="w-4 h-4 text-yellow-400 fill-yellow-400" />)}
+                </div>
+                <p className="text-white/70 mb-4 text-sm leading-relaxed">&quot;{testimonial.quote}&quot;</p>
+                <div>
+                  <div className="font-semibold text-white">{testimonial.name}</div>
+                  <div className="text-white/40 text-sm">{testimonial.business}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Visual Proof Section */}
-      <section className="py-20 bg-[#030712] relative">
+      <section className="py-16 bg-[#030712] relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-950/10 to-transparent" />
         <div className="max-w-6xl mx-auto px-6 relative z-10">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              See What Modern Business Content{' '}
-              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Looks Like</span>
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              Content That Makes You{' '}
+              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Stand Out</span>
             </h2>
-            <p className="text-white/50 text-lg">
-              Premium graphics designed to build authority and drive engagement
+            <p className="text-white/50">
+              Browse our library of industry-specific content packs
             </p>
           </div>
           
@@ -346,37 +428,31 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Platform Strategy Section */}
-      <section className="py-20 bg-[#0a0f1a] relative overflow-hidden">
+      {/* Platform Strategy Section - Condensed */}
+      <section className="py-12 bg-[#0a0f1a] relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
         <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
         
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Different Platforms. Different Strategies.{' '}
-              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Better Results.</span>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+              Content for Every Platform
             </h2>
-            <p className="text-white/50 text-lg max-w-2xl mx-auto">
-              Content optimized for each platform&apos;s unique algorithm and audience behavior
+            <p className="text-white/50">
+              Optimized for each platform&apos;s algorithm
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
             {platforms.map((platform) => (
               <div 
                 key={platform.name}
-                className={`group relative bg-[#0d1423] rounded-2xl p-6 border ${platform.borderColor} hover:border-opacity-60 transition-all duration-300 hover:shadow-xl ${platform.glowColor}`}
+                className="text-center group"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent rounded-2xl" />
-                <div className="relative z-10">
-                  <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${platform.color} flex items-center justify-center mb-4 text-white`}>
-                    <platform.icon />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-1">{platform.name}</h3>
-                  <p className="text-sm font-medium text-blue-400 mb-2">{platform.tagline}</p>
-                  <p className="text-white/40 text-sm">{platform.strategy}</p>
+                <div className={`w-12 h-12 mx-auto rounded-xl bg-gradient-to-br ${platform.color} flex items-center justify-center mb-2 text-white group-hover:scale-110 transition-transform`}>
+                  <platform.icon />
                 </div>
+                <p className="text-white/60 text-xs font-medium">{platform.name}</p>
               </div>
             ))}
           </div>
@@ -384,17 +460,20 @@ export default function HomePage() {
       </section>
 
       {/* Niche Content Systems */}
-      <section id="vaults" className="py-20 bg-[#030712] relative">
+      <section id="vaults" className="py-16 bg-[#030712] relative">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-950/5 via-transparent to-transparent" />
         
         <div className="max-w-6xl mx-auto px-6 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              AI Content Systems{' '}
-              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Built For Your Industry</span>
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 text-purple-400 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+              <Sparkles className="w-4 h-4" />
+              Content Vaults
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              Ready-to-Post Content for Your Industry
             </h2>
-            <p className="text-white/50 text-lg">
-              Premium content libraries tailored to your specific niche
+            <p className="text-white/50">
+              Download professional graphics, captions, and carousels. Post in minutes.
             </p>
           </div>
           
@@ -494,54 +573,26 @@ export default function HomePage() {
       </section>
 
       {/* Website Services Section */}
-      <section className="py-20 bg-[#030712] relative overflow-hidden">
+      <section className="py-16 bg-[#030712] relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-cyan-500/5 rounded-full blur-[100px]" />
         
         <div className="max-w-6xl mx-auto px-6 relative z-10">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-4 py-2 rounded-full text-sm font-semibold mb-6">
-                <Building2 className="w-4 h-4" />
-                Professional Websites
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Need a Website for Your Business?
-              </h2>
-              <p className="text-white/50 text-lg mb-6">
-                We build stunning, mobile-friendly websites that turn visitors into customers. Launch in 7 days with zero hassle.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {[
-                  'Custom design for your industry',
-                  'Mobile-responsive on all devices',
-                  'SEO optimized for local search',
-                  'Contact forms & click-to-call',
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-white/70">
-                    <CheckCircle className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link 
-                  href="/websites"
-                  className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-cyan-500 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/25"
-                >
-                  Get a Website - $497
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-                <Link 
-                  href="/websites#examples"
-                  className="inline-flex items-center justify-center gap-2 text-white/60 hover:text-white font-medium transition-colors"
-                >
-                  See Examples
-                  <Eye className="w-4 h-4" />
-                </Link>
-              </div>
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+              <Building2 className="w-4 h-4" />
+              Website Service
             </div>
-            <div className="relative">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              Professional Websites That Convert
+            </h2>
+            <p className="text-white/50 max-w-xl mx-auto">
+              Custom-designed, mobile-friendly websites built specifically for your industry. Live in 7 days.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="relative order-2 md:order-1">
               <div className="bg-[#1a1a1a] rounded-xl border border-white/10 overflow-hidden shadow-2xl">
                 <div className="bg-[#252525] p-2 flex items-center gap-2">
                   <div className="flex gap-1.5">
@@ -561,38 +612,35 @@ export default function HomePage() {
                   className="w-full"
                 />
               </div>
-              <div className="absolute -bottom-4 -right-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">
-                + $47/mo hosting
-              </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Download Growth Vaults Section */}
-      <section className="py-20 bg-[#0a0f1a] relative">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="relative bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-8 md:p-12 text-center overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent" />
-            
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-400 px-4 py-1.5 rounded-full text-sm font-bold mb-4">
-                <Sparkles className="w-4 h-4" />
-                READY-TO-USE CONTENT
+            <div className="order-1 md:order-2">
+              <ul className="space-y-3 mb-6">
+                {[
+                  'Custom design tailored to your industry',
+                  'Mobile-responsive on all devices',
+                  'SEO optimized for local search',
+                  'Contact forms and click-to-call buttons',
+                  'Hosting, SSL, and updates included',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-white/70">
+                    <CheckCircle className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="bg-[#0a0f1a] border border-white/10 rounded-xl p-5 mb-6">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-3xl font-bold text-white">$497</span>
+                  <span className="text-white/40">one-time build</span>
+                </div>
+                <div className="text-white/60 text-sm">+ $47/month for hosting, SSL, and ongoing support</div>
               </div>
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
-                Download Ready-To-Use Growth Vaults
-              </h3>
-              <p className="text-white/50 mb-8 max-w-xl mx-auto">
-                Prebuilt niche content packs designed to help businesses post with more authority, consistency, and speed.
-              </p>
               <Link 
-                href="#vaults"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/25"
+                href="/websites"
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-cyan-400 hover:to-blue-400 transition-all shadow-lg shadow-cyan-500/25 w-full md:w-auto"
               >
-                Browse All Vaults
-                <ArrowRight className="w-5 h-5" />
+                See Website Examples
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
@@ -600,38 +648,33 @@ export default function HomePage() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-24 bg-[#0a0f1a] relative overflow-hidden">
+      <section className="py-16 bg-[#0a0f1a] relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-950/10 via-transparent to-transparent" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/5 rounded-full blur-[120px]" />
         
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Ready To Build Your{' '}
-            <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
-              Content Advantage?
-            </span>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Ready to Grow Your Business?
           </h2>
-          <p className="text-xl text-white/50 mb-10 max-w-2xl mx-auto">
-            Start with a content vault, or use Pipeline AI to create smarter marketing assets for your business.
+          <p className="text-lg text-white/50 mb-8 max-w-xl mx-auto">
+            Get a website, grab a content pack, or both. Start winning more customers today.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
-              href="#vaults"
-              className="group bg-gradient-to-r from-blue-600 to-blue-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-500 hover:to-blue-400 transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25"
+              href="/websites"
+              className="group bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-cyan-400 hover:to-blue-400 transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25"
             >
-              Explore Vaults
+              <Building2 className="w-5 h-5" />
+              Get a Website - $497
+            </Link>
+            <Link 
+              href="#vaults"
+              className="group bg-white/5 border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all inline-flex items-center justify-center gap-2"
+            >
+              Browse Content Vaults
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-{/* Branding Tool - Hidden until perfected
-            <Link 
-              href="/brand"
-              className="group bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 hover:border-white/20 transition-all inline-flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-5 h-5 text-purple-400" />
-              Try Branding Tool
-            </Link>
-*/}
           </div>
         </div>
       </section>
