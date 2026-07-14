@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
@@ -84,6 +84,70 @@ export default function HomePage() {
   const [beforeImage, setBeforeImage] = useState<string | null>(null);
   const [afterImage, setAfterImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [previewSubmitting, setPreviewSubmitting] = useState(false);
+  const [previewSuccess, setPreviewSuccess] = useState(false);
+  const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
+  const [newsletterSuccess, setNewsletterSuccess] = useState(false);
+
+  const handlePreviewSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setPreviewSubmitting(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      businessName: formData.get('businessName'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      industry: formData.get('industry'),
+      consent: formData.get('consent') === 'on',
+    };
+    
+    try {
+      const response = await fetch('https://sites.getpipelineai.com/api/preview-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (response.ok) {
+        setPreviewSuccess(true);
+        (e.target as HTMLFormElement).reset();
+      } else {
+        alert('Something went wrong. Please try again.');
+      }
+    } catch {
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setPreviewSubmitting(false);
+    }
+  };
+
+  const handleNewsletterSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setNewsletterSubmitting(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email');
+    
+    try {
+      const response = await fetch('https://sites.getpipelineai.com/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      if (response.ok) {
+        setNewsletterSuccess(true);
+        (e.target as HTMLFormElement).reset();
+      } else {
+        alert('Something went wrong. Please try again.');
+      }
+    } catch {
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setNewsletterSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -669,7 +733,7 @@ export default function HomePage() {
                   Or text <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-emerald-400">WEBSITE</span> to <span className="font-semibold text-white">1-888-247-7818</span>
                 </p>
               </div>
-              <form className="space-y-4" id="previewForm">
+              <form className="space-y-4" id="previewForm" onSubmit={handlePreviewSubmit}>
                 <input 
                   type="text" 
                   name="businessName"
@@ -712,12 +776,19 @@ export default function HomePage() {
                   <input type="checkbox" name="consent" required className="mt-0.5" />
                   <span>I agree to receive text messages and emails including updates, reminders, and marketing offers. Msg & data rates may apply. Reply STOP to opt out.</span>
                 </label>
-                <button 
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-emerald-400 hover:to-cyan-400 transition-all"
-                >
-                  Get My Free Preview
-                </button>
+                {previewSuccess ? (
+                  <div className="w-full bg-emerald-500/20 text-emerald-400 py-3 rounded-lg font-semibold text-center">
+                    Thanks! We&apos;ll send your preview soon.
+                  </div>
+                ) : (
+                  <button 
+                    type="submit"
+                    disabled={previewSubmitting}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-emerald-400 hover:to-cyan-400 transition-all disabled:opacity-50"
+                  >
+                    {previewSubmitting ? 'Submitting...' : 'Get My Free Preview'}
+                  </button>
+                )}
               </form>
             </div>
           </div>
@@ -729,7 +800,7 @@ export default function HomePage() {
         <div className="max-w-2xl mx-auto px-6 text-center">
           <h3 className="text-xl font-bold text-white mb-2">Get Free Marketing Tips</h3>
           <p className="text-white/50 text-sm mb-6">Weekly tips to grow your local business. No spam, unsubscribe anytime.</p>
-          <form className="flex flex-col sm:flex-row gap-3" id="newsletterForm">
+          <form className="flex flex-col sm:flex-row gap-3" id="newsletterForm" onSubmit={handleNewsletterSubmit}>
             <input 
               type="email" 
               name="email"
@@ -737,12 +808,19 @@ export default function HomePage() {
               required
               className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-blue-500/50"
             />
-            <button 
-              type="submit"
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors whitespace-nowrap"
-            >
-              Subscribe
-            </button>
+            {newsletterSuccess ? (
+              <div className="px-6 py-3 bg-emerald-500/20 text-emerald-400 rounded-lg font-semibold whitespace-nowrap">
+                Subscribed!
+              </div>
+            ) : (
+              <button 
+                type="submit"
+                disabled={newsletterSubmitting}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors whitespace-nowrap disabled:opacity-50"
+              >
+                {newsletterSubmitting ? '...' : 'Subscribe'}
+              </button>
+            )}
           </form>
           <p className="text-white/30 text-xs mt-3">By subscribing, you agree to receive marketing emails. Unsubscribe anytime.</p>
         </div>
