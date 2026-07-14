@@ -18,6 +18,132 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
+async function handleWebsiteClaim(session: Stripe.Checkout.Session, resend: Resend) {
+  const customerEmail = session.customer_details?.email || '';
+  const businessName = session.metadata?.business_name || 'Your Business';
+  const contactName = session.metadata?.contact_name || '';
+  const phone = session.metadata?.phone || '';
+  const previewUrl = session.metadata?.preview_url || '';
+  
+  // Notify VPS backend about the claim
+  try {
+    await fetch('https://sites.getpipelineai.com/api/claim/paid', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        stripeSessionId: session.id,
+        stripePaymentIntent: session.payment_intent,
+        businessName,
+        contactName,
+        email: customerEmail,
+        phone,
+        previewUrl,
+        amountPaid: (session.amount_total || 0) / 100,
+      }),
+    });
+  } catch (err) {
+    console.error('Error notifying VPS about claim:', err);
+  }
+  
+  // Send confirmation email to customer
+  if (customerEmail) {
+    try {
+      await resend.emails.send({
+        from: 'Pipeline AI <noreply@getpipelineai.com>',
+        to: customerEmail,
+        subject: `Welcome to Pipeline AI! Your Website is Being Built`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="font-family: Arial, Helvetica, sans-serif; background-color: #f5f5f5; margin: 0; padding: 40px 20px;">
+            <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+              
+              <div style="background-color: #059669; padding: 32px; text-align: center;">
+                <h1 style="color: #ffffff; font-size: 28px; margin: 0;">Pipeline <span style="color: #d1fae5;">AI</span></h1>
+                <p style="color: #d1fae5; margin: 8px 0 0; font-size: 14px;">Professional Websites for Local Businesses</p>
+              </div>
+              
+              <div style="padding: 40px;">
+                <div style="background-color: #ecfdf5; border: 2px solid #22c55e; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+                  <p style="color: #22c55e; font-size: 16px; font-weight: bold; margin: 0;">Payment Successful!</p>
+                </div>
+                
+                <h2 style="color: #111827; font-size: 24px; margin: 0 0 16px; text-align: center;">
+                  Welcome, ${contactName || 'valued customer'}!
+                </h2>
+                
+                <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
+                  Thank you for choosing Pipeline AI! We're excited to build a professional website for <strong>${businessName}</strong>.
+                </p>
+                
+                <div style="background-color: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                  <h3 style="color: #111827; font-size: 16px; margin: 0 0 16px;">What Happens Next:</h3>
+                  <ol style="color: #4b5563; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                    <li>Our team will review your preview and begin customization</li>
+                    <li>We'll reach out within 24 hours to gather any additional info</li>
+                    <li>Your website will be ready within <strong>3 business days</strong></li>
+                    <li>We'll send you the live link and login credentials</li>
+                  </ol>
+                </div>
+                
+                <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                  <p style="color: #92400e; font-size: 14px; margin: 0;">
+                    <strong>Launch Bonus:</strong> Your package includes a custom logo and social media profile/cover images, delivered within your first 30 days!
+                  </p>
+                </div>
+                
+                ${previewUrl ? `
+                <a href="${previewUrl}" style="display: block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 18px 24px; border-radius: 12px; font-weight: bold; font-size: 16px; text-align: center; margin-bottom: 16px;">
+                  View Your Preview
+                </a>
+                ` : ''}
+                
+                <p style="color: #9ca3af; font-size: 13px; margin: 0; text-align: center;">
+                  Questions? Reply to this email or call us at <strong>1-888-247-7818</strong>
+                </p>
+              </div>
+              
+              <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+                <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                  &copy; ${new Date().getFullYear()} Pipeline AI. All rights reserved.
+                </p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+      });
+    } catch (emailError) {
+      console.error('Error sending website claim email:', emailError);
+    }
+  }
+  
+  // Send notification to Pipeline AI team
+  try {
+    await resend.emails.send({
+      from: 'Pipeline AI <noreply@getpipelineai.com>',
+      to: 'brian@getpipelineai.com',
+      subject: `New Website Sale! ${businessName}`,
+      html: `
+        <h2>New Website Claim</h2>
+        <p><strong>Business:</strong> ${businessName}</p>
+        <p><strong>Contact:</strong> ${contactName}</p>
+        <p><strong>Email:</strong> ${customerEmail}</p>
+        <p><strong>Phone:</strong> ${phone}</p>
+        <p><strong>Amount:</strong> $${(session.amount_total || 0) / 100}</p>
+        <p><strong>Preview:</strong> <a href="${previewUrl}">${previewUrl}</a></p>
+        <p><strong>Stripe Session:</strong> ${session.id}</p>
+      `,
+    });
+  } catch (err) {
+    console.error('Error sending team notification:', err);
+  }
+}
+
 export async function POST(request: NextRequest) {
   const stripe = getStripe();
   const supabase = getSupabase();
@@ -41,6 +167,13 @@ export async function POST(request: NextRequest) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     const customerEmail = session.customer_details?.email || '';
+    
+    // Handle website claim purchases
+    if (session.metadata?.type === 'website_claim') {
+      await handleWebsiteClaim(session, resend);
+      return NextResponse.json({ received: true });
+    }
+    
     const itemTitle = session.metadata?.item_title || 'Your Purchase';
     const downloadUrl = `${process.env.NEXT_PUBLIC_APP_URL}/download?session_id=${session.id}`;
 
