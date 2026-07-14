@@ -647,8 +647,109 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Free Website Preview Section */}
+      <section className="py-16 bg-[#030712] relative">
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 rounded-2xl p-8 md:p-10">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-sm font-semibold mb-4">
+                  <Sparkles className="w-4 h-4" />
+                  FREE Preview
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+                  See What Your Website Could Look Like
+                </h2>
+                <p className="text-white/60 mb-4">
+                  Enter your business info and we&apos;ll create a free custom website preview, no commitment required.
+                </p>
+                <p className="text-white/40 text-sm flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Or text <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-emerald-400">WEBSITE</span> to <span className="font-semibold text-white">(XXX) XXX-XXXX</span>
+                </p>
+              </div>
+              <form className="space-y-4" id="previewForm">
+                <input 
+                  type="text" 
+                  name="businessName"
+                  placeholder="Your Business Name" 
+                  required
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-emerald-500/50"
+                />
+                <input 
+                  type="email" 
+                  name="email"
+                  placeholder="Email Address" 
+                  required
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-emerald-500/50"
+                />
+                <input 
+                  type="tel" 
+                  name="phone"
+                  placeholder="Phone Number" 
+                  required
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-emerald-500/50"
+                />
+                <select 
+                  name="industry"
+                  required
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white/70 focus:outline-none focus:border-emerald-500/50"
+                >
+                  <option value="">Select Your Industry</option>
+                  <option value="roofing">Roofing</option>
+                  <option value="hvac">HVAC</option>
+                  <option value="plumbing">Plumbing</option>
+                  <option value="electrical">Electrical</option>
+                  <option value="landscaping">Landscaping</option>
+                  <option value="painting">Painting</option>
+                  <option value="pool">Pool Service</option>
+                  <option value="pest">Pest Control</option>
+                  <option value="auto">Auto Repair</option>
+                  <option value="other">Other</option>
+                </select>
+                <label className="flex items-start gap-2 text-xs text-white/50">
+                  <input type="checkbox" name="consent" required className="mt-0.5" />
+                  <span>I agree to receive text messages and emails including updates, reminders, and marketing offers. Msg & data rates may apply. Reply STOP to opt out.</span>
+                </label>
+                <button 
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-emerald-400 hover:to-cyan-400 transition-all"
+                >
+                  Get My Free Preview
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter Signup */}
+      <section className="py-12 bg-[#0a0f1a]">
+        <div className="max-w-2xl mx-auto px-6 text-center">
+          <h3 className="text-xl font-bold text-white mb-2">Get Free Marketing Tips</h3>
+          <p className="text-white/50 text-sm mb-6">Weekly tips to grow your local business. No spam, unsubscribe anytime.</p>
+          <form className="flex flex-col sm:flex-row gap-3" id="newsletterForm">
+            <input 
+              type="email" 
+              name="email"
+              placeholder="Enter your email" 
+              required
+              className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-blue-500/50"
+            />
+            <button 
+              type="submit"
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors whitespace-nowrap"
+            >
+              Subscribe
+            </button>
+          </form>
+          <p className="text-white/30 text-xs mt-3">By subscribing, you agree to receive marketing emails. Unsubscribe anytime.</p>
+        </div>
+      </section>
+
       {/* Final CTA Section */}
-      <section className="py-16 bg-[#0a0f1a] relative overflow-hidden">
+      <section className="py-16 bg-[#030712] relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-950/10 via-transparent to-transparent" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/5 rounded-full blur-[120px]" />
         
