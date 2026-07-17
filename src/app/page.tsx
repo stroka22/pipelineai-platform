@@ -802,37 +802,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Newsletter Signup */}
-      <section className="py-12 bg-[#0a0f1a]">
-        <div className="max-w-2xl mx-auto px-6 text-center">
-          <h3 className="text-xl font-bold text-white mb-2">Get Free Marketing Tips</h3>
-          <p className="text-white/50 text-sm mb-6">Weekly tips to grow your local business. No spam, unsubscribe anytime.</p>
-          <form className="flex flex-col sm:flex-row gap-3" id="newsletterForm" onSubmit={handleNewsletterSubmit}>
-            <input 
-              type="email" 
-              name="email"
-              placeholder="Enter your email" 
-              required
-              className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-blue-500/50"
-            />
-            {newsletterSuccess ? (
-              <div className="px-6 py-3 bg-emerald-500/20 text-emerald-400 rounded-lg font-semibold whitespace-nowrap">
-                Subscribed!
-              </div>
-            ) : (
-              <button 
-                type="submit"
-                disabled={newsletterSubmitting}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors whitespace-nowrap disabled:opacity-50"
-              >
-                {newsletterSubmitting ? '...' : 'Subscribe'}
-              </button>
-            )}
-          </form>
-          <p className="text-white/30 text-xs mt-3">By subscribing, you agree to receive marketing emails. Unsubscribe anytime.</p>
-        </div>
-      </section>
-
       {/* Final CTA Section */}
       <section className="py-16 bg-[#030712] relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-950/10 via-transparent to-transparent" />
