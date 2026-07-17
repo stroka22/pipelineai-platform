@@ -99,7 +99,8 @@ export default function HomePage() {
       email: formData.get('email'),
       phone: formData.get('phone'),
       industry: formData.get('industry'),
-      consent: formData.get('consent') === 'on',
+      marketingConsent: formData.get('marketingConsent') === 'on',
+      serviceConsent: formData.get('serviceConsent') === 'on',
     };
     
     try {
@@ -772,10 +773,16 @@ export default function HomePage() {
                   <option value="auto">Auto Repair</option>
                   <option value="other">Other</option>
                 </select>
-                <label className="flex items-start gap-2 text-xs text-white/50">
-                  <input type="checkbox" name="consent" required className="mt-0.5" />
-                  <span>I agree to receive text messages and emails including updates, reminders, and marketing offers. Msg & data rates may apply. Reply STOP to opt out.</span>
-                </label>
+                <div className="space-y-3">
+                  <label className="flex items-start gap-2 text-xs text-white/50">
+                    <input type="checkbox" name="marketingConsent" className="mt-0.5" />
+                    <span><strong className="text-white/70">Marketing Consent:</strong> I agree to receive marketing text messages and emails from Get Pipeline AI about special offers, promotions, and updates at the number and email provided. Message frequency varies. Msg & data rates may apply. Reply STOP to opt-out.</span>
+                  </label>
+                  <label className="flex items-start gap-2 text-xs text-white/50">
+                    <input type="checkbox" name="serviceConsent" required className="mt-0.5" />
+                    <span><strong className="text-white/70">Account & Service Alerts *</strong> I agree to receive operational text messages and emails from Get Pipeline AI regarding my account, appointments, reminders, and updates. Message frequency varies. Msg & data rates may apply. Reply STOP to opt-out.</span>
+                  </label>
+                </div>
                 {previewSuccess ? (
                   <div className="w-full bg-emerald-500/20 text-emerald-400 py-3 rounded-lg font-semibold text-center">
                     Thanks! We&apos;ll send your preview soon.
