@@ -58,7 +58,7 @@ function SuccessContent() {
 
         {/* Contact */}
         <p className="text-gray-500 text-sm mb-6">
-          Questions? Call us at <a href="tel:1-888-247-7818" className="text-emerald-600 font-medium">1-888-247-7818</a>
+          Questions? Call or text <a href="tel:1-888-247-7818" className="text-emerald-600 font-medium">1-888-247-7818</a> or email <a href="mailto:Support@GetPipelineAI.com" className="text-emerald-600 font-medium">Support@GetPipelineAI.com</a>
         </p>
 
         <Link 

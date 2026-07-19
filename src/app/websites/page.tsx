@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import HeroCarousel from './HeroCarousel'
 import Header from '@/components/Header'
 
@@ -331,9 +332,11 @@ export default function WebsitesPage() {
       <footer className="py-10 text-center text-white/40 text-sm">
         <p>&copy; 2026 Pipeline AI. All rights reserved.</p>
         <p className="mt-2">
-          <a href="/" className="hover:text-white/60">Home</a>
+          <Link href="/" className="hover:text-white/60">Home</Link>
           {' · '}
-          <a href="mailto:hello@getpipelineai.com" className="hover:text-white/60">Contact</a>
+          <a href="tel:1-888-247-7818" className="hover:text-white/60">1-888-247-7818</a>
+          {' · '}
+          <a href="mailto:Support@GetPipelineAI.com" className="hover:text-white/60">Contact</a>
         </p>
       </footer>
     </div>

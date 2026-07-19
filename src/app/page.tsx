@@ -845,6 +845,12 @@ export default function HomePage() {
             <p className="text-sm text-center md:text-left">
               Smarter Content. Stronger Brands.
             </p>
+            <a href="tel:1-888-247-7818" className="text-sm text-white/70 hover:text-white transition-colors font-medium">
+              Call or text: 1-888-247-7818
+            </a>
+            <a href="mailto:Support@GetPipelineAI.com" className="text-sm text-white/70 hover:text-white transition-colors font-medium">
+              Support@GetPipelineAI.com
+            </a>
             <p className="text-xs">
               © {new Date().getFullYear()} Pipeline AI. All rights reserved.
             </p>

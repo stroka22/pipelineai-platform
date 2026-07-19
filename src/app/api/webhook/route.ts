@@ -103,7 +103,7 @@ async function handleWebsiteClaim(session: Stripe.Checkout.Session, resend: Rese
                 ` : ''}
                 
                 <p style="color: #9ca3af; font-size: 13px; margin: 0; text-align: center;">
-                  Questions? Reply to this email or call us at <strong>1-888-247-7818</strong>
+                  Questions? Email <a href="mailto:Support@GetPipelineAI.com" style="color: #059669; font-weight: bold;">Support@GetPipelineAI.com</a> or call/text <a href="tel:1-888-247-7818" style="color: #059669; font-weight: bold;">1-888-247-7818</a>
                 </p>
               </div>
               

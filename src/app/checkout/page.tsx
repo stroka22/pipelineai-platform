@@ -262,7 +262,7 @@ function CheckoutForm() {
                       <div className="border-2 border-dashed border-[#E5E7EB] rounded-lg p-6 text-center hover:border-[#C96A2B] transition-colors">
                         <Upload className="w-8 h-8 text-[#9CA3AF] mx-auto mb-2" />
                         <p className="text-sm text-[#4B5563]">
-                          Email your logo to <a href="mailto:hello@getpipelineai.com" className="text-[#C96A2B] hover:underline">hello@getpipelineai.com</a>
+                          Email your logo to <a href="mailto:Support@GetPipelineAI.com" className="text-[#C96A2B] hover:underline">Support@GetPipelineAI.com</a>
                         </p>
                         <p className="text-xs text-[#9CA3AF] mt-1">PNG or SVG preferred</p>
                       </div>
@@ -296,6 +296,10 @@ function CheckoutForm() {
                     <>Continue to Payment</>
                   )}
                 </button>
+
+                <p className="text-center text-sm text-[#9CA3AF]">
+                  Questions? Call or text <a href="tel:1-888-247-7818" className="text-[#C96A2B] hover:underline font-medium">1-888-247-7818</a>
+                </p>
               </form>
             </div>
           </div>

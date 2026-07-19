@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Eye, Menu, X, ShoppingCart, Sparkles, Info, Calendar } from 'lucide-react';
+import { ChevronDown, Eye, Menu, X, ShoppingCart, Sparkles, Info, Calendar, Phone } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { supabase, Niche } from '@/lib/supabase';
 
@@ -123,6 +123,13 @@ export default function Header({ currentNiche }: HeaderProps) {
             Websites
           </Link>
           <a 
+            href="tel:1-888-247-7818"
+            className="text-white/70 hover:text-white transition-colors text-sm font-medium items-center gap-1.5 hidden lg:flex"
+          >
+            <Phone className="w-4 h-4" />
+            1-888-247-7818
+          </a>
+          <a 
             href="https://calendly.com/getpipelineai-support/30min"
             target="_blank"
             rel="noopener noreferrer"
@@ -240,6 +247,14 @@ export default function Header({ currentNiche }: HeaderProps) {
             >
               🌐 Websites
             </Link>
+            <a 
+              href="tel:1-888-247-7818"
+              className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-base font-medium flex items-center gap-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Phone className="w-5 h-5" />
+              1-888-247-7818
+            </a>
             <a 
               href="https://calendly.com/getpipelineai-support/30min"
               target="_blank"

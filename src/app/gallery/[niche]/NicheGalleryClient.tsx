@@ -347,10 +347,16 @@ export default function NicheGalleryClient({
 
       {/* Footer */}
       <footer className="border-t border-white/5 bg-black/20">
-        <div className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-between gap-4">
           <Link href="/" className="text-white/40 hover:text-white text-sm">
             ← Pipeline AI
           </Link>
+          <a href="tel:1-888-247-7818" className="text-white/40 hover:text-white text-sm">
+            Call or text: 1-888-247-7818
+          </a>
+          <a href="mailto:Support@GetPipelineAI.com" className="text-white/40 hover:text-white text-sm">
+            Support@GetPipelineAI.com
+          </a>
           <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer" className="hover:underline text-sm" style={{ color: accent }}>
             Book a Call →
           </a>
