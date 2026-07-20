@@ -3,6 +3,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import SocialLinks from '@/components/SocialLinks';
 import { 
   ArrowRight, 
   Sparkles, 
@@ -869,6 +870,7 @@ export default function HomePage() {
             <a href="mailto:Support@GetPipelineAI.com" className="text-sm text-white/70 hover:text-white transition-colors font-medium">
               Support@GetPipelineAI.com
             </a>
+            <SocialLinks />
             <p className="text-xs">
               © {new Date().getFullYear()} Pipeline AI. All rights reserved.
             </p>

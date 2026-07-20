@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import SocialLinks from '@/components/SocialLinks';
 import { Suspense } from 'react';
 
 function SuccessContent() {
@@ -60,6 +61,10 @@ function SuccessContent() {
         <p className="text-gray-500 text-sm mb-6">
           Questions? Call or text <a href="tel:1-888-247-7818" className="text-emerald-600 font-medium">1-888-247-7818</a> or email <a href="mailto:Support@GetPipelineAI.com" className="text-emerald-600 font-medium">Support@GetPipelineAI.com</a>
         </p>
+
+        <div className="flex justify-center mb-6">
+          <SocialLinks iconClassName="text-gray-400 hover:text-emerald-600" />
+        </div>
 
         <Link 
           href="/"

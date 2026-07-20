@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import SocialLinks from '@/components/SocialLinks';
 import { Calendar, ArrowRight, Check, ChevronLeft, ChevronRight, Star, Crown, Zap, Camera, Layers } from 'lucide-react';
 
 interface NicheData {
@@ -357,6 +358,7 @@ export default function NicheGalleryClient({
           <a href="mailto:Support@GetPipelineAI.com" className="text-white/40 hover:text-white text-sm">
             Support@GetPipelineAI.com
           </a>
+          <SocialLinks size={18} />
           <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer" className="hover:underline text-sm" style={{ color: accent }}>
             Book a Call →
           </a>

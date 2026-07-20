@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import LogoClaimForm from '@/components/LogoClaimForm'
+import SocialLinks from '@/components/SocialLinks'
 
 export const metadata: Metadata = {
   title: 'Get a FREE Premium Logo for Your Business | Pipeline AI',
@@ -95,6 +96,9 @@ export default function FreePremiumLogoPage() {
           {' · '}
           <a href="mailto:Support@GetPipelineAI.com" className="hover:text-white/60">Contact</a>
         </p>
+        <div className="mt-4 flex justify-center">
+          <SocialLinks />
+        </div>
       </footer>
     </div>
   )
