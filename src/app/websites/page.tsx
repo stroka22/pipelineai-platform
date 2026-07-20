@@ -317,6 +317,22 @@ export default function WebsitesPage() {
         </div>
       </section>
 
+      {/* Free Logo Promo */}
+      <section className="py-16 bg-[#030712]">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/30 rounded-2xl p-8 text-center">
+            <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-semibold mb-3">
+              🎁 100% FREE - No Purchase Required
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Not ready for a website? Get a FREE Premium Logo</h2>
+            <p className="text-white/60 mb-6">Our design team will create a professional custom logo for your business and email it to you - free.</p>
+            <Link href="/free-premium-logo" className="inline-block bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-8 py-3 rounded-lg font-semibold hover:from-emerald-400 hover:to-cyan-400 transition-all">
+              Claim My Free Logo →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="py-20 bg-gradient-to-br from-blue-600 to-cyan-600 text-white text-center">
         <div className="max-w-3xl mx-auto px-6">

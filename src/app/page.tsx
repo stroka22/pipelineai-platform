@@ -712,6 +712,24 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Free Logo Promo Banner */}
+      <section className="py-12 bg-[#030712]">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/30 rounded-2xl p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-semibold mb-3">
+                🎁 100% FREE - No Purchase Required
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Get a FREE Premium Logo for Your Business</h2>
+              <p className="text-white/60">Our design team will create a professional custom logo and email it to you. No cost, no catch.</p>
+            </div>
+            <Link href="/free-premium-logo" className="flex-shrink-0 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-8 py-4 rounded-lg font-semibold hover:from-emerald-400 hover:to-cyan-400 transition-all whitespace-nowrap">
+              Claim My Free Logo →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Free Website Preview Section */}
       <section className="py-16 bg-[#030712] relative">
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />

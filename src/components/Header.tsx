@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronDown, Eye, Menu, X, ShoppingCart, Sparkles, Info, Calendar, Phone } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { supabase, Niche } from '@/lib/supabase';
+import AnnouncementBar from './AnnouncementBar';
 
 interface HeaderProps {
   currentNiche?: string;
@@ -43,6 +44,7 @@ export default function Header({ currentNiche }: HeaderProps) {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#030712]/95 backdrop-blur-md border-b border-white/5">
+      <AnnouncementBar />
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
           <img src="/logo-icon.png" alt="Pipeline AI" className="h-9 w-9 rounded-xl" />
