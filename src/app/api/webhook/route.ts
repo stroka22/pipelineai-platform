@@ -2,9 +2,49 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { ensureHostingSubscription, attachInstallmentSchedule } from '@/lib/stripe-billing';
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!);
+}
+
+// After the initial checkout is paid, finish the recurring billing setup:
+// - installments: convert the $179/mo sub into 3 charges that roll into $47/mo
+// - full: start the $47/mo hosting subscription with a 30-day trial
+// Errors here must not fail the webhook (payment already succeeded).
+async function setupPostPaymentBilling(stripe: Stripe, session: Stripe.Checkout.Session) {
+  const plan = session.metadata?.plan === 'installments' ? 'installments' : 'full';
+  try {
+    if (plan === 'installments') {
+      const subscriptionId =
+        typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
+      if (subscriptionId) {
+        await attachInstallmentSchedule(stripe, subscriptionId);
+      }
+    } else {
+      const customerId =
+        typeof session.customer === 'string' ? session.customer : session.customer?.id;
+      if (customerId) {
+        let paymentMethodId: string | null = null;
+        const piId =
+          typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : session.payment_intent?.id;
+        if (piId) {
+          const pi = await stripe.paymentIntents.retrieve(piId);
+          paymentMethodId =
+            typeof pi.payment_method === 'string' ? pi.payment_method : pi.payment_method?.id ?? null;
+        }
+        await ensureHostingSubscription(stripe, {
+          customerId,
+          paymentMethodId,
+          metadata: { source_session: session.id },
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Post-payment billing setup failed:', err);
+  }
 }
 
 function getSupabase() {
@@ -24,6 +64,10 @@ async function handleWebsiteClaim(session: Stripe.Checkout.Session, resend: Rese
   const contactName = session.metadata?.contact_name || '';
   const phone = session.metadata?.phone || '';
   const previewUrl = session.metadata?.preview_url || '';
+  const planLabel =
+    session.metadata?.plan === 'installments'
+      ? '3-payment plan ($179 x3, then $47/mo)'
+      : 'Paid in full ($497, then $47/mo)';
   
   // Notify VPS backend about the claim
   try {
@@ -134,7 +178,8 @@ async function handleWebsiteClaim(session: Stripe.Checkout.Session, resend: Rese
         <p><strong>Contact:</strong> ${contactName}</p>
         <p><strong>Email:</strong> ${customerEmail}</p>
         <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Amount:</strong> $${(session.amount_total || 0) / 100}</p>
+        <p><strong>Plan:</strong> ${planLabel}</p>
+        <p><strong>First payment:</strong> $${(session.amount_total || 0) / 100}</p>
         <p><strong>Preview:</strong> <a href="${previewUrl}">${previewUrl}</a></p>
         <p><strong>Stripe Session:</strong> ${session.id}</p>
       `,
@@ -171,6 +216,7 @@ export async function POST(request: NextRequest) {
     // Handle website claim purchases
     if (session.metadata?.type === 'website_claim') {
       await handleWebsiteClaim(session, resend);
+      await setupPostPaymentBilling(stripe, session);
       return NextResponse.json({ received: true });
     }
     
