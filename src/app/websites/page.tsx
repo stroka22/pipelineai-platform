@@ -197,12 +197,12 @@ export default function WebsitesPage() {
                     </li>
                   ))}
                 </ul>
-                <a href="https://sites.getpipelineai.com/claim/?plan=full" className="block w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white text-center py-4 rounded-xl font-semibold text-lg hover:from-blue-500 hover:to-blue-400 transition shadow-lg shadow-blue-500/30">
+                <Link href="/claim?plan=full" className="block w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white text-center py-4 rounded-xl font-semibold text-lg hover:from-blue-500 hover:to-blue-400 transition shadow-lg shadow-blue-500/30">
                   Pay in Full - $497
-                </a>
-                <a href="https://sites.getpipelineai.com/claim/?plan=installments" className="block w-full mt-3 border border-blue-500/60 text-blue-300 text-center py-4 rounded-xl font-semibold text-lg hover:bg-blue-500/10 transition">
+                </Link>
+                <Link href="/claim?plan=installments" className="block w-full mt-3 border border-blue-500/60 text-blue-300 text-center py-4 rounded-xl font-semibold text-lg hover:bg-blue-500/10 transition">
                   Or 3 payments of $179
-                </a>
+                </Link>
                 <p className="text-center text-sm text-white/40 mt-4">30-day money-back guarantee</p>
               </div>
             </div>
@@ -342,9 +342,9 @@ export default function WebsitesPage() {
         <div className="max-w-3xl mx-auto px-6">
           <h2 className="text-3xl font-bold mb-4">Ready to Get Your Website?</h2>
           <p className="text-lg opacity-90 mb-8">Join hundreds of local businesses with professional websites</p>
-          <a href="https://sites.getpipelineai.com/claim/?plan=full" className="inline-block bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:shadow-lg transition">
+          <Link href="/claim?plan=full" className="inline-block bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:shadow-lg transition">
             Get Started - $497
-          </a>
+          </Link>
         </div>
       </section>
 
