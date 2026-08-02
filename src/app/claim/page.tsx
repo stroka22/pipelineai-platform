@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 const PLAN_INFO = {
@@ -38,25 +37,31 @@ function Check() {
   );
 }
 
-function ClaimContent() {
-  const searchParams = useSearchParams();
-  const initialPlan: PlanKey = searchParams.get('plan') === 'installments' ? 'installments' : 'full';
-
-  const [plan, setPlan] = useState<PlanKey>(initialPlan);
+export default function ClaimPage() {
+  const [plan, setPlan] = useState<PlanKey>('full');
   const [form, setForm] = useState({
     name: '',
-    businessName: searchParams.get('name') || '',
+    businessName: '',
     email: '',
     phone: '',
     domain: '',
   });
+  const [businessId, setBusinessId] = useState('');
+  const [source, setSource] = useState('website');
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [serviceConsent, setServiceConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const businessId = searchParams.get('id') || '';
-  const source = searchParams.get('source') || 'website';
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('plan') === 'installments') setPlan('installments');
+    const name = params.get('name');
+    if (name) setForm((f) => ({ ...f, businessName: name }));
+    setBusinessId(params.get('id') || '');
+    setSource(params.get('source') || 'website');
+  }, []);
+
   const info = PLAN_INFO[plan];
 
   const inputClass =
@@ -338,19 +343,5 @@ function ClaimContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function ClaimPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[#030712] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
-        </div>
-      }
-    >
-      <ClaimContent />
-    </Suspense>
   );
 }
