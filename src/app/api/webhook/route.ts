@@ -13,6 +13,9 @@ function getStripe() {
 // - full: start the $47/mo hosting subscription with a 30-day trial
 // Errors here must not fail the webhook (payment already succeeded).
 async function setupPostPaymentBilling(stripe: Stripe, session: Stripe.Checkout.Session) {
+  // Self-serve subscriptions already include their 7-day trial + recurring price
+  // at checkout, so there is no installment schedule or separate hosting plan.
+  if (session.metadata?.plan === 'self_serve') return;
   const plan = session.metadata?.plan === 'installments' ? 'installments' : 'full';
   try {
     if (plan === 'installments') {
@@ -64,12 +67,22 @@ async function handleWebsiteClaim(session: Stripe.Checkout.Session, resend: Rese
   const contactName = session.metadata?.contact_name || '';
   const phone = session.metadata?.phone || '';
   const previewUrl = session.metadata?.preview_url || '';
-  const planLabel =
-    session.metadata?.plan === 'installments'
+  const businessId = session.metadata?.preview_id || '';
+  const isSelfServe = session.metadata?.plan === 'self_serve';
+  const billing = session.metadata?.billing === 'annual' ? 'annual' : 'monthly';
+  const manageUrl = 'https://sites.getpipelineai.com/owner/';
+  const stripeCustomerId =
+    typeof session.customer === 'string' ? session.customer : session.customer?.id || '';
+  const subscriptionId =
+    typeof session.subscription === 'string' ? session.subscription : session.subscription?.id || '';
+  const planLabel = isSelfServe
+    ? `Self-serve website (${billing === 'annual' ? '$490/yr' : '$49/mo'}, 7-day trial)`
+    : session.metadata?.plan === 'installments'
       ? '3-payment plan ($179 x3, then $47/mo)'
       : 'Paid in full ($497, then $47/mo)';
   
-  // Notify VPS backend about the claim
+  // Notify VPS backend about the claim. For self-serve this also provisions
+  // ownership (creates the client + attaches the website project).
   try {
     await fetch('https://sites.getpipelineai.com/api/claim/paid', {
       method: 'POST',
@@ -77,6 +90,10 @@ async function handleWebsiteClaim(session: Stripe.Checkout.Session, resend: Rese
       body: JSON.stringify({
         stripeSessionId: session.id,
         stripePaymentIntent: session.payment_intent,
+        stripeCustomerId,
+        stripeSubscriptionId: subscriptionId,
+        businessId,
+        plan: isSelfServe ? 'self_serve' : session.metadata?.plan || 'full',
         businessName,
         contactName,
         email: customerEmail,
@@ -89,8 +106,61 @@ async function handleWebsiteClaim(session: Stripe.Checkout.Session, resend: Rese
     console.error('Error notifying VPS about claim:', err);
   }
   
-  // Send confirmation email to customer
-  if (customerEmail) {
+  // Self-serve customers get a "your site is live + how to manage it" email.
+  if (customerEmail && isSelfServe) {
+    try {
+      await resend.emails.send({
+        from: 'Pipeline AI <noreply@getpipelineai.com>',
+        to: customerEmail,
+        subject: 'Your Pipeline AI website is live - 7-day free trial started',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+          <body style="font-family: Arial, Helvetica, sans-serif; background-color: #f5f5f5; margin: 0; padding: 40px 20px;">
+            <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+              <div style="background: linear-gradient(135deg,#2563eb,#06b6d4); padding: 32px; text-align: center;">
+                <h1 style="color: #ffffff; font-size: 28px; margin: 0;">Pipeline <span style="color: #cffafe;">AI</span></h1>
+                <p style="color: #cffafe; margin: 8px 0 0; font-size: 14px;">Your website is live</p>
+              </div>
+              <div style="padding: 40px;">
+                <div style="background-color: #ecfeff; border: 2px solid #06b6d4; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+                  <p style="color: #0e7490; font-size: 16px; font-weight: bold; margin: 0;">7-day free trial started</p>
+                  <p style="color: #155e75; font-size: 13px; margin: 6px 0 0;">You won't be charged today. After your trial it's ${billing === 'annual' ? '$490/year' : '$49/month'}. Cancel anytime.</p>
+                </div>
+                <h2 style="color: #111827; font-size: 24px; margin: 0 0 16px; text-align: center;">You're all set, ${contactName || 'welcome'}!</h2>
+                <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
+                  Your website for <strong>${businessName}</strong> is published and ready. You can keep editing it anytime with the AI builder - just sign in to your dashboard.
+                </p>
+                ${previewUrl ? `<a href="${previewUrl}" style="display: block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 16px 24px; border-radius: 12px; font-weight: bold; font-size: 16px; text-align: center; margin-bottom: 12px;">View Your Website</a>` : ''}
+                <a href="${manageUrl}" style="display: block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 24px; border-radius: 12px; font-weight: bold; font-size: 16px; text-align: center; margin-bottom: 24px;">Manage &amp; Edit Your Site</a>
+                <div style="background-color: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                  <p style="color: #4b5563; font-size: 14px; line-height: 1.7; margin: 0;">
+                    <strong>To edit anytime:</strong> go to your <a href="${manageUrl}" style="color:#2563eb;">dashboard</a> and sign in with this email (${customerEmail}). We'll email you a secure one-time login link.
+                  </p>
+                </div>
+                <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                  <p style="color: #92400e; font-size: 14px; margin: 0;"><strong>14-day money-back guarantee.</strong> If it's not for you, email us within 14 days for a full refund.</p>
+                </div>
+                <p style="color: #9ca3af; font-size: 13px; margin: 0; text-align: center;">
+                  Questions? Email <a href="mailto:Support@GetPipelineAI.com" style="color: #2563eb; font-weight: bold;">Support@GetPipelineAI.com</a> or call/text <a href="tel:1-888-247-7818" style="color: #2563eb; font-weight: bold;">1-888-247-7818</a>
+                </p>
+              </div>
+              <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+                <p style="color: #9ca3af; font-size: 12px; margin: 0;">&copy; ${new Date().getFullYear()} Pipeline AI. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+      });
+    } catch (emailError) {
+      console.error('Error sending self-serve welcome email:', emailError);
+    }
+  }
+
+  // Send confirmation email to customer (done-for-you flow)
+  if (customerEmail && !isSelfServe) {
     try {
       await resend.emails.send({
         from: 'Pipeline AI <noreply@getpipelineai.com>',

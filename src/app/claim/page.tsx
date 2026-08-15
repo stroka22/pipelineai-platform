@@ -18,6 +18,23 @@ const PLAN_INFO = {
 
 type PlanKey = keyof typeof PLAN_INFO;
 
+const SELF_SERVE_INFO = {
+  monthly: {
+    amount: '$49',
+    per: '/mo',
+    subtitle: '7-day free trial, then $49/month. Cancel anytime.',
+    button: 'Start 7-Day Free Trial',
+  },
+  annual: {
+    amount: '$490',
+    per: '/yr',
+    subtitle: '7-day free trial, then $490/year (save ~2 months). Cancel anytime.',
+    button: 'Start 7-Day Free Trial',
+  },
+} as const;
+
+type BillingKey = keyof typeof SELF_SERVE_INFO;
+
 const INCLUDED: [string, string][] = [
   ['Custom Design', 'Professional design tailored to your business and industry'],
   ['Mobile Responsive', 'Looks great on phones, tablets, and desktops'],
@@ -39,6 +56,8 @@ function Check() {
 
 export default function ClaimPage() {
   const [plan, setPlan] = useState<PlanKey>('full');
+  const [selfServe, setSelfServe] = useState(false);
+  const [billing, setBilling] = useState<BillingKey>('monthly');
   const [form, setForm] = useState({
     name: '',
     businessName: '',
@@ -55,14 +74,18 @@ export default function ClaimPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('plan') === 'installments') setPlan('installments');
+    const planParam = params.get('plan');
+    if (planParam === 'self_serve') setSelfServe(true);
+    else if (planParam === 'installments') setPlan('installments');
+    if (params.get('billing') === 'annual') setBilling('annual');
     const name = params.get('name');
     if (name) setForm((f) => ({ ...f, businessName: name }));
     setBusinessId(params.get('id') || '');
     setSource(params.get('source') || 'website');
   }, []);
 
-  const info = PLAN_INFO[plan];
+  const info = selfServe ? SELF_SERVE_INFO[billing] : PLAN_INFO[plan];
+  const per = selfServe ? SELF_SERVE_INFO[billing].per : '';
 
   const inputClass =
     'w-full px-4 py-3 bg-[#0f0f0f] border border-white/10 rounded-lg text-white placeholder-white/30 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition';
@@ -87,7 +110,8 @@ export default function ClaimPage() {
           ...form,
           businessId,
           source,
-          plan,
+          plan: selfServe ? 'self_serve' : plan,
+          billing: selfServe ? billing : undefined,
           marketingConsent,
           serviceConsent,
         }),
@@ -124,15 +148,18 @@ export default function ClaimPage() {
 
       <div className="max-w-3xl mx-auto px-4 py-12">
         <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Claim Your Professional Website</h1>
-          <p className="text-lg text-white/60">Get a stunning, mobile-friendly website for your business</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">{selfServe ? 'Launch Your Website' : 'Claim Your Professional Website'}</h1>
+          <p className="text-lg text-white/60">{selfServe ? 'Start your 7-day free trial. No setup fee, cancel anytime.' : 'Get a stunning, mobile-friendly website for your business'}</p>
         </div>
 
         <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
           {/* Price header */}
           <div className="bg-gradient-to-br from-blue-600 to-cyan-600 text-white px-8 py-10 text-center">
-            <div className="text-sm font-semibold uppercase tracking-wider opacity-90 mb-2">Complete Website Package</div>
-            <div className="text-5xl font-extrabold mb-2">{info.amount}</div>
+            <div className="text-sm font-semibold uppercase tracking-wider opacity-90 mb-2">{selfServe ? 'Pipeline AI Website' : 'Complete Website Package'}</div>
+            <div className="text-5xl font-extrabold mb-2">
+              {info.amount}
+              {per && <span className="text-2xl font-semibold">{per}</span>}
+            </div>
             <div className="text-blue-100">{info.subtitle}</div>
           </div>
 
@@ -158,43 +185,81 @@ export default function ClaimPage() {
               <h2 className="text-2xl font-bold text-white">Get Started:</h2>
 
               {/* Plan selector */}
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-3">Choose your payment option</label>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {(['full', 'installments'] as PlanKey[]).map((key) => {
-                    const selected = plan === key;
-                    return (
-                      <button
-                        type="button"
-                        key={key}
-                        onClick={() => setPlan(key)}
-                        className={`text-left cursor-pointer border-2 rounded-lg p-4 flex items-start gap-3 transition-colors ${
-                          selected ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20'
-                        }`}
-                      >
-                        <span
-                          className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                            selected ? 'border-blue-500' : 'border-white/30'
+              {selfServe ? (
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-3">Choose your billing</label>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {(['monthly', 'annual'] as BillingKey[]).map((key) => {
+                      const selected = billing === key;
+                      return (
+                        <button
+                          type="button"
+                          key={key}
+                          onClick={() => setBilling(key)}
+                          className={`text-left cursor-pointer border-2 rounded-lg p-4 flex items-start gap-3 transition-colors ${
+                            selected ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20'
                           }`}
                         >
-                          {selected && <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
-                        </span>
-                        <span>
-                          <span className="block font-semibold text-white">
-                            {key === 'full' ? 'Pay in full' : '3 easy payments'}
+                          <span
+                            className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                              selected ? 'border-blue-500' : 'border-white/30'
+                            }`}
+                          >
+                            {selected && <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
                           </span>
-                          <span className="block text-sm text-white/50">
-                            {key === 'full' ? '$497 one-time' : '$179/mo for 3 months'}
+                          <span>
+                            <span className="block font-semibold text-white">{key === 'monthly' ? 'Monthly' : 'Annual'}</span>
+                            <span className="block text-sm text-white/50">
+                              {key === 'monthly' ? '$49/month' : '$490/year - save ~2 months'}
+                            </span>
                           </span>
-                        </span>
-                      </button>
-                    );
-                  })}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-white/40 mt-2">
+                    7-day free trial - you won&apos;t be charged today. Cancel anytime before it ends and pay nothing.
+                  </p>
                 </div>
-                <p className="text-xs text-white/40 mt-2">
-                  Then $47/month for hosting &amp; support, starting after your launch fee. Cancel anytime.
-                </p>
-              </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-3">Choose your payment option</label>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {(['full', 'installments'] as PlanKey[]).map((key) => {
+                      const selected = plan === key;
+                      return (
+                        <button
+                          type="button"
+                          key={key}
+                          onClick={() => setPlan(key)}
+                          className={`text-left cursor-pointer border-2 rounded-lg p-4 flex items-start gap-3 transition-colors ${
+                            selected ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          <span
+                            className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                              selected ? 'border-blue-500' : 'border-white/30'
+                            }`}
+                          >
+                            {selected && <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
+                          </span>
+                          <span>
+                            <span className="block font-semibold text-white">
+                              {key === 'full' ? 'Pay in full' : '3 easy payments'}
+                            </span>
+                            <span className="block text-sm text-white/50">
+                              {key === 'full' ? '$497 one-time' : '$179/mo for 3 months'}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-white/40 mt-2">
+                    Then $47/month for hosting &amp; support, starting after your launch fee. Cancel anytime.
+                  </p>
+                </div>
+              )}
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
@@ -322,7 +387,7 @@ export default function ClaimPage() {
               </button>
 
               <p className="text-center text-sm text-white/40">
-                Secure payment powered by Stripe. 30-day money-back guarantee.
+                Secure payment powered by Stripe. {selfServe ? '14-day money-back guarantee.' : '30-day money-back guarantee.'}
               </p>
             </form>
           </div>

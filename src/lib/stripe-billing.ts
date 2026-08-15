@@ -19,15 +19,19 @@ export const PRICING = {
   hosting: Number(process.env.PRICE_HOSTING_CENTS) || 4700, // $47/mo
   installmentCount: 3,
   hostingTrialDays: 30,
+  selfServeMonthly: Number(process.env.PRICE_SELF_SERVE_MONTHLY_CENTS) || 4900, // $49/mo
+  selfServeAnnual: Number(process.env.PRICE_SELF_SERVE_ANNUAL_CENTS) || 49000, // $490/yr
+  selfServeTrialDays: 7,
 };
 
-export type WebsitePlan = 'full' | 'installments';
+export type WebsitePlan = 'full' | 'installments' | 'self_serve';
+export type BillingInterval = 'monthly' | 'annual';
 
 type PriceSpec = {
   lookupKey: string;
   productName: string;
   unitAmount: number;
-  interval?: 'month';
+  interval?: 'month' | 'year';
 };
 
 const priceIdCache = new Map<string, string>();
@@ -69,6 +73,29 @@ export function getHostingPriceId(stripe: Stripe): Promise<string> {
     unitAmount: PRICING.hosting,
     interval: 'month',
   });
+}
+
+// Self-serve website plan: $49/mo or $490/yr, both with a 7-day free trial.
+export function getSelfServeMonthlyPriceId(stripe: Stripe): Promise<string> {
+  return getOrCreatePrice(stripe, {
+    lookupKey: 'pipeline_selfserve_49',
+    productName: 'Pipeline AI Website (monthly)',
+    unitAmount: PRICING.selfServeMonthly,
+    interval: 'month',
+  });
+}
+
+export function getSelfServeAnnualPriceId(stripe: Stripe): Promise<string> {
+  return getOrCreatePrice(stripe, {
+    lookupKey: 'pipeline_selfserve_annual_490',
+    productName: 'Pipeline AI Website (annual)',
+    unitAmount: PRICING.selfServeAnnual,
+    interval: 'year',
+  });
+}
+
+export function getSelfServePriceId(stripe: Stripe, billing: BillingInterval): Promise<string> {
+  return billing === 'annual' ? getSelfServeAnnualPriceId(stripe) : getSelfServeMonthlyPriceId(stripe);
 }
 
 // Create the ongoing $47/mo hosting subscription. Idempotent: returns the
