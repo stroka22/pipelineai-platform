@@ -155,6 +155,12 @@ export default function Header({ currentNiche }: HeaderProps) {
 
         {/* Desktop CTA + Cart */}
         <div className="hidden md:flex items-center gap-4">
+          <a
+            href="https://sites.getpipelineai.com/owner/"
+            className="text-white/70 hover:text-white transition-colors text-sm font-medium"
+          >
+            Log in
+          </a>
           <Link href="/cart" className="relative text-white/70 hover:text-white transition-colors p-2">
             <ShoppingCart className="w-5 h-5" />
             {itemCount > 0 && (
@@ -249,6 +255,13 @@ export default function Header({ currentNiche }: HeaderProps) {
             >
               🌐 Websites
             </Link>
+            <a 
+              href="https://sites.getpipelineai.com/owner/"
+              className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-base font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Log in
+            </a>
             <a 
               href="tel:1-888-247-7818"
               className="block px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-base font-medium flex items-center gap-2"
