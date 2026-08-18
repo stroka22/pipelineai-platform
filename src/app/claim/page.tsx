@@ -35,13 +35,23 @@ const SELF_SERVE_INFO = {
 
 type BillingKey = keyof typeof SELF_SERVE_INFO;
 
-const INCLUDED: [string, string][] = [
+const INCLUDED_EN: [string, string][] = [
   ['Custom Design', 'Professional design tailored to your business and industry'],
   ['Mobile Responsive', 'Looks great on phones, tablets, and desktops'],
+  ['Bilingual (EN/ES)', 'Automatic English & Spanish version to reach more customers'],
   ['Contact Forms', 'Let customers reach you directly from your website'],
   ['SEO Optimized', 'Built to rank in Google for local searches'],
   ['Fast Hosting', 'Lightning-fast loading speeds included'],
   ['SSL Security', 'Secure HTTPS encryption for your site'],
+];
+const INCLUDED_ES: [string, string][] = [
+  ['Diseño personalizado', 'Diseño profesional adaptado a tu negocio e industria'],
+  ['Adaptable a móviles', 'Se ve genial en teléfonos, tabletas y computadoras'],
+  ['Bilingüe (EN/ES)', 'Versión automática en inglés y español para llegar a más clientes'],
+  ['Formularios de contacto', 'Permite que los clientes te contacten directamente desde tu sitio'],
+  ['Optimizado para SEO', 'Diseñado para posicionar en Google en búsquedas locales'],
+  ['Hospedaje rápido', 'Velocidades de carga ultrarrápidas incluidas'],
+  ['Seguridad SSL', 'Cifrado HTTPS seguro para tu sitio'],
 ];
 
 const CLAIM_API = 'https://sites.getpipelineai.com/api/claim';
@@ -71,6 +81,34 @@ export default function ClaimPage() {
   const [serviceConsent, setServiceConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [lang, setLang] = useState<'en' | 'es'>('en');
+
+  const tr = (en: string, es: string) => (lang === 'es' ? es : en);
+
+  useEffect(() => {
+    let initial: 'en' | 'es' = 'en';
+    try {
+      const saved = localStorage.getItem('pa_site_lang');
+      if (saved === 'en' || saved === 'es') initial = saved;
+      else if ((navigator.language || '').toLowerCase().startsWith('es')) initial = 'es';
+    } catch {
+      /* ignore */
+    }
+    setLang(initial);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  function chooseLang(l: 'en' | 'es') {
+    setLang(l);
+    try {
+      localStorage.setItem('pa_site_lang', l);
+    } catch {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -87,6 +125,21 @@ export default function ClaimPage() {
   const info = selfServe ? SELF_SERVE_INFO[billing] : PLAN_INFO[plan];
   const per = selfServe ? SELF_SERVE_INFO[billing].per : '';
 
+  const subtitleText = selfServe
+    ? billing === 'monthly'
+      ? tr('7-day free trial, then $49/month. Cancel anytime.', 'Prueba gratis de 7 días, luego $49/mes. Cancela cuando quieras.')
+      : tr('7-day free trial, then $490/year (save ~2 months). Cancel anytime.', 'Prueba gratis de 7 días, luego $490/año (ahorra ~2 meses). Cancela cuando quieras.')
+    : plan === 'full'
+    ? tr('One-time payment. No hidden fees.', 'Pago único. Sin cargos ocultos.')
+    : tr('$179 due today, then 2 monthly payments.', '$179 hoy, luego 2 pagos mensuales.');
+  const buttonText = submitting
+    ? tr('Processing...', 'Procesando...')
+    : selfServe
+    ? tr('Start 7-Day Free Trial', 'Comienza tu prueba gratis de 7 días')
+    : plan === 'full'
+    ? tr('Continue to Payment - $497', 'Continuar al pago - $497')
+    : tr('Continue to Payment - $179 Today', 'Continuar al pago - $179 hoy');
+
   const inputClass =
     'w-full px-4 py-3 bg-[#0f0f0f] border border-white/10 rounded-lg text-white placeholder-white/30 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition';
 
@@ -98,7 +151,7 @@ export default function ClaimPage() {
     e.preventDefault();
     setError('');
     if (!serviceConsent) {
-      setError('Please agree to Account & Service Alerts to continue.');
+      setError(tr('Please agree to Account & Service Alerts to continue.', 'Acepta las Alertas de Cuenta y Servicio para continuar.'));
       return;
     }
     setSubmitting(true);
@@ -120,16 +173,30 @@ export default function ClaimPage() {
       if (result.checkoutUrl) {
         window.location.href = result.checkoutUrl;
       } else {
-        throw new Error(result.error || 'Something went wrong. Please try again.');
+        throw new Error(result.error || tr('Something went wrong. Please try again.', 'Algo salió mal. Inténtalo de nuevo.'));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      setError(err instanceof Error ? err.message : tr('Something went wrong. Please try again.', 'Algo salió mal. Inténtalo de nuevo.'));
       setSubmitting(false);
     }
   }
 
   return (
     <div className="min-h-screen bg-[#030712]">
+      {/* Language toggle */}
+      <div
+        role="group"
+        aria-label="Language / Idioma"
+        style={{ position: 'fixed', bottom: 16, right: 16, zIndex: 60, display: 'flex', gap: 2, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 9999, boxShadow: '0 2px 10px rgba(0,0,0,.15)', padding: 3 }}
+      >
+        <button type="button" onClick={() => chooseLang('en')} aria-pressed={lang === 'en'} style={{ border: 0, cursor: 'pointer', fontWeight: 600, fontSize: 12, padding: '6px 11px', borderRadius: 9999, background: lang === 'en' ? '#111827' : 'transparent', color: lang === 'en' ? '#fff' : '#374151' }}>
+          EN
+        </button>
+        <button type="button" onClick={() => chooseLang('es')} aria-pressed={lang === 'es'} style={{ border: 0, cursor: 'pointer', fontWeight: 600, fontSize: 12, padding: '6px 11px', borderRadius: 9999, background: lang === 'es' ? '#111827' : 'transparent', color: lang === 'es' ? '#fff' : '#374151' }}>
+          ES
+        </button>
+      </div>
+
       {/* Minimal focused header */}
       <header className="border-b border-white/5">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -141,33 +208,33 @@ export default function ClaimPage() {
             </span>
           </Link>
           <Link href="/websites" className="text-sm text-white/50 hover:text-white transition-colors">
-            &larr; Back to Websites
+            &larr; {tr('Back to Websites', 'Volver a Sitios Web')}
           </Link>
         </div>
       </header>
 
       <div className="max-w-3xl mx-auto px-4 py-12">
         <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">{selfServe ? 'Launch Your Website' : 'Claim Your Professional Website'}</h1>
-          <p className="text-lg text-white/60">{selfServe ? 'Start your 7-day free trial. No setup fee, cancel anytime.' : 'Get a stunning, mobile-friendly website for your business'}</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">{selfServe ? tr('Launch Your Website', 'Lanza Tu Sitio Web') : tr('Claim Your Professional Website', 'Reclama Tu Sitio Web Profesional')}</h1>
+          <p className="text-lg text-white/60">{selfServe ? tr('Start your 7-day free trial. No setup fee, cancel anytime.', 'Comienza tu prueba gratis de 7 días. Sin cargo de instalación, cancela cuando quieras.') : tr('Get a stunning, mobile-friendly website for your business', 'Obtén un sitio web impresionante y adaptable a móviles para tu negocio')}</p>
         </div>
 
         <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
           {/* Price header */}
           <div className="bg-gradient-to-br from-blue-600 to-cyan-600 text-white px-8 py-10 text-center">
-            <div className="text-sm font-semibold uppercase tracking-wider opacity-90 mb-2">{selfServe ? 'Pipeline AI Website' : 'Complete Website Package'}</div>
+            <div className="text-sm font-semibold uppercase tracking-wider opacity-90 mb-2">{selfServe ? tr('Pipeline AI Website', 'Sitio Web Pipeline AI') : tr('Complete Website Package', 'Paquete Completo de Sitio Web')}</div>
             <div className="text-5xl font-extrabold mb-2">
               {info.amount}
               {per && <span className="text-2xl font-semibold">{per}</span>}
             </div>
-            <div className="text-blue-100">{info.subtitle}</div>
+            <div className="text-blue-100">{subtitleText}</div>
           </div>
 
           <div className="px-6 md:px-8 py-10">
             {/* What's included */}
-            <h2 className="text-2xl font-bold text-white mb-6">What&apos;s Included:</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">{tr("What's Included:", 'Lo Que Incluye:')}</h2>
             <div className="grid md:grid-cols-2 gap-5">
-              {INCLUDED.map(([title, desc]) => (
+              {(lang === 'es' ? INCLUDED_ES : INCLUDED_EN).map(([title, desc]) => (
                 <div key={title} className="flex items-start gap-4">
                   <div className="flex-shrink-0 w-10 h-10 bg-blue-500/15 rounded-lg flex items-center justify-center">
                     <Check />
@@ -182,12 +249,12 @@ export default function ClaimPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="mt-10 pt-10 border-t border-white/10 space-y-6">
-              <h2 className="text-2xl font-bold text-white">Get Started:</h2>
+              <h2 className="text-2xl font-bold text-white">{tr('Get Started:', 'Comienza:')}</h2>
 
               {/* Plan selector */}
               {selfServe ? (
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-3">Choose your billing</label>
+                  <label className="block text-sm font-medium text-white/70 mb-3">{tr('Choose your billing', 'Elige tu facturación')}</label>
                   <div className="grid sm:grid-cols-2 gap-4">
                     {(['monthly', 'annual'] as BillingKey[]).map((key) => {
                       const selected = billing === key;
@@ -208,9 +275,9 @@ export default function ClaimPage() {
                             {selected && <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
                           </span>
                           <span>
-                            <span className="block font-semibold text-white">{key === 'monthly' ? 'Monthly' : 'Annual'}</span>
+                            <span className="block font-semibold text-white">{key === 'monthly' ? tr('Monthly', 'Mensual') : tr('Annual', 'Anual')}</span>
                             <span className="block text-sm text-white/50">
-                              {key === 'monthly' ? '$49/month' : '$490/year - save ~2 months'}
+                              {key === 'monthly' ? tr('$49/month', '$49/mes') : tr('$490/year - save ~2 months', '$490/año - ahorra ~2 meses')}
                             </span>
                           </span>
                         </button>
@@ -218,12 +285,15 @@ export default function ClaimPage() {
                     })}
                   </div>
                   <p className="text-xs text-white/40 mt-2">
-                    7-day free trial - you won&apos;t be charged today. Cancel anytime before it ends and pay nothing.
+                    {tr(
+                      "7-day free trial - you won't be charged today. Cancel anytime before it ends and pay nothing.",
+                      'Prueba gratis de 7 días - hoy no se te cobrará. Cancela en cualquier momento antes de que termine y no pagas nada.'
+                    )}
                   </p>
                 </div>
               ) : (
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-3">Choose your payment option</label>
+                  <label className="block text-sm font-medium text-white/70 mb-3">{tr('Choose your payment option', 'Elige tu forma de pago')}</label>
                   <div className="grid sm:grid-cols-2 gap-4">
                     {(['full', 'installments'] as PlanKey[]).map((key) => {
                       const selected = plan === key;
@@ -245,10 +315,10 @@ export default function ClaimPage() {
                           </span>
                           <span>
                             <span className="block font-semibold text-white">
-                              {key === 'full' ? 'Pay in full' : '3 easy payments'}
+                              {key === 'full' ? tr('Pay in full', 'Pago completo') : tr('3 easy payments', '3 pagos fáciles')}
                             </span>
                             <span className="block text-sm text-white/50">
-                              {key === 'full' ? '$497 one-time' : '$179/mo for 3 months'}
+                              {key === 'full' ? tr('$497 one-time', '$497 pago único') : tr('$179/mo for 3 months', '$179/mes por 3 meses')}
                             </span>
                           </span>
                         </button>
@@ -256,39 +326,42 @@ export default function ClaimPage() {
                     })}
                   </div>
                   <p className="text-xs text-white/40 mt-2">
-                    Then $47/month for hosting &amp; support, starting after your launch fee. Cancel anytime.
+                    {tr(
+                      'Then $47/month for hosting & support, starting after your launch fee. Cancel anytime.',
+                      'Luego $47/mes por hospedaje y soporte, a partir de tu cuota de lanzamiento. Cancela cuando quieras.'
+                    )}
                   </p>
                 </div>
               )}
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-2">Your Name *</label>
+                  <label className="block text-sm font-medium text-white/70 mb-2">{tr('Your Name *', 'Tu Nombre *')}</label>
                   <input
                     type="text"
                     required
                     value={form.name}
                     onChange={(e) => update('name', e.target.value)}
                     className={inputClass}
-                    placeholder="John Smith"
+                    placeholder={tr('John Smith', 'Juan Pérez')}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-2">Business Name *</label>
+                  <label className="block text-sm font-medium text-white/70 mb-2">{tr('Business Name *', 'Nombre del Negocio *')}</label>
                   <input
                     type="text"
                     required
                     value={form.businessName}
                     onChange={(e) => update('businessName', e.target.value)}
                     className={inputClass}
-                    placeholder="Your Business LLC"
+                    placeholder={tr('Your Business LLC', 'Tu Negocio LLC')}
                   />
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-2">Email Address *</label>
+                  <label className="block text-sm font-medium text-white/70 mb-2">{tr('Email Address *', 'Correo Electrónico *')}</label>
                   <input
                     type="email"
                     required
@@ -299,7 +372,7 @@ export default function ClaimPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-2">Phone Number *</label>
+                  <label className="block text-sm font-medium text-white/70 mb-2">{tr('Phone Number *', 'Número de Teléfono *')}</label>
                   <input
                     type="tel"
                     required
@@ -312,7 +385,7 @@ export default function ClaimPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-2">Preferred Domain (optional)</label>
+                <label className="block text-sm font-medium text-white/70 mb-2">{tr('Preferred Domain (optional)', 'Dominio Preferido (opcional)')}</label>
                 <div className="flex items-center">
                   <span className="text-white/40 mr-2">www.</span>
                   <input
@@ -323,7 +396,7 @@ export default function ClaimPage() {
                     placeholder="yourbusiness.com"
                   />
                 </div>
-                <p className="text-sm text-white/40 mt-1">We&apos;ll help you get a domain if you don&apos;t have one</p>
+                <p className="text-sm text-white/40 mt-1">{tr("We'll help you get a domain if you don't have one", 'Te ayudamos a conseguir un dominio si no tienes uno')}</p>
               </div>
 
               {/* Consent */}
@@ -337,10 +410,12 @@ export default function ClaimPage() {
                       className="mt-1 w-5 h-5 accent-blue-600"
                     />
                     <span className="text-sm text-white/60">
-                      <span className="font-medium text-white">Marketing Consent</span>
-                      <br />I agree to receive marketing text messages and emails from Get Pipeline AI about special
-                      offers, promotions, and updates at the number and email provided. Message frequency varies. Msg &amp;
-                      data rates may apply. Reply STOP to opt-out.
+                      <span className="font-medium text-white">{tr('Marketing Consent', 'Consentimiento de Marketing')}</span>
+                      <br />
+                      {tr(
+                        'I agree to receive marketing text messages and emails from Get Pipeline AI about special offers, promotions, and updates at the number and email provided. Message frequency varies. Msg & data rates may apply. Reply STOP to opt-out.',
+                        'Acepto recibir mensajes de texto y correos de marketing de Get Pipeline AI sobre ofertas especiales, promociones y novedades al número y correo proporcionados. La frecuencia de mensajes varía. Pueden aplicar tarifas de mensajes y datos. Responde STOP para cancelar.'
+                      )}
                     </span>
                   </label>
                 </div>
@@ -354,21 +429,23 @@ export default function ClaimPage() {
                       className="mt-1 w-5 h-5 accent-blue-600"
                     />
                     <span className="text-sm text-white/60">
-                      <span className="font-medium text-white">Account &amp; Service Alerts *</span>
-                      <br />I agree to receive operational text messages and emails from Get Pipeline AI regarding my
-                      account, appointments, reminders, and updates. Message frequency varies. Msg &amp; data rates may
-                      apply. Reply STOP to opt-out.
+                      <span className="font-medium text-white">{tr('Account & Service Alerts *', 'Alertas de Cuenta y Servicio *')}</span>
+                      <br />
+                      {tr(
+                        'I agree to receive operational text messages and emails from Get Pipeline AI regarding my account, appointments, reminders, and updates. Message frequency varies. Msg & data rates may apply. Reply STOP to opt-out.',
+                        'Acepto recibir mensajes de texto y correos operativos de Get Pipeline AI sobre mi cuenta, citas, recordatorios y novedades. La frecuencia de mensajes varía. Pueden aplicar tarifas de mensajes y datos. Responde STOP para cancelar.'
+                      )}
                     </span>
                   </label>
                 </div>
                 <p className="text-xs text-white/40">
-                  View our{' '}
+                  {tr('View our', 'Consulta nuestra')}{' '}
                   <a href="https://sites.getpipelineai.com/privacy" className="text-blue-400 underline">
-                    Privacy Policy
+                    {tr('Privacy Policy', 'Política de Privacidad')}
                   </a>{' '}
-                  and{' '}
+                  {tr('and', 'y')}{' '}
                   <a href="https://sites.getpipelineai.com/terms" className="text-blue-400 underline">
-                    Terms of Service
+                    {tr('Terms of Service', 'Términos del Servicio')}
                   </a>
                   .
                 </p>
@@ -383,11 +460,14 @@ export default function ClaimPage() {
                 disabled={submitting}
                 className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 disabled:opacity-60 disabled:cursor-not-allowed text-white py-4 px-8 rounded-xl text-lg font-semibold transition shadow-lg shadow-blue-500/30"
               >
-                {submitting ? 'Processing...' : info.button}
+                {buttonText}
               </button>
 
               <p className="text-center text-sm text-white/40">
-                Secure payment powered by Stripe. {selfServe ? '14-day money-back guarantee.' : '30-day money-back guarantee.'}
+                {tr('Secure payment powered by Stripe.', 'Pago seguro con tecnología de Stripe.')}{' '}
+                {selfServe
+                  ? tr('14-day money-back guarantee.', 'Garantía de reembolso de 14 días.')
+                  : tr('30-day money-back guarantee.', 'Garantía de reembolso de 30 días.')}
               </p>
             </form>
           </div>
@@ -396,11 +476,11 @@ export default function ClaimPage() {
         {/* Trust */}
         <div className="mt-10 text-center">
           <p className="text-white/50">
-            Questions? Call or text{' '}
+            {tr('Questions? Call or text', '¿Preguntas? Llama o envía un mensaje al')}{' '}
             <a href="tel:1-888-247-7818" className="text-blue-400 font-medium">
               1-888-247-7818
             </a>{' '}
-            or email{' '}
+            {tr('or email', 'o escribe a')}{' '}
             <a href="mailto:Support@GetPipelineAI.com" className="text-blue-400 font-medium">
               Support@GetPipelineAI.com
             </a>
