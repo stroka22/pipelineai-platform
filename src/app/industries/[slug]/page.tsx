@@ -1,12 +1,24 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import IndustryPage from '@/components/IndustryPage';
 import { Metadata } from 'next';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+let supabaseInstance: SupabaseClient | null = null;
+
+// Lazy singleton: instantiate only when a request needs it, so the build's
+// config-collection step never evaluates the client at module-import time.
+function getSupabase(): SupabaseClient {
+  if (supabaseInstance) return supabaseInstance;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    throw new Error('Missing Supabase environment variables');
+  }
+  supabaseInstance = createClient(url, key);
+  return supabaseInstance;
+}
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -15,7 +27,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   
-  const { data: niche } = await supabase
+  const { data: niche } = await getSupabase()
     .from('niches')
     .select('name, description')
     .eq('slug', slug)
@@ -41,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function DynamicIndustryPage({ params }: Props) {
   const { slug } = await params;
 
-  const { data: niche } = await supabase
+  const { data: niche } = await getSupabase()
     .from('niches')
     .select('*')
     .eq('slug', slug)
